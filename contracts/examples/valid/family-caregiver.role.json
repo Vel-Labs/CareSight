@@ -1,0 +1,7 @@
+{
+  "schema": "caregiver-role",
+  "role_id": "family_caregiver",
+  "name": "Family caregiver",
+  "can_confirm_event_types": ["possible_floor_stay", "medication_routine_likely_observed"],
+  "can_view_event_types": ["possible_floor_stay", "medication_routine_likely_observed"]
+}

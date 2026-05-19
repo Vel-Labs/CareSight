@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/care-event.schema.json",
+  "title": "CareEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "camera_id",
+    "severity",
+    "confidence",
+    "status",
+    "requires_human_confirmation",
+    "allowed_actions",
+    "blocked_actions",
+    "evidence"
+  ],
+  "properties": {
+    "schema": {
+      "const": "care-event"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[a-z0-9_-]+$"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "possible_floor_stay",
+        "medication_routine_likely_observed",
+        "caregiver_alert_policy"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "camera_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "zone_id": {
+      "type": "string",
+      "minLength": 3
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "possible",
+        "likely_observed",
+        "awaiting_human_confirmation",
+        "human_confirmed",
+        "dismissed"
+      ]
+    },
+    "requires_human_confirmation": {
+      "type": "boolean"
+    },
+    "allowed_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "journal_entry",
+          "caregiver_alert",
+          "facetime_handoff",
+          "dashboard_update",
+          "local_notification"
+        ]
+      }
+    },
+    "blocked_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "autonomous_emergency_dispatch",
+          "raw_video_cloud_upload",
+          "medication_confirmed_without_authorized_human",
+          "medical_diagnosis"
+        ]
+      }
+    },
+    "human_confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirmed_by_role_id", "confirmed_at"],
+      "properties": {
+        "confirmed_by_role_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "confirmed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["raw_video_stays_local"],
+      "properties": {
+        "raw_video_stays_local": {
+          "const": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "possible_floor_stay"
+          }
+        },
+        "required": ["event_type"]
+      },
+      "then": {
+        "properties": {
+          "requires_human_confirmation": {
+            "const": true
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "event_type": {
+            "const": "medication_routine_likely_observed"
+          },
+          "status": {
+            "const": "human_confirmed"
+          }
+        },
+        "required": ["event_type", "status"]
+      },
+      "then": {
+        "properties": {
+          "human_confirmation": true
+        },
+        "required": ["human_confirmation"]
+      }
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CareSightRoutine",
+  "type": "object",
+  "required": [
+    "routine_id",
+    "name",
+    "subject_id",
+    "expected_window",
+    "evidence_required",
+    "escalation_policy"
+  ],
+  "properties": {
+    "routine_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "expected_window": {
+      "type": "object",
+      "required": [
+        "start",
+        "end"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        },
+        "end": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        }
+      }
+    },
+    "evidence_required": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "confirmation_required_by_role": {
+      "type": "string"
+    },
+    "missed_routine_grace_minutes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "escalation_policy": {
+      "type": "string"
+    }
+  }
+}

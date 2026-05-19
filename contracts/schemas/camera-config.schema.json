@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/camera-config.schema.json",
+  "title": "CameraConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "camera_id", "name", "source_type", "source_uri", "privacy"],
+  "properties": {
+    "schema": {
+      "const": "camera-config"
+    },
+    "camera_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["webcam", "continuity_camera", "usb", "rtsp", "onvif", "home_assistant"]
+    },
+    "source_uri": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ]
+    },
+    "room": {
+      "type": "string"
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_video_storage", "cloud_upload_default"],
+      "properties": {
+        "raw_video_storage": {
+          "type": "string",
+          "enum": ["disabled", "local_opt_in"]
+        },
+        "cloud_upload_default": {
+          "const": false
+        }
+      }
+    }
+  }
+}

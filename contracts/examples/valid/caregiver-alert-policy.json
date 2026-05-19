@@ -1,0 +1,8 @@
+{
+  "schema": "alert-policy",
+  "policy_id": "default-caregiver-alert",
+  "event_types": ["possible_floor_stay", "medication_routine_likely_observed"],
+  "allowed_channels": ["console", "dashboard", "apple_shortcut", "facetime_handoff"],
+  "requires_acknowledgement": true,
+  "blocked_actions": ["autonomous_emergency_dispatch", "raw_video_cloud_upload"]
+}

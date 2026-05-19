@@ -1,0 +1,26 @@
+{
+  "name": "caresight-hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install:local": "npm install",
+    "init:template": "tsx scripts/init-template.ts",
+    "init:template:dry-run": "tsx scripts/init-template.ts --yes --dry-run",
+    "validate:scaffold": "tsx scripts/validate-scaffold.ts",
+    "validate:contracts": "tsx scripts/validate-contracts.ts",
+    "test:focused": "vitest run tests/contracts tests/core",
+    "test": "vitest run tests",
+    "typecheck": "tsc --noEmit",
+    "py:check": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub",
+    "check": "npm run validate:scaffold && npm run validate:contracts && npm run test:focused && npm run test && npm run typecheck && npm run py:check"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.1"
+  }
+}

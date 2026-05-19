@@ -1,0 +1,17 @@
+{
+  "schema": "care-event",
+  "event_id": "evt_bad_autonomous_dispatch",
+  "event_type": "possible_floor_stay",
+  "occurred_at": "2026-05-18T15:00:00Z",
+  "camera_id": "living_room",
+  "zone_id": "floor_zone",
+  "severity": "high",
+  "confidence": "high",
+  "status": "possible",
+  "requires_human_confirmation": false,
+  "allowed_actions": ["journal_entry", "autonomous_emergency_dispatch"],
+  "blocked_actions": ["medical_diagnosis"],
+  "evidence": {
+    "raw_video_stays_local": true
+  }
+}

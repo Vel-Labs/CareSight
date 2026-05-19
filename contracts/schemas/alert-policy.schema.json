@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/alert-policy.schema.json",
+  "title": "AlertPolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "policy_id", "event_types", "allowed_channels", "blocked_actions"],
+  "properties": {
+    "schema": {
+      "const": "alert-policy"
+    },
+    "policy_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "event_types": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": ["possible_floor_stay", "medication_routine_likely_observed"]
+      }
+    },
+    "allowed_channels": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["console", "dashboard", "macos_notification", "apple_shortcut", "facetime_handoff"]
+      }
+    },
+    "requires_acknowledgement": {
+      "type": "boolean"
+    },
+    "blocked_actions": {
+      "type": "array",
+      "minItems": 1,
+      "contains": {
+        "const": "autonomous_emergency_dispatch"
+      },
+      "items": {
+        "type": "string",
+        "enum": [
+          "autonomous_emergency_dispatch",
+          "raw_video_cloud_upload",
+          "medical_diagnosis"
+        ]
+      }
+    }
+  }
+}

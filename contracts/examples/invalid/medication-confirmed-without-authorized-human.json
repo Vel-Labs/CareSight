@@ -1,0 +1,17 @@
+{
+  "schema": "care-event",
+  "event_id": "evt_bad_medication_confirmation",
+  "event_type": "medication_routine_likely_observed",
+  "occurred_at": "2026-05-18T15:15:00Z",
+  "camera_id": "kitchen_counter",
+  "zone_id": "medication_station",
+  "severity": "medium",
+  "confidence": "medium",
+  "status": "human_confirmed",
+  "requires_human_confirmation": true,
+  "allowed_actions": ["journal_entry", "caregiver_alert"],
+  "blocked_actions": ["medication_confirmed_without_authorized_human"],
+  "evidence": {
+    "raw_video_stays_local": true
+  }
+}

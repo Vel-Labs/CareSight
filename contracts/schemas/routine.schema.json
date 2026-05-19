@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/routine.schema.json",
+  "title": "Routine",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "routine_id", "routine_type", "name", "observation_language"],
+  "properties": {
+    "schema": {
+      "const": "routine"
+    },
+    "routine_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "routine_type": {
+      "type": "string",
+      "enum": ["medication", "meal", "pet_care", "check_in"]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3
+    },
+    "window": {
+      "type": "string"
+    },
+    "observation_language": {
+      "type": "string",
+      "enum": ["likely_observed", "possible_event", "human_confirmed"]
+    },
+    "requires_human_confirmation": {
+      "type": "boolean"
+    }
+  }
+}

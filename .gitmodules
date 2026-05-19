@@ -1,0 +1,3 @@
+[submodule "apps/caresight-hub/vendor/yolo-mlx"]
+	path = apps/caresight-hub/vendor/yolo-mlx
+	url = https://github.com/thewebAI/yolo-mlx.git

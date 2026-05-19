@@ -1,0 +1,38 @@
+possible_floor_stay:
+  severity: high
+  min_confidence: 0.65
+  cooldown_seconds: 300
+  threshold_seconds: 30
+  actions:
+    - create_journal_entry
+    - show_dashboard_alert
+    - notify_primary_caregiver
+    - switch_obs_event_view
+    - offer_facetime
+
+medication_routine_likely_observed:
+  severity: medium
+  min_confidence: 0.60
+  cooldown_seconds: 3600
+  threshold_seconds: 10
+  actions:
+    - create_journal_entry
+    - request_confirmation
+
+pet_food_activity_observed:
+  severity: low
+  min_confidence: 0.50
+  cooldown_seconds: 1800
+  threshold_seconds: 15
+  actions:
+    - create_journal_entry
+    - notify_temporary_caregiver_if_enabled
+
+camera_offline:
+  severity: medium
+  min_confidence: 1.0
+  cooldown_seconds: 1800
+  threshold_seconds: 60
+  actions:
+    - create_journal_entry
+    - notify_owner

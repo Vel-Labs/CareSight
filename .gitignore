@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.DS_Store
+.env
+.env.*
+.venv/
+__pycache__/
+.pytest_cache/
+apps/caresight-hub/vendor/yolo-mlx/models/
+apps/caresight-hub/vendor/yolo-mlx/images/
+apps/caresight-hub/vendor/yolo-mlx/results/
+apps/caresight-hub/images/
+apps/caresight-hub/results/
+apps/caresight-hub/data/

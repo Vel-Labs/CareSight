@@ -1,0 +1,29 @@
+{
+  "camera": {
+    "camera_id": "living_room",
+    "name": "Living Room",
+    "source_type": "webcam",
+    "source_uri": 0,
+    "width": 1280,
+    "height": 720,
+    "fps": 30
+  },
+  "floor_zone": {
+    "zone_id": "floor_zone",
+    "camera_id": "living_room",
+    "name": "Floor / Low Zone",
+    "kind": "floor_low",
+    "x_min": 0.0,
+    "y_min": 0.66,
+    "x_max": 1.0,
+    "y_max": 1.0
+  },
+  "floor_stay": {
+    "dwell_seconds": 8.0,
+    "severity": "high",
+    "confidence": "high"
+  },
+  "storage": {
+    "database_path": "apps/caresight-hub/data/caresight-v0.sqlite3"
+  }
+}

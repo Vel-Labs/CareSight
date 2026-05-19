@@ -1,0 +1,11 @@
+{
+  "schema": "camera-config",
+  "camera_id": "living_room",
+  "name": "Living Room",
+  "source_type": "webcam",
+  "source_uri": 0,
+  "privacy": {
+    "raw_video_storage": "disabled",
+    "cloud_upload_default": true
+  }
+}

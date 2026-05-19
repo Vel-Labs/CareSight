@@ -1,0 +1,9 @@
+{
+  "schema": "routine",
+  "routine_id": "morning_medication",
+  "routine_type": "medication",
+  "name": "Morning medication station check",
+  "window": "08:00-10:00",
+  "observation_language": "likely_observed",
+  "requires_human_confirmation": true
+}

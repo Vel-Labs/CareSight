@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/caregiver-role.schema.json",
+  "title": "CaregiverRole",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "role_id", "name", "can_confirm_event_types", "can_view_event_types"],
+  "properties": {
+    "schema": {
+      "const": "caregiver-role"
+    },
+    "role_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3
+    },
+    "can_confirm_event_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["possible_floor_stay", "medication_routine_likely_observed", "pet_food_activity_observed"]
+      }
+    },
+    "can_view_event_types": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": ["possible_floor_stay", "medication_routine_likely_observed", "pet_food_activity_observed"]
+      }
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
