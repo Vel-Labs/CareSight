@@ -23,3 +23,9 @@ Rationale: this keeps the challenge-critical YOLO26 MLX implementation close eno
 CareSight v0 review commands may list and summarize local events, but confirm/dismiss transitions require an explicit human reviewer. Each review creates a durable review row, journal row, and report-only agent handoff payload.
 
 Rationale: this proves the first agent-ready lifecycle while preserving the bounded control loop and preventing autonomous emergency dispatch, medical diagnosis, or agent-owned acknowledgement.
+
+## 2026-05-19: Use AGPL-3.0-Only for the Hackathon Repository
+
+CareSight Hub uses `AGPL-3.0-only` for the public hackathon repository. The current runtime depends on the `thewebAI/yolo-mlx` submodule, which is also licensed under `AGPL-3.0-only`.
+
+Rationale: this keeps the hackathon build open, inspectable, and compatible with the current YOLO MLX dependency posture while leaving future commercial packaging, support, managed updates, hardware compatibility, and other service layers as separate product decisions.

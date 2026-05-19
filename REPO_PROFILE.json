@@ -12,6 +12,8 @@
       "CHANGELOG.md",
       "CONTRIBUTING.md",
       "DECISIONS.md",
+      "LICENSE",
+      "NOTICE.md",
       "REPO_PROFILE.json",
       "README.md",
       "ROADMAP.md",
@@ -32,6 +34,8 @@
       "CHANGELOG.md",
       "CONTRIBUTING.md",
       "DECISIONS.md",
+      "LICENSE",
+      "NOTICE.md",
       "ROADMAP.md"
     ],
     "note": "Root stays limited to entrypoints, conventional project files, and major implementation/doc directories."

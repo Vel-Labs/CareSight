@@ -13,6 +13,8 @@ AGENTS.md
 CHANGELOG.md
 CONTRIBUTING.md
 DECISIONS.md
+LICENSE
+NOTICE.md
 README.md
 REPO_PROFILE.json
 ROADMAP.md
@@ -256,6 +258,7 @@ docs/hackathon/rules.md
 docs/hackathon/submission-checklist.md
 docs/hackathon/vendor-tracks.md
 docs/integrations/LLM_PROVIDER_INTEGRATION.md
+docs/legal/LICENSE_NOTES.md
 docs/project/CARESIGHT_THESIS.md
 docs/project/PROJECT_BRIEF.md
 docs/project/TEMPLATE_USAGE.md

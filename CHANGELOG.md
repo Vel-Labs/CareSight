@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-05-19
+
+- Added root `AGPL-3.0-only` license posture for the hackathon repository.
+- Added `NOTICE.md` and `docs/legal/LICENSE_NOTES.md` to document YOLO MLX AGPL dependency posture, model-weight caution, and future commercial packaging boundaries.
+- Updated `README.md` with license positioning and submodule clone instructions.
+
 ## 2026-05-18
 
 - Adopted `Vel-Labs/project-scaffold` as the CareSight Hub repo backbone.
@@ -14,3 +20,4 @@
 - Added local still snapshot capture for v0 floor-stay events, recorded in event evidence as local-only snapshot metadata.
 - Added v0 review and acknowledgement CLI with event inbox, human-readable summaries, reviewer-gated confirm/dismiss, journal entries, report-only agent handoffs, and lifecycle tests.
 - Added `docs/cli/COMMANDS.md` as the durable local CLI registry and updated agent rules for review-flow boundaries.
+- Added README project ethos for an accessible open-source baseline plus future packaged/service value-adds.
