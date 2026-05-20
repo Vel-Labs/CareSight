@@ -1,8 +1,24 @@
 # CareSight Hub
 
-CareSight Hub is a local-first caregiver awareness prototype for the YOLO26 MLX hackathon. It uses the project scaffold as the repo backbone for governance, contracts, quality gates, and agent-safe collaboration, then keeps the Python/MLX runtime in a separate app boundary.
+CareSight Hub is a local-first caregiver awareness system for homes where peace of mind matters: an aging parent living alone, a child at home, a pet, or any loved one you want to know is okay without turning the home into a cloud surveillance product.
+
+The long-term vision is simple: a small Mac mini-class appliance that runs local vision, text-to-speech, and language models, records structured care events, preserves a non-destructive SQLite blackbox, and creates caregiver handoff paths when attention may be needed.
+
+CareSight does not try to replace a caregiver, diagnose a condition, or dispatch emergency services. It gives the home a local memory: what was observed, when it happened, what evidence exists, who reviewed it, what was journaled, and what draft alert or handoff was prepared.
+
+The current hackathon build uses the project scaffold as the repo backbone for governance, contracts, quality gates, and agent-safe collaboration, then keeps the Python/MLX runtime in a separate app boundary.
 
 CareSight is not a medical device, certified fall detector, alarm service, emergency dispatch product, or HIPAA-compliant clinical system. The MVP creates local care observations that authorized humans can acknowledge, confirm, or dismiss.
+
+## Why CareSight Exists
+
+Many care moments are stressful because the people responsible for helping do not have continuity. They may not know when something happened, where someone was last seen, what they were wearing, whether an event was already reviewed, or what the next appropriate handoff should be.
+
+CareSight is designed around that gap.
+
+It acts like a local black box for care-relevant observations: raw video stays local, models run locally, SQLite remains the source of truth, and every event has an audit trail. The goal is not to create fear or automate authority. The goal is to preserve context so help is easier to coordinate when something feels wrong.
+
+In a perfect-world product footprint, this runs on the lowest-cost practical Apple hardware, such as a Mac mini, and becomes a quiet home appliance for local care awareness.
 
 ## Project Ethos
 
