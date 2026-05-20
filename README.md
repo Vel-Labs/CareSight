@@ -20,9 +20,17 @@ It acts like a local black box for care-relevant observations: raw video stays l
 
 In a perfect-world product footprint, this runs on the lowest-cost practical Apple hardware, such as a Mac mini, and becomes a quiet home appliance for local care awareness.
 
+## Why Local Models
+
+Caregiving data is deeply personal. A camera in the home can reveal routines, vulnerability, visitors, mobility changes, pets, children, sleep patterns, and moments of distress. CareSight is built around the idea that this context should belong first to the household, not to a remote platform.
+
+The default architecture keeps raw video, structured events, review history, journal entries, and handoff records on locally owned hardware. Local vision, language, and text-to-speech models reduce the need to send sensitive home context to outside services, while SQLite preserves an inspectable blackbox record of what happened.
+
+This does not make CareSight a privacy guarantee or compliance product by itself. It does make privacy a design constraint: minimize external dependencies, keep raw media local by default, make every event auditable, and require explicit human approval before sensitive handoffs leave the device.
+
 ## Project Ethos
 
-CareSight is being built in public because trust, safety, and caregiving should be accessible to people who are willing to learn, assemble, and run local tools for their own families. The open-source hackathon build should be capable enough to help real households experiment with local-first care awareness without waiting for a commercial gatekeeper.
+CareSight is being built in public because trust, safety, privacy, and caregiving should be accessible to people who are willing to learn, assemble, and run local tools for their own families. The open-source hackathon build should be capable enough to help real households experiment with local-first care awareness without waiting for a commercial gatekeeper.
 
 That does not mean every future product layer must be free or unmanaged. A sustainable CareSight business would likely focus on reliable packaging, installation, support, managed updates, hardware compatibility, caregiver workflows, and other value-added services. The baseline loop should remain understandable and inspectable: observe locally, create bounded events, ask humans to confirm, journal what happened, and preserve auditability.
 
