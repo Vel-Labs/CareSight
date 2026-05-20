@@ -1,0 +1,2058 @@
+version: 2
+goal:
+  slug: caresight-sprint-buildout
+  title: CareSight Sprint Buildout
+  kind: existing_plan
+  tranche: "Continuous execution: complete successive safe verified CareSight sprint slices until the blackbox live-loop foundation and approved downstream buildout are proven by receipts."
+  status: done
+  created_at: "2026-05-19"
+  owner: PM
+  pm_reasoning: high
+  oracle:
+    signal: "A real live-camera event plus deterministic test/audit chain proves CareSight observes locally, records blackbox evidence in SQLite, supports human review, journals outcomes, prepares handoff artifacts, and preserves safety boundaries."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Final Judge or PM receipt includes full_outcome_complete: true, exact commands, verification status, dirty diff summary, audit receipt paths, and no required Worker task remaining."
+  intake:
+    original_request: "Turn the CareSight sprint items into GoalBuddy and prepare safe rapid action with proven audit trail."
+    interpreted_outcome: "Execute an auditable CareSight sprint buildout from v0 live-loop proof through review console, YOLO26 harness, tracking, v1 events, dashboard/journal/alerts, local multi-camera support, and constrained agent assistance."
+    input_shape: existing_plan
+    audience:
+      - CareSight maintainers
+      - hackathon judges
+      - local caregivers evaluating the prototype
+      - future coding agents
+    authority: approved
+    proof_type:
+      - test
+      - demo
+      - artifact
+      - review
+    completion_proof: "Final Judge or PM audit receipt proves the current tranche is complete with live-loop evidence, verification commands, dirty diff summary, and no required Worker task remaining."
+    likely_misfire: "Shipping docs or UI polish without proving the blackbox live loop, review authority, event policy reliability, and audit evidence."
+    blind_spots_considered:
+      - "Live data is required for delivered demo proof, but deterministic tests may use seeded data."
+      - "Agents can help with summaries and drafts but cannot become the reviewer of record."
+      - "Multi-camera narrative is useful, but must not weaken the v0 blackbox proof."
+    existing_plan_facts:
+      - "Sprint 1 closes the v0 live loop with real data and a detailed blackbox audit receipt."
+      - "Sprint 2 builds review console behavior on the same service boundary as CLI wrappers."
+      - "Sprint 3 wraps YOLO26 MLX behind a CareSight-owned inference harness."
+      - "Sprint 4 adds track-aware floor-stay, missing-off-camera logic, severity scaling, and multi-room narrative."
+      - "Sprint 5 adds deterministic v1 event policies for floor-stay, missing-off-camera, medication routine likely observed, and hydration routine likely observed."
+      - "Sprint 6 evaluates segmentation only if it improves evidence or demo clarity without delaying v1."
+      - "Sprint 7 builds dashboard, journal, Apple Notes-style logging, and text-to-FaceTime escalation artifacts."
+      - "Sprint 8 supports practical local multi-camera configuration, ideally two local cameras with room labels and RTSP."
+      - "Sprint 9 adds constrained agent/LLM assistance with provenance and forbidden-action tests."
+  constraints:
+    - "Preserve resident and caregiver safety."
+    - "CareSight is not a medical device."
+    - "Do not claim HIPAA compliance."
+    - "Do not implement autonomous emergency dispatch."
+    - "Do not confirm medication administration from vision alone."
+    - "Do not identify a specific medication as taken."
+    - "Do not add Ring/Nest/cloud camera integrations to hackathon core."
+    - "Keep raw video local by default."
+    - "Keep YOLO26 MLX as the vision lane."
+    - "Keep LLM/agent layers constrained to summaries, drafts, audit, and handoff assistance."
+    - "Agents must not confirm, dismiss, dispatch, diagnose, delete records, or become reviewer of record."
+    - "SQLite is the unbiased blackbox source of truth."
+    - "Scripts should be thin wrappers over focused runtime modules."
+    - "Keep files below 350 lines where practical; files above 500 lines require extraction or written justification."
+    - "Every supported CLI command must be documented in docs/cli/COMMANDS.md."
+    - "Behavior changes require tests or deterministic checks where practical, docs, CHANGELOG.md, and DECISIONS.md for architecture changes."
+    - "Delivered demo proof should use live data; seeded/synthetic data is only for deterministic tests and smoke checks."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/caresight-sprint-buildout/"
+    command: "npx goalbuddy board /Users/steven/Workspace/40_Code/hackathons/CareSight/docs/goals/caresight-sprint-buildout"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Map current CareSight repo state against the sprint plan and identify the exact existing files, commands, and gaps for Sprint 1 through Sprint 3."
+    inputs:
+      - "AGENTS.md"
+      - "README.md"
+      - "ROADMAP.md"
+      - "REPO_PROFILE.json"
+      - "docs/project/PROJECT_BRIEF.md"
+      - "docs/architecture/ARCHITECTURE.md"
+      - "docs/architecture/REPO_BOUNDARIES.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/hackathon/hackathon_roadmap.md"
+      - "contracts/README.md"
+      - "docs/cli/COMMANDS.md"
+      - "apps/caresight-hub/"
+    constraints:
+      - "Read-only."
+      - "Do not run live camera commands."
+      - "Do not edit implementation files."
+      - "Preserve safety boundaries and blackbox SQLite framing."
+    expected_output:
+      - "Repo map for v0 live loop, review CLI/service, YOLO scripts, storage, tests, docs, and audit files."
+      - "Exact current verification commands and whether they are deterministic or manual."
+      - "Gap list for Sprint 1 through Sprint 3."
+      - "Recommended largest safe first Worker slice with allowed_files and verify commands."
+    receipt:
+      result: done
+      summary: "CareSight already has Sprint 1 and much of Sprint 2 implemented: v0 live loop, SQLite blackbox tables, review CLI, journal/handoff rows, docs, and deterministic tests. Sprint 3 remains the largest clean next slice: YOLO26 inference is still embedded in smoke/live scripts, not a CareSight-owned harness with Detection/Observation separation, metadata, and fail-closed API."
+      evidence:
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md: immediate next action is prove v0 review/acknowledgement loop after possible_floor_stay."
+        - "docs/cli/COMMANDS.md: documents image smoke, webcam smoke, v0 live loop, review list/show/confirm/dismiss/journal with safety classes."
+        - "apps/caresight-hub/scripts/v0_floor_stay_live.py: live command loads YOLO, AVFoundation camera, FloorStayDetector, snapshot, SQLite insert, event_persisted output."
+        - "apps/caresight-hub/scripts/v0_review_events.py: CLI list/show are read-safe; confirm/dismiss require --reviewer and write review/journal/handoff."
+        - "apps/caresight-hub/caresight/storage/sqlite_store.py and migrations/001_init.sql: blackbox tables include cameras, zones, event_policies, events, event_observations, event_reviews, journal_entries, agent_handoffs."
+        - "apps/caresight-hub/caresight/events/floor_stay.py: emits possible_floor_stay with awaiting_human_confirmation and blocked autonomous emergency dispatch/medical diagnosis."
+        - "apps/caresight-hub/caresight/vision/detections.py: only raw Detection dataclass exists; no Observation type found."
+        - "apps/caresight-hub/config/v0.local.json: current single camera living_room, floor_zone, 8s dwell, local SQLite path."
+        - "apps/caresight-hub/tests/test_v0_review_events.py: deterministic coverage for inbox filtering, summary, reviewer gate, confirm/dismiss status, journal, handoff, no emergency_dispatch command."
+        - "package.json: verification scripts are validate:scaffold, validate:contracts, test:focused, test, typecheck, py:check, check."
+      facts:
+        - "Sprint 1 gap: live-data proof and detailed blackbox audit receipt are not current; deterministic tests exist, but PM/operator still needs real v0_floor_stay_live run evidence and SQLite inspection."
+        - "Sprint 2 gap: review lifecycle exists in CLI/storage, but no shared runtime/review service boundary or dashboard/console path exists."
+        - "Sprint 3 gap: no caresight/runtime/inference package found; YOLO model loading/result normalization lives in scripts, so Detection/Observation separation, config-first model metadata, and fail-closed harness are incomplete."
+        - "Recommended largest safe first Worker slice: implement Sprint 3 CareSight-owned inference harness before broad UI/tracking."
+      contradictions:
+        - "docs/cli/COMMANDS.md marks YOLO26 Image Smoke as manual-operator even though it uses bundled image/model and appears deterministic-ish apart from local model/env availability."
+        - "apps/caresight-hub/README.md says py:check is lightweight while current tests cover v0 config/events/storage/review behavior; wording is stale."
+        - "Sprint 2 board objective says review console/service boundary, but current repo only has CLI plus SQLiteStore methods."
+      ambiguity_requiring_judge:
+        - "Whether first Worker should close Sprint 1 live audit proof with operator-run evidence, or build Sprint 3 harness first."
+        - "Whether review service extraction should precede inference harness so CLI and future dashboard share one boundary."
+        - "Whether yolo26_image_smoke.py should remain manual-operator or become agent-safe/manual-env after model availability is confirmed."
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the sprint sequence and choose the first safe implementation slice from the Scout evidence."
+    inputs:
+      - "T001 receipt"
+      - "Goal constraints"
+      - "Existing sprint plan facts"
+    constraints:
+      - "Read-only."
+      - "Prefer live-loop closeout before broader architecture."
+      - "Reject any slice that lets dashboard, agent, or LLM output become canonical truth."
+    expected_output:
+      - "Decision: approved | revise | blocked."
+      - "First Worker objective."
+      - "allowed_files."
+      - "verify commands."
+      - "stop_if conditions."
+      - "Risks and audit evidence required."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Approve the sprint sequence with a correction to Scout priority: the first Worker slice must close or harden the v0 live-loop blackbox path before review UI, dashboard, agent, tracking, or YOLO26 harness expansion. Sprint 1 still lacks current live-data audit proof. T003 is the right boundary if it produces deterministic audit checks and operator-ready live proof artifacts without making dashboard, agent, or LLM output canonical truth."
+      evidence:
+        - "T001 receipt says Sprint 1 has deterministic tests but lacks current live-data proof and detailed blackbox audit receipt."
+        - "Goal constraints make SQLite the unbiased blackbox source of truth and require local-first raw video defaults."
+        - "Existing sprint plan says Sprint 1 closes the v0 live loop before review console, YOLO harness, tracking, dashboard, multi-camera, and agent assistance."
+      blocked_tasks: []
+      missing_evidence:
+        - "Current operator-run live-camera event proof."
+        - "SQLite inspection proving event, observation, review, journal, and handoff audit chain for the live event."
+        - "Audit receipt tying commands, status, event_id, snapshot_path, reviewer, timestamps, and safety boundaries together."
+      required_board_updates:
+        - "Activate T003 with Judge-provided objective, allowed_files, verify, and stop_if."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Close or harden the v0 live-loop blackbox path so a real live-camera possible_floor_stay event can be observed locally, persisted in SQLite with snapshot_path/event_id/status/timestamps, reviewed by an authorized human through the existing CLI path, journaled, and handed off as an auditable artifact without any agent, dashboard, or LLM becoming canonical truth."
+    allowed_files:
+      - "apps/caresight-hub/caresight/storage/**"
+      - "apps/caresight-hub/caresight/events/**"
+      - "apps/caresight-hub/caresight/runtime/**"
+      - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+      - "apps/caresight-hub/scripts/v0_review_events.py"
+      - "apps/caresight-hub/config/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/audits/**"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+      - "manual/operator: run documented v0 live camera command only when hardware/operator is available"
+      - "manual/operator: inspect SQLite rows for event_id, snapshot_path, observations, review, journal, handoff, reviewer, timestamps, and status"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Need live camera proof and operator is unavailable; produce deterministic hardening plus exact operator checklist instead."
+      - "The change would let agents, dashboard, LLM output, or scripts confirm, dismiss, dispatch, diagnose, delete, or become reviewer of record."
+      - "The implementation would bypass SQLite blackbox records or make generated UI text canonical truth."
+      - "The event wording claims medical-device behavior, HIPAA compliance, confirmed medication administration, diagnosis, or autonomous emergency response."
+      - "Verification fails twice for the same unexplained reason."
+      - "A file would exceed 500 lines without explicit written justification."
+    expected_output:
+      - "Changed files."
+      - "Commands run with pass/fail status."
+      - "Audit receipt path or clear reason it could not be produced."
+      - "Remaining risks."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+        - "apps/caresight-hub/scripts/v0_review_events.py"
+        - "apps/caresight-hub/tests/test_v0_review_events.py"
+        - "docs/cli/COMMANDS.md"
+        - "docs/audits/2026-05-19-v0-live-loop-blackbox-hardening.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Implemented deterministic v0 blackbox hardening: read-only SQLite audit CLI, audit docs/checklist, reviewer/timestamp fields in report-only handoff payloads, and automation-reviewer rejection. Python verification and full check passed after T013 recovered the generated file tree."
+      remaining_blockers: []
+      missing_final_audit_evidence:
+        - "Live camera proof and manual SQLite inspection require an available hardware/operator session."
+      failed_attempts:
+        - "npm run check failed before T013 because docs/FILE_TREE.md was stale and outside T003 allowed_files."
+        - "Manual live-camera command was not run; operator/hardware live proof is deferred to final audit."
+        - "Manual SQLite inspection for live event was not run; operator/hardware live proof is deferred to final audit."
+      recovery:
+        - "T013 regenerated docs/FILE_TREE.md and passed npm run check."
+        - "T014 approved marking T003 done for deterministic hardening; live proof remains final-audit evidence, not a T003 blocker."
+      stopped_because: "Need files outside allowed_files to fix npm run check: docs/FILE_TREE.md is stale."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Build or harden the shared review service boundary so CLI and future console buttons use the same confirm/dismiss/journal/handoff path."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/review/**"
+      - "apps/caresight-hub/scripts/v0_review_events.py"
+      - "apps/caresight-hub/tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/audits/**"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Existing repo shape uses different paths; ask PM to update allowed_files."
+      - "Dashboard/UI files are required before the service boundary is clear."
+      - "The implementation would bypass SQLite blackbox records."
+      - "The implementation would allow agent confirmation/dismissal/deletion."
+    expected_output:
+      - "CLI and review service share one implementation path."
+      - "Tests prove reviewer requirement, status update, journal row, handoff row, and forbidden actions."
+      - "CLI docs updated."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/review/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/review/service.py"
+        - "apps/caresight-hub/scripts/v0_review_events.py"
+        - "apps/caresight-hub/tests/test_v0_review_events.py"
+        - "docs/cli/COMMANDS.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Built the shared ReviewService boundary and routed the CLI through it for list/show/confirm/dismiss/journal/audit. Added tests for reviewer requirement, status mutation, review/journal/handoff rows, audit-chain reads, agent reviewer rejection, and forbidden delete/dispatch commands. Updated CLI docs, changelog, and decision record. Full check passed after T015 recovered the generated file tree."
+      remaining_blockers: []
+      failed_attempts:
+        - "npm run check failed before T015 because docs/FILE_TREE.md was stale and outside T004 allowed_files."
+      recovery:
+        - "T015 regenerated docs/FILE_TREE.md and passed npm run check."
+      stopped_because: "Need files outside allowed_files to fix npm run check: docs/FILE_TREE.md is stale."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Create the CareSight-owned YOLO26 MLX inference harness with Detection and Observation separation plus camera and room metadata."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/inference/**"
+      - "apps/caresight-hub/config/**"
+      - "apps/caresight-hub/scripts/yolo26_image_smoke.py"
+      - "apps/caresight-hub/scripts/yolo26_webcam_smoke.py"
+      - "apps/caresight-hub/tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/architecture/**"
+      - "docs/audits/**"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "YOLO26 MLX cannot be loaded and no fail-closed path can be tested."
+      - "The harness would fake detections."
+      - "Required metadata cannot be persisted or exposed cleanly."
+    expected_output:
+      - "CareSight-owned inference API."
+      - "Raw Detection and normalized Observation types."
+      - "Config-first model/camera/room metadata."
+      - "Fail-closed error behavior."
+    receipt:
+      result: done
+      changed_files:
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+        - "apps/caresight-hub/caresight/runtime/inference/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/inference/adapter.py"
+        - "apps/caresight-hub/caresight/runtime/inference/config.py"
+        - "apps/caresight-hub/caresight/runtime/inference/harness.py"
+        - "apps/caresight-hub/caresight/runtime/inference/types.py"
+        - "apps/caresight-hub/config/v0.local.json"
+        - "apps/caresight-hub/scripts/yolo26_image_smoke.py"
+        - "apps/caresight-hub/scripts/yolo26_webcam_smoke.py"
+        - "apps/caresight-hub/tests/test_inference_harness.py"
+        - "docs/architecture/ARCHITECTURE.md"
+        - "docs/architecture/REPO_BOUNDARIES.md"
+        - "docs/audits/2026-05-19-yolo26-inference-harness.md"
+        - "docs/cli/COMMANDS.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added CareSight-owned inference harness with fail-closed YOLO26 MLX adapter, raw Detection and normalized Observation types, config-first model/camera/room metadata, smoke-script wiring, deterministic tests, and docs/audit/changelog/decision notes. The harness does not fake detections; missing model/import/load/predict paths fail closed and empty YOLO results stay empty."
+      remaining_blockers: []
+      failed_attempts:
+        - "npm run check failed before T016 because docs/FILE_TREE.md was stale and outside T005 allowed_files."
+      recovery:
+        - "T016 regenerated docs/FILE_TREE.md and passed npm run check."
+      stopped_because: "Need files outside allowed_files to fix npm run check: docs/FILE_TREE.md is stale."
+
+  - id: T006
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit Sprint 1 through Sprint 3 receipts and decide whether tracking and multi-room work is safe to start."
+    inputs:
+      - "T003 receipt"
+      - "T004 receipt"
+      - "T005 receipt"
+      - "Current verification status"
+    constraints:
+      - "Read-only."
+      - "Do not approve tracking work if blackbox event lifecycle remains unproven."
+    expected_output:
+      - "complete | not_complete for foundation tranche."
+      - "Missing evidence."
+      - "Next Worker allowed_files and verify commands for tracking if approved."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Foundation tranche is complete enough to start tracking. T003/T004 prove deterministic blackbox lifecycle and ReviewService safety boundaries; T005 proves the YOLO26 harness fail-closed path. T013/T015/T016 recovered scaffold verification, and npm run check passed after T016. Live-camera proof remains final/demo evidence, not a blocker for the next deterministic tracking slice."
+      evidence:
+        - "T003 receipt: v0 audit command, deterministic blackbox hardening, automation-reviewer rejection, npm run py:check pass, npm run check recovered by T013."
+        - "T004 receipt: shared ReviewService proves reviewer requirement, status mutation, review/journal/handoff rows, audit reads, forbidden delete/dispatch, npm run check recovered by T015."
+        - "T005 receipt: CareSight-owned YOLO26 inference harness with Detection/Observation separation, metadata, fail-closed behavior, deterministic tests, npm run check recovered by T016."
+        - "Current fact: npm run check passed after T016; live-camera proof was not run and remains final/demo evidence."
+      blocked_tasks: []
+      missing_evidence:
+        - "Operator-run live v0_floor_stay_live proof with real possible_floor_stay and event_persisted output."
+        - "SQLite audit output for the live event showing event row, observation row, human review, journal entry, report-only handoff, reviewer, timestamps, status, event_id, and snapshot_path."
+        - "Final/demo audit tying live proof to downstream tracking behavior once tracking is implemented."
+      required_board_updates:
+        - "T007 activated with corrected repo paths and expanded safety stop conditions."
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement track-aware floor-stay and missing-off-camera foundations with severity scaling and observation-level track metadata."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/tracking/**"
+      - "apps/caresight-hub/caresight/events/**"
+      - "apps/caresight-hub/caresight/storage/**"
+      - "apps/caresight-hub/caresight/runtime/config.py"
+      - "apps/caresight-hub/caresight/runtime/inference/**"
+      - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+      - "apps/caresight-hub/config/**"
+      - "apps/caresight-hub/tests/**"
+      - "contracts/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/architecture/**"
+      - "docs/audits/**"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run validate:contracts"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Tracker choice requires a high-burden dependency not approved by Judge."
+      - "Track IDs cannot be represented without contract/schema changes not included in allowed_files."
+      - "Severity logic implies emergency dispatch."
+      - "Multi-camera work requires credentials or hardware unavailable to the Worker."
+      - "Blackbox event lifecycle tests fail or are removed."
+      - "ReviewService or SQLite canonical path is bypassed."
+      - "Tracking or severity implies diagnosis or confirmed medication administration."
+      - "Live camera or multi-camera hardware is required for deterministic completion."
+      - "Files outside allowed_files are required."
+    expected_output:
+      - "Same-track dwell policy."
+      - "Occlusion grace and reset tests."
+      - "Dedupe/severity behavior."
+      - "Missing-off-camera initial policy."
+      - "Camera and room labels preserved in observations."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/events/floor_stay.py"
+        - "apps/caresight-hub/caresight/events/missing_off_camera.py"
+        - "apps/caresight-hub/caresight/runtime/config.py"
+        - "apps/caresight-hub/caresight/runtime/tracking/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/tracking/state.py"
+        - "apps/caresight-hub/caresight/storage/migrations/001_init.sql"
+        - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+        - "apps/caresight-hub/config/v0.local.json"
+        - "apps/caresight-hub/tests/test_floor_stay.py"
+        - "apps/caresight-hub/tests/test_missing_off_camera.py"
+        - "apps/caresight-hub/tests/test_sqlite_store.py"
+        - "apps/caresight-hub/tests/test_tracking_state.py"
+        - "contracts/examples/valid/missing-off-camera.event.json"
+        - "contracts/examples/valid/possible-floor-stay.event.json"
+        - "contracts/schemas/care-event.schema.json"
+        - "tests/contracts/contract-corpus.test.ts"
+        - "docs/audits/2026-05-19-tracking-foundation.md"
+        - "docs/architecture/ARCHITECTURE.md"
+        - "docs/architecture/REPO_BOUNDARIES.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run validate:contracts"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Implemented deterministic tracking foundations: lightweight local track state, track-aware floor-stay dwell with short-occlusion continuity, reset/dedupe tests, SQLite observation track_id persistence, and initial missing_off_camera_extended policy. Full quality gate passed."
+      remaining_blockers:
+        - "Live camera and multi-camera hardware proof remain final/demo evidence."
+
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement deterministic v1 event policies for medication routine likely observed and hydration routine likely observed without overclaiming."
+    allowed_files:
+      - "apps/caresight-hub/caresight/events/**"
+      - "apps/caresight-hub/caresight/runtime/events/**"
+      - "apps/caresight-hub/caresight/storage/**"
+      - "apps/caresight-hub/caresight/runtime/storage/**"
+      - "apps/caresight-hub/caresight/runtime/config.py"
+      - "apps/caresight-hub/config/**"
+      - "apps/caresight-hub/tests/**"
+      - "contracts/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/architecture/**"
+      - "docs/audits/**"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run validate:contracts"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Policy wording claims a specific medication was taken."
+      - "Vision evidence would create a confirmed event without human review."
+      - "Object label list is too broad to defend."
+    expected_output:
+      - "Routine window and zone policies."
+      - "Narrow allowed object-label evidence."
+      - "Confidence/severity wording tests."
+      - "No autonomous confirmation."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/events/routine.py"
+        - "apps/caresight-hub/caresight/runtime/config.py"
+        - "apps/caresight-hub/config/v0.local.json"
+        - "apps/caresight-hub/tests/test_routine_events.py"
+        - "contracts/examples/valid/hydration-routine.event.json"
+        - "contracts/schemas/care-event.schema.json"
+        - "tests/contracts/contract-corpus.test.ts"
+        - "docs/audits/2026-05-19-v1-routine-event-engine.md"
+        - "docs/architecture/ARCHITECTURE.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run validate:contracts"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Implemented deterministic medication and hydration routine policies requiring person evidence, narrow configured object-label evidence, routine zone, and routine window. Events remain awaiting_human_confirmation and explicitly avoid medication administration or hydration medical-state claims. Full quality gate passed."
+      remaining_blockers:
+        - "Live demo proof remains final-audit evidence."
+
+  - id: T009
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Evaluate segmentation and local multi-camera feasibility without blocking the v1 event path."
+    inputs:
+      - "Current inference harness"
+      - "YOLO26 MLX model assets"
+      - "Current camera config"
+      - "Network/local camera constraints"
+    constraints:
+      - "Read-only unless PM creates a Worker task."
+      - "Do not add Ring/Nest/cloud provider scope."
+      - "Do not run intrusive network discovery without operator approval."
+    expected_output:
+      - "Segmentation keep/defer/drop recommendation."
+      - "RTSP/two-camera feasibility."
+      - "ONVIF discovery feasibility and risks."
+      - "Recommended Worker slice if feasible."
+    receipt:
+      result: done
+      summary: "Segmentation is technically present upstream but should be deferred for v1 event path: current CareSight runtime consumes box detections only, has one webcam config, and v0/v1 docs explicitly say multi-camera comes after review loop proof. RTSP/two-camera is feasible as a bounded local Worker slice if it starts with config plus one optional RTSP source and no discovery. ONVIF discovery is feasible later but riskier because it implies LAN probing, credentials, and camera capability variance."
+      evidence:
+        - "apps/caresight-hub/config/v0.local.json defines a single living_room webcam source_uri=0 at 1280x720@30 with yolo26n.npz."
+        - "apps/caresight-hub/scripts/v0_floor_stay_live.py opens only int(config.camera.source_uri) via cv2.VideoCapture(..., cv2.CAP_AVFOUNDATION)."
+        - "apps/caresight-hub/caresight/runtime/inference/adapter.py parses result.boxes only and emits Detection records with bbox, class, confidence, camera_id, and timestamp."
+        - "apps/caresight-hub/caresight/runtime/inference/types.py has BoundingBox/Detection/Observation types, but no mask or segmentation payload."
+        - "contracts/schemas/camera-config.schema.json already allows source_type values webcam, continuity_camera, usb, rtsp, onvif, home_assistant."
+        - "docs/architecture/camera_integration_strategy.md ranks RTSP as best local-home-camera direction and ONVIF as future local interoperability with implementation/capability-variation risks."
+        - "apps/caresight-hub/vendor/yolo-mlx/GUIDE_SEGMENTATION.md documents yolo26n-seg MLX inference, but local models directory has only yolo26n.npz converted."
+      facts:
+        - "Segmentation recommendation: defer, not drop. Keep it as a later precision upgrade for zone/contact evidence after the box-based review loop is stable."
+        - "RTSP feasibility: yes for a narrow local slice. OpenCV can generally read RTSP URI strings, and the camera contract already permits source_type=rtsp and string source_uri."
+        - "Two-camera feasibility: feasible as sequential or low-rate multiplexing first, but current code assumes one camera config and one event loop."
+        - "ONVIF feasibility: technically feasible as a discovery/config helper later, but not as v1 path work because discovery can scan the LAN, require credentials, and vary by device profile."
+      contradictions:
+        - "The camera contract already allows rtsp/onvif, but the current runtime config and live scripts implement only one webcam-style source."
+        - "Upstream YOLO26 segmentation support and benchmarks exist, but the CareSight adapter/event schema path currently ignores masks and only stores boxes."
+      ambiguity_requiring_judge:
+        - "Whether the first multi-camera demo should run two active feeds or only support one active selected camera plus a disabled second camera config."
+        - "Whether segmentation evidence should ever enter care-event contracts, or remain an internal policy signal summarized into existing box/zone observations."
+
+  - id: T010
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Build the demo dashboard, journal, concern feed, and escalation artifact path on top of SQLite truth."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/dashboard/**"
+      - "apps/caresight-hub/caresight/runtime/alerts/**"
+      - "apps/caresight-hub/caresight/runtime/journal/**"
+      - "apps/caresight-hub/caresight/runtime/review/**"
+      - "apps/caresight-hub/scripts/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/architecture/**"
+      - "docs/audits/**"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Dashboard would write directly to SQLite outside the review service."
+      - "Generated alerts omit provenance."
+      - "Escalation copy implies emergency dispatch or diagnosis."
+      - "Frontend framework or app path is unclear; ask PM to add Scout/Judge task."
+    expected_output:
+      - "Live/demo review surface."
+      - "Filterable event and concern feeds."
+      - "Journal preview."
+      - "Caregiver alert draft with provenance."
+      - "Escalation attempts logged as artifacts, not autonomous dispatch."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/alerts/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/alerts/service.py"
+        - "apps/caresight-hub/caresight/runtime/dashboard/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/dashboard/service.py"
+        - "apps/caresight-hub/caresight/runtime/journal/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/journal/service.py"
+        - "apps/caresight-hub/scripts/care_console.py"
+        - "apps/caresight-hub/tests/test_care_console.py"
+        - "docs/audits/2026-05-19-care-console-dashboard-alerts.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added local care console dashboard and alert draft read models on top of SQLite/ReviewService. Dashboard shows state, timeline, concern feed, journal preview, alert draft, and forbidden delete/dispatch controls. Alert drafts include provenance and remain report-only. Full quality gate passed."
+      remaining_blockers:
+        - "Visual/browser dashboard remains future work; current surface is JSON console read model."
+
+  - id: T011
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add constrained agent/LLM skill documentation and forbidden-action tests for summaries, drafts, audit, and handoff assistance."
+    allowed_files:
+      - "docs/agents/**"
+      - "docs/architecture/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/audits/**"
+      - "docs/FILE_TREE.md"
+      - "apps/caresight-hub/caresight/runtime/agents/**"
+      - "apps/caresight-hub/tests/**"
+      - "contracts/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run validate:contracts"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Agent layer would inspect raw video as a decision-maker."
+      - "Agent layer can confirm, dismiss, dispatch, diagnose, or delete records."
+      - "Generated outputs lack event ID/source-field provenance."
+    expected_output:
+      - "Agent allowed/forbidden action matrix."
+      - "Provenance requirements."
+      - "Forbidden-action tests."
+      - "Skill/CLI documentation for safe agent use."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/agents/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/agents/policy.py"
+        - "apps/caresight-hub/tests/test_agent_policy.py"
+        - "docs/agents/AGENT_BOUNDARIES.md"
+        - "docs/audits/2026-05-19-agent-policy-boundaries.md"
+        - "docs/architecture/ARCHITECTURE.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added constrained agent policy checks and docs. Agents may summarize, draft caregiver/journal wording, and audit handoffs only with purpose and event provenance. Confirmation, dismissal, deletion, dispatch, diagnosis, medication-taken confirmation, and raw-video decision access are forbidden. Full quality gate passed."
+      remaining_blockers: []
+
+  - id: T012
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Prepare any required live-data audit run instructions and operator checklist once deterministic tests are green."
+    inputs:
+      - "Done Worker receipts"
+      - "Current CLI docs"
+      - "Current audit artifacts"
+    constraints:
+      - "PM may update only GoalBuddy control files unless a later PM task explicitly permits repo docs."
+      - "Do not claim live proof until live commands have been run and inspected."
+    expected_output:
+      - "Checklist for real live camera proof."
+      - "Required commands and SQLite inspection queries."
+      - "Open blockers for operator-run evidence."
+    receipt:
+      result: done
+      summary: "Prepared the remaining live-data audit checklist. Deterministic work is verified, but delivered demo proof still requires an operator-run live possible_floor_stay, review, journal, handoff, and SQLite audit output."
+      required_commands:
+        - "python apps/caresight-hub/scripts/v0_floor_stay_live.py"
+        - "python apps/caresight-hub/scripts/v0_review_events.py list"
+        - "python apps/caresight-hub/scripts/v0_review_events.py show <event_id>"
+        - "python apps/caresight-hub/scripts/v0_review_events.py confirm <event_id> --reviewer <human_name> --note \"<note>\""
+        - "python apps/caresight-hub/scripts/v0_review_events.py journal <event_id>"
+        - "python apps/caresight-hub/scripts/v0_review_events.py audit <event_id>"
+        - "python apps/caresight-hub/scripts/care_console.py dashboard"
+        - "python apps/caresight-hub/scripts/care_console.py alert-draft <event_id>"
+      sqlite_evidence_needed:
+        - "events row with event_id, snapshot_path evidence, status, timestamps, camera_id, and zone_id"
+        - "event_observations row with track_id"
+        - "event_reviews row with authorized human reviewer"
+        - "journal_entries row"
+        - "agent_handoffs row with report_only status and provenance"
+      open_blockers:
+        - "Live hardware/operator run has not been performed in this session."
+
+  - id: T013
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: "Recover scaffold verification by regenerating docs/FILE_TREE.md from current repo files after the T003 allowed-file changes."
+    allowed_files:
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Need files outside docs/FILE_TREE.md."
+      - "npm run check fails for any reason other than stale docs/FILE_TREE.md after regeneration."
+      - "The update would hide or omit current repo files."
+    expected_output:
+      - "Changed files."
+      - "Commands run with pass/fail status."
+      - "Remaining blockers."
+    receipt:
+      result: done
+      changed_files:
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "node --input-type=module -e '<regenerate docs/FILE_TREE.md using validate-scaffold listRepoFiles behavior>'"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Regenerated docs/FILE_TREE.md from the current repository file list using the same ignore set and sorted recursive behavior as scripts/validate-scaffold.ts. Verification passed."
+      remaining_blockers: []
+
+  - id: T014
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit T003 and T013 together, decide whether the v0 deterministic hardening slice is acceptable to advance, and identify the next active task."
+    inputs:
+      - "T003 receipt"
+      - "T013 receipt"
+      - "Current diff"
+      - "Last verification"
+    constraints:
+      - "Read-only."
+      - "Do not mark the full goal complete."
+      - "Treat live-camera proof as required for delivered demo proof, but not necessarily a blocker for deterministic hardening work."
+      - "Reject advancement if blackbox review boundaries or safety constraints are weakened."
+    expected_output:
+      - "Decision: approved | rejected | needs_recovery."
+      - "Whether T003 should be marked done or remain blocked pending live proof."
+      - "Next active task if advancement is approved."
+      - "Missing evidence for final audit."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Approve advancement. T003 delivered deterministic v0 hardening and T013 recovered the stale scaffold verification, so T003 should be marked done for deterministic hardening rather than remain blocked on live proof. Live-camera proof remains required for delivered demo/final audit, but it is not a blocker for advancing to the next bounded implementation slice. The current diff strengthens, not weakens, blackbox review boundaries."
+      evidence:
+        - "T003 receipt: npm run py:check passed; npm run check failed only because docs/FILE_TREE.md was outside allowed_files and stale; live proof not run."
+        - "T013 receipt: docs/FILE_TREE.md regenerated and npm run check passed."
+        - "Current diff adds read-only audit command, reviewer/timestamp handoff payload fields, automation-reviewer rejection, deterministic tests, CLI docs, changelog, and decision notes."
+        - "Audit receipt explicitly states live-camera proof is still pending and keeps SQLite canonical with agents/dashboards/LLMs unable to confirm, dismiss, dispatch, diagnose, delete, or become reviewer of record."
+      blocked_tasks: []
+      missing_evidence:
+        - "Operator-run live v0_floor_stay_live proof with real possible_floor_stay and event_persisted output."
+        - "SQLite audit output for the live event showing event row, observation row, human review, journal entry, report-only handoff, reviewer, timestamps, status, event_id, and snapshot_path."
+        - "Final audit still needs downstream receipts for remaining required sprint tasks; do not mark full goal complete."
+      required_board_updates:
+        - "T003 marked done for deterministic hardening; live proof remains final-audit evidence, not a T003 blocker."
+        - "T004 set active."
+
+  - id: T015
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: "Recover scaffold verification by regenerating docs/FILE_TREE.md after the T004 review service boundary files were added."
+    allowed_files:
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Need files outside docs/FILE_TREE.md."
+      - "npm run check fails for any reason other than stale docs/FILE_TREE.md after regeneration."
+      - "The update would hide or omit current repo files."
+    expected_output:
+      - "Changed files."
+      - "Commands run with pass/fail status."
+      - "Remaining blockers."
+    receipt:
+      result: done
+      changed_files:
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "node --input-type=module -e '<regenerate docs/FILE_TREE.md using validate-scaffold listRepoFiles behavior>'"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Regenerated docs/FILE_TREE.md after adding the ReviewService files. Full quality gate passed."
+      remaining_blockers: []
+
+  - id: T016
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: low
+    objective: "Recover scaffold verification by regenerating docs/FILE_TREE.md after the T005 inference harness files were added."
+    allowed_files:
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Need files outside docs/FILE_TREE.md."
+      - "npm run check fails for any reason other than stale docs/FILE_TREE.md after regeneration."
+      - "The update would hide or omit current repo files."
+    expected_output:
+      - "Changed files."
+      - "Commands run with pass/fail status."
+      - "Remaining blockers."
+    receipt:
+      result: done
+      changed_files:
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "node --input-type=module -e '<regenerate docs/FILE_TREE.md using validate-scaffold listRepoFiles behavior>'"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Regenerated docs/FILE_TREE.md after adding the inference harness files. Full quality gate passed."
+      remaining_blockers: []
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the current CareSight sprint buildout tranche satisfies the original owner outcome."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Audit receipt paths"
+    constraints:
+      - "Read-only."
+      - "Do not mark complete if any required Worker task remains queued or active."
+      - "Do not mark complete if live data proof is missing for delivered demo claims."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence mapped to original request"
+      - "Missing evidence"
+      - "Next task if not complete"
+    receipt:
+      result: done
+      decision: not_complete
+      full_outcome_complete: false
+      summary: "The deterministic sprint tranche is substantially implemented and verified, but the original GoalBuddy oracle is not fully satisfied because live camera proof is still missing."
+      evidence:
+        - "npm run check passed after T011 with scaffold, contracts, focused tests, full tests, typecheck, and 43 Python tests."
+        - "Receipts exist for v0 blackbox hardening, ReviewService, inference harness, tracking foundation, routine event policies, care console/alerts, and agent policy."
+      missing_evidence:
+        - "Operator-run live v0_floor_stay_live proof with real possible_floor_stay and event_persisted output."
+        - "SQLite audit output for the live event showing event row, observation row with track_id, human review, journal entry, report-only handoff, reviewer, timestamps, status, event_id, and snapshot_path."
+        - "Care console dashboard and alert-draft output for the live event."
+      next_task: T017
+
+  - id: T017
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Collect operator-run live demo proof for the blackbox loop and attach the exact command output/SQLite audit evidence."
+    inputs:
+      - "T012 checklist"
+      - "Current CLI docs"
+      - "Current SQLite audit command"
+      - "Current care console command"
+    constraints:
+      - "Do not claim delivered live proof until real hardware/operator output is captured."
+      - "Do not confirm or dismiss events as an agent."
+      - "Use an authorized human reviewer for confirm/dismiss."
+      - "Keep raw video local."
+    expected_output:
+      - "Exact command output for live event_persisted."
+      - "event_id and snapshot_path."
+      - "Review, journal, handoff, dashboard, and alert-draft outputs."
+      - "SQLite audit receipt path."
+    receipt:
+      result: blocked
+      summary: "Read-only local DB inspection found three prior possible_floor_stay events, but final live proof is not complete. Events are awaiting_human_confirmation with no review, journal, or handoff rows; selected event has no snapshot path. Existing DB also lacks the new event_observations.track_id column, so schema migration recovery is needed before final live proof."
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py list --all"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py show evt_43677ef938444f178833ac8ce2dec620"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py audit evt_43677ef938444f178833ac8ce2dec620"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py dashboard"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py alert-draft evt_43677ef938444f178833ac8ce2dec620"
+          status: pass
+      evidence:
+        - "Event evt_43677ef938444f178833ac8ce2dec620 exists and is awaiting_human_confirmation."
+        - "Audit output reports Observation rows: 1, Review rows: 0, Journal rows: 0, Agent handoff rows: 0."
+        - "Snapshot path is not recorded."
+        - "Direct SQLite query for event_observations.track_id failed because the existing DB lacks that column."
+      remaining_blockers:
+        - "Add non-destructive schema migration for existing event_observations.track_id column."
+        - "Run live camera proof with current code and authorized human review."
+        - "Capture SQLite audit output after review."
+
+  - id: T018
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add non-destructive SQLite schema upgrade handling so existing local DBs gain event_observations.track_id without deleting prior blackbox records."
+    allowed_files:
+      - "apps/caresight-hub/caresight/storage/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/audits/**"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Migration would delete or rewrite existing event, observation, review, journal, or handoff records."
+      - "Need files outside allowed_files."
+    expected_output:
+      - "Existing DBs gain track_id column."
+      - "Legacy DB test proves rows are preserved."
+      - "Full quality gate passes."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+        - "apps/caresight-hub/tests/test_sqlite_store.py"
+        - "docs/audits/2026-05-20-sqlite-schema-upgrade.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py list --all >/dev/null && python3 - <<'PY' ..."
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added additive SQLite schema upgrade handling for existing local databases so event_observations gains track_id without deleting prior rows. Verified the existing local DB now has track_id with prior rows preserved as NULL. Full quality gate passed with 44 Python tests."
+      remaining_blockers: []
+
+  - id: T019
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Wait for or collect authorized operator live-camera proof for the final blackbox demo receipt."
+    inputs:
+      - "T017 read-only evidence"
+      - "T018 schema recovery receipt"
+      - "Current local DB"
+      - "Current CLI docs"
+    constraints:
+      - "Do not confirm or dismiss events as an agent."
+      - "Do not claim final live proof from stale awaiting-review events."
+      - "Authorized human reviewer must run or explicitly instruct confirm/dismiss."
+      - "Keep raw video local."
+    expected_output:
+      - "Fresh event_persisted output from current code."
+      - "Human review command output."
+      - "Journal and audit command output."
+      - "Care console dashboard and alert draft output."
+      - "Receipt path or board receipt with exact event_id and snapshot_path."
+    receipt:
+      result: blocked
+      summary: "Live proof cannot be safely completed from the existing open-ended live loop alone. The current script requires operator/camera behavior and has no max-duration or stop-after-event flag, so bounded proof collection needs a small script hardening task before operator run."
+      evidence:
+        - "v0_floor_stay_live.py currently runs while True and exits only on camera read failure or q in preview window."
+        - "T017 read-only DB evidence shows stale awaiting-review events are insufficient final proof."
+      remaining_blockers:
+        - "Add bounded live run flags for max duration and stop after event."
+        - "Run operator live proof after bounded command support exists."
+
+  - id: T020
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add bounded live-proof controls to v0_floor_stay_live.py so an operator can collect event_persisted output without an unbounded loop."
+    allowed_files:
+      - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+      - "apps/caresight-hub/tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/audits/**"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "The change would fake detections or events."
+      - "The command would auto-confirm, dismiss, or dispatch."
+    expected_output:
+      - "Bounded max-duration support."
+      - "Stop-after-event support."
+      - "Deterministic tests for loop-control decisions."
+      - "CLI docs updated."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+        - "apps/caresight-hub/tests/test_v0_floor_stay_live.py"
+        - "docs/cli/COMMANDS.md"
+        - "docs/audits/2026-05-20-bounded-live-proof.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added bounded live-proof controls: --max-seconds and --stop-after-event. Operators can now collect one event_persisted line without leaving the live loop unbounded. The command still requires real camera/model output and does not confirm, dismiss, dispatch, diagnose, or fake detections. Full quality gate passed."
+      remaining_blockers:
+        - "Operator must run bounded live proof and authorize human review."
+
+  - id: T021
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Collect or await operator-run bounded live proof using the current v0_floor_stay_live.py command."
+    inputs:
+      - "T020 bounded live-proof receipt"
+      - "Current SQLite audit commands"
+      - "Current care console commands"
+    constraints:
+      - "Do not run confirm/dismiss unless an authorized human explicitly instructs it."
+      - "Do not claim final proof from stale events."
+      - "Do not fake detections or event output."
+      - "Keep raw video local."
+    expected_output:
+      - "Bounded live event_persisted output."
+      - "Human review output."
+      - "Journal, audit, dashboard, and alert draft output."
+      - "Final board receipt or explicit live-operator blocker."
+    receipt:
+      result: blocked
+      summary: "Operator live proof is blocked by live script readiness. `python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help` failed before parsing args because cv2 is imported at main entry, and base python3 lacks cv2/yolo26mlx. Model file exists. The script needs import-order/path hardening before an operator proof run is reliable."
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+          status: fail
+        - cmd: "test -f apps/caresight-hub/vendor/yolo-mlx/models/yolo26n.npz && echo model_present || echo model_missing"
+          status: pass
+        - cmd: "python3 - <<'PY' import cv2/yolo26mlx readiness check"
+          status: fail
+      remaining_blockers:
+        - "Make --help and argument parsing work without importing cv2."
+        - "Add vendored YOLO path to live script like the smoke scripts."
+
+  - id: T022
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Harden v0_floor_stay_live.py operator readiness so help/argument parsing works without cv2 and vendored YOLO26 imports resolve during live runs."
+    allowed_files:
+      - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+      - "apps/caresight-hub/tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/audits/**"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "The change would fake detections or bypass real model/camera requirements."
+    expected_output:
+      - "--help exits successfully without cv2."
+      - "Vendored YOLO path is available for live runs."
+      - "Full quality gate passes."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+        - "apps/caresight-hub/tests/test_v0_floor_stay_live.py"
+        - "docs/cli/COMMANDS.md"
+        - "docs/audits/2026-05-20-live-cli-readiness.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Hardened live CLI readiness: --help now parses before cv2 import, the live script adds the vendored YOLO26 MLX path, and tests cover help output plus bounded loop controls. Full quality gate passed with 48 Python tests."
+      remaining_blockers:
+        - "Operator must run bounded live proof and authorize human review."
+
+  - id: T023
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Collect or await operator-run bounded live proof now that live CLI readiness is fixed."
+    inputs:
+      - "T020 bounded live-proof receipt"
+      - "T022 live CLI readiness receipt"
+      - "Current SQLite audit commands"
+      - "Current care console commands"
+    constraints:
+      - "Do not run confirm/dismiss unless an authorized human explicitly instructs it."
+      - "Do not claim final proof from stale events."
+      - "Do not fake detections or event output."
+      - "Keep raw video local."
+      - "Agents must not become reviewer of record."
+    expected_output:
+      - "Fresh bounded live event_persisted output from current code."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, and alert draft output."
+      - "Final board receipt or explicit live-operator blocker."
+    receipt:
+      result: blocked
+      summary: "Bounded live proof now reaches the intended vendored YOLO26 MLX runtime outside the sandbox, loads model weights successfully, then fails at macOS camera authorization. No fresh event_persisted line was produced, so no review, journal, handoff, dashboard, or alert proof can be claimed from this run."
+      audit_receipt: "docs/audits/2026-05-20-live-proof-camera-blocker.md"
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --no-window --max-seconds 8 --stop-after-event"
+          status: fail
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --no-window --max-seconds 8 --stop-after-event"
+          status: fail
+      evidence:
+        - "Base python3 failed with ModuleNotFoundError: No module named 'cv2'."
+        - "Vendored runtime loaded YOLO26 MLX weights with Matching weights: 594/594 and Loaded weights successfully."
+        - "OpenCV reported not authorized to capture video and Could not open camera 0."
+      remaining_blockers:
+        - "Operator must grant camera access to the process running the vendored Python interpreter."
+        - "Operator must rerun bounded live proof and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss after the fresh event is produced."
+
+  - id: T024
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the next safe sprint slice now that final live proof is blocked only by local camera authorization."
+    inputs:
+      - "T023 live-proof blocker receipt"
+      - "Current goal oracle"
+      - "Completed Worker receipts T003 through T022"
+      - "Current git status"
+    constraints:
+      - "Read-only."
+      - "Do not weaken or bypass the real live-data oracle."
+      - "Do not mark the goal complete while T023 remains blocked."
+      - "Prefer progress that improves eventual live proof, auditability, or current sprint architecture without needing camera permission."
+      - "Reject any task that lets agents, dashboard, or LLM output become canonical truth."
+    expected_output:
+      - "Decision: proceed | wait_for_operator | revise."
+      - "Next Worker objective or explicit wait decision."
+      - "allowed_files."
+      - "verify commands."
+      - "stop_if conditions."
+      - "Risks and audit evidence required."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Proceed, but not toward completion. T023 proves the live path now reaches real YOLO26 MLX and is blocked only by macOS camera authorization, so the real live-data oracle must remain blocked. The next safe slice is a read-only live-proof audit bundle and readiness collector: it improves eventual proof capture and auditability without faking events, using stale DB rows, or making dashboard, agent, or LLM output canonical."
+      evidence:
+        - "T023 receipt: vendored runtime loaded YOLO26 MLX weights successfully, then OpenCV failed on camera authorization with no event_persisted output."
+        - "T023 audit receipt: docs/audits/2026-05-20-live-proof-camera-blocker.md states no review, journal, handoff, dashboard proof, or alert draft can be claimed."
+        - "Goal oracle still requires a real live-camera possible_floor_stay persisted to SQLite plus human review, journal, handoff, dashboard, and alert evidence."
+        - "Completed receipts T003-T022 cover deterministic hardening, ReviewService, inference harness, tracking, v1 policies, console/alerts, agent boundaries, schema upgrade, bounded live loop, and CLI readiness."
+      blocked_tasks:
+        - "T023 remains blocked on local macOS camera authorization and authorized human review."
+      missing_evidence:
+        - "Fresh bounded live event_persisted output from current code."
+        - "Snapshot path for the fresh live event."
+        - "Authorized human review output for the fresh live event."
+        - "Journal, SQLite audit, dashboard, and alert-draft output for the fresh live event."
+
+  - id: T025
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add a read-only live-proof readiness and audit-bundle collector that can verify environment/model/config readiness, report camera authorization as an explicit blocker, and, after an operator supplies a fresh event_id, emit a local audit bundle from SQLite-backed services showing event, observation track_id, review, journal, handoff, dashboard, and alert provenance without creating, confirming, dismissing, synthesizing, or reclassifying events."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/audit/**"
+      - "apps/caresight-hub/caresight/runtime/review/**"
+      - "apps/caresight-hub/caresight/runtime/dashboard/**"
+      - "apps/caresight-hub/caresight/runtime/alerts/**"
+      - "apps/caresight-hub/caresight/storage/**"
+      - "apps/caresight-hub/scripts/live_proof_audit.py"
+      - "apps/caresight-hub/scripts/care_console.py"
+      - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+      - "apps/caresight-hub/tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/audits/**"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+      - "python3 apps/caresight-hub/scripts/live_proof_audit.py --help"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Camera permission is required for deterministic tests to pass."
+      - "The implementation would create or synthesize a live event."
+      - "The implementation would use stale DB rows as final live proof."
+      - "The implementation would confirm, dismiss, dispatch, diagnose, delete, or become reviewer of record."
+      - "Dashboard, alert, agent, or LLM output would become canonical truth instead of SQLite records."
+      - "The collector writes to SQLite except for explicit report artifact generation."
+      - "The real live-data oracle is weakened, bypassed, or replaced with seeded/static/video proof."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unexplained reason."
+    expected_output:
+      - "Audit doc showing readiness checks and explicit camera_authorization_blocked behavior."
+      - "Seeded deterministic test proving the collector reads SQLite-backed event, observation, review, journal, handoff, dashboard, and alert provenance."
+      - "Negative test proving missing review/journal/handoff or stale event_id yields not_complete, not final proof."
+      - "Command outputs for python3 --help, npm run py:check, and npm run check."
+      - "Clear statement that T023 remains blocked until operator grants camera access and captures a fresh event_persisted line."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/audit/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/audit/live_proof.py"
+        - "apps/caresight-hub/scripts/live_proof_audit.py"
+        - "apps/caresight-hub/tests/test_live_proof_audit.py"
+        - "docs/cli/COMMANDS.md"
+        - "docs/audits/2026-05-20-live-proof-audit-collector.md"
+        - "docs/audits/2026-05-20-live-proof-camera-blocker.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py --help"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py readiness --camera-authorization blocked"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py bundle evt_43677ef938444f178833ac8ce2dec620 --max-event-age-minutes 60"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added a read-only live-proof readiness and audit-bundle collector. Readiness reports config/model/env state and explicit camera_authorization_blocked. Bundle collection reads SQLite-backed event, observation track_id, review, journal, handoff, dashboard, and alert provenance without lifecycle mutation, and marks stale or incomplete proof not_complete. Full quality gate passed with 54 Python tests."
+      remaining_blockers:
+        - "T023 live proof remains blocked until an operator grants camera access and captures a fresh event_persisted line."
+
+  - id: T026
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the next safe sprint slice after the live-proof audit collector, preserving the blocked real live-data oracle."
+    inputs:
+      - "T023 camera authorization blocker"
+      - "T025 live-proof audit collector receipt"
+      - "Goal oracle and existing sprint plan facts"
+      - "Current git status"
+    constraints:
+      - "Read-only."
+      - "Do not mark the goal complete while T023 remains blocked."
+      - "Prefer a slice that advances remaining sprint plan scope without requiring camera authorization."
+      - "Do not weaken or bypass live-data proof."
+      - "Reject scope that adds cloud camera, Ring/Nest, autonomous dispatch, diagnosis, or medication-taken claims."
+      - "Preserve SQLite as canonical truth."
+    expected_output:
+      - "Decision: proceed | wait_for_operator | revise."
+      - "Next Worker objective or explicit wait decision."
+      - "allowed_files."
+      - "verify commands."
+      - "stop_if conditions."
+      - "Risks and audit evidence required."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Proceed with a bounded local multi-camera/RTSP configuration slice. T023 remains blocked on macOS camera authorization, so no completion or live-proof claim is allowed. T025 improved audit readiness without replacing the live oracle. The next useful slice advances remaining sprint scope without camera access by making camera sources explicit, selectable, locally scoped, and testable while preserving SQLite as canonical truth."
+      evidence:
+        - "T023: vendored YOLO26 MLX loaded successfully but camera authorization blocked live proof; no fresh event_persisted output exists."
+        - "T025: live-proof audit collector passed help/readiness/bundle checks and npm run check, but explicitly leaves T023 blocked."
+        - "Goal oracle still requires real live-camera possible_floor_stay, human review, journal, handoff, dashboard, and alert evidence."
+      blocked_tasks:
+        - "T023 remains blocked on operator camera authorization and authorized human review."
+      missing_evidence:
+        - "Fresh bounded live event_persisted output from current code."
+        - "Snapshot path for the fresh live event."
+        - "Authorized human review output."
+        - "SQLite audit showing event, observation track_id, review, journal, handoff, dashboard, alert provenance."
+        - "Camera authorization granted to the vendored Python runtime."
+
+  - id: T027
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement deterministic local multi-camera configuration and source-selection support for webcam/usb/continuity_camera/rtsp sources, preserving room/camera labels and SQLite-backed event provenance without requiring camera authorization or live hardware proof."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/cameras/**"
+      - "apps/caresight-hub/caresight/runtime/config.py"
+      - "apps/caresight-hub/caresight/runtime/audit/**"
+      - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+      - "apps/caresight-hub/scripts/live_proof_audit.py"
+      - "apps/caresight-hub/config/**"
+      - "apps/caresight-hub/tests/**"
+      - "contracts/schemas/camera-config.schema.json"
+      - "contracts/examples/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/architecture/**"
+      - "docs/audits/**"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+      - "python3 apps/caresight-hub/scripts/live_proof_audit.py --help"
+      - "npm run validate:contracts"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Camera authorization or live hardware is required for deterministic tests."
+      - "The change adds Ring, Nest, cloud-camera integration, ONVIF discovery, LAN scanning, or credential handling."
+      - "The implementation weakens, bypasses, or replaces the real live-data oracle."
+      - "Any source other than SQLite becomes canonical truth for events, review, journal, handoff, dashboard, or alert state."
+      - "The code creates, confirms, dismisses, deletes, diagnoses, dispatches, or claims medication was taken."
+      - "The slice requires files outside allowed_files."
+      - "Verification fails twice for the same unexplained reason."
+    expected_output:
+      - "Audit doc states T023 remains blocked and multi-camera support is deterministic/config-level until operator proof."
+      - "Tests prove source selection preserves camera_id, room_label, source_type, and local-only constraints."
+      - "Tests or contract checks reject unsupported cloud/provider scope such as Ring/Nest."
+      - "CLI docs show how to select a configured camera/source without claiming live proof."
+      - "Verification command outputs are recorded."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/cameras/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/cameras/sources.py"
+        - "apps/caresight-hub/caresight/runtime/config.py"
+        - "apps/caresight-hub/caresight/runtime/audit/live_proof.py"
+        - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+        - "apps/caresight-hub/config/v0.local.json"
+        - "apps/caresight-hub/tests/test_v0_config.py"
+        - "apps/caresight-hub/tests/test_v0_floor_stay_live.py"
+        - "apps/caresight-hub/tests/test_live_proof_audit.py"
+        - "contracts/schemas/camera-config.schema.json"
+        - "contracts/examples/invalid/ring-camera-provider-out-of-scope.json"
+        - "tests/contracts/contract-corpus.test.ts"
+        - "docs/cli/COMMANDS.md"
+        - "docs/architecture/camera_integration_strategy.md"
+        - "docs/audits/2026-05-20-multi-camera-config.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py --help"
+          status: pass
+        - cmd: "npm run validate:contracts"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Implemented deterministic local camera source selection for webcam, USB, Continuity Camera, and RTSP through config.cameras plus CLI --camera-id/--source-type support. Added local-only source validation, Ring/Nest/cloud/provider rejection, RTSP credential rejection, readiness metadata, contract invalid example, tests, docs, and audit note. T023 remains blocked; this is config-level support, not two-camera live proof."
+      remaining_blockers:
+        - "T023 live proof remains blocked until an operator grants camera access and captures a fresh event_persisted line."
+        - "Python verification passes but emits ResourceWarning output for unclosed SQLite connections; T028 will clean this for audit-quality receipts."
+
+  - id: T028
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Eliminate SQLite ResourceWarning noise from Python verification by making SQLiteStore connection handling close database handles deterministically without changing event semantics."
+    allowed_files:
+      - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+      - "apps/caresight-hub/tests/**"
+      - "docs/audits/**"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "The change would delete, rewrite, or alter existing SQLite blackbox records."
+      - "The change would change event, review, journal, handoff, dashboard, or alert semantics."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unexplained reason."
+    expected_output:
+      - "SQLite connections close deterministically."
+      - "Python verification passes without ResourceWarning output."
+      - "No blackbox event semantics change."
+      - "Audit note, changelog, and decision update if needed."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+        - "apps/caresight-hub/tests/test_sqlite_store.py"
+        - "docs/audits/2026-05-20-sqlite-connection-close.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+      commands:
+        - cmd: "wc -l apps/caresight-hub/caresight/storage/sqlite_store.py"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Made SQLiteStore._connect a closing context manager so every store operation preserves transaction behavior and closes the database handle deterministically. Added a regression test for unclosed SQLite ResourceWarning output. Trimmed sqlite_store.py back under the hard 500-line threshold at 492 lines. Full quality gate passed with 58 Python tests and no ResourceWarning noise."
+      remaining_blockers: []
+
+  - id: T029
+    type: judge
+    assignee: Judge
+    status: blocked
+    reasoning_hint: high
+    objective: "Audit the current tranche after T028 and decide whether another safe non-camera Worker slice remains, or whether the board should stop on the operator live-proof blocker."
+    inputs:
+      - "T023 live camera authorization blocker"
+      - "T025 live-proof audit collector receipt"
+      - "T027 multi-camera config receipt"
+      - "T028 SQLite warning cleanup receipt"
+      - "Goal oracle and sprint facts"
+      - "Current verification results"
+    constraints:
+      - "Read-only."
+      - "Do not mark full_outcome_complete true while T023 remains blocked."
+      - "Do not invent broad new scope beyond the approved sprint plan."
+      - "Prefer stopping if remaining work requires camera permission, human review authority, or would risk scope creep."
+      - "If another slice is recommended, it must have clear allowed_files, verification, and audit evidence."
+    expected_output:
+      - "Decision: proceed | wait_for_operator | revise."
+      - "If proceed: next Worker objective, allowed_files, verify, stop_if, risks, audit evidence."
+      - "If wait_for_operator: exact remaining operator steps and why no safe Worker remains in this tranche."
+      - "full_outcome_complete must remain false unless the real live oracle is proven."
+    receipt:
+      result: blocked
+      decision: wait_for_operator
+      full_outcome_complete: false
+      rationale: "T025, T027, and T028 closed the safe non-camera tranche with passing verification. The remaining oracle evidence requires macOS camera authorization, a fresh live event, and authorized human review. Another Worker slice would either be routine cleanup or expand into scope that depends on live hardware/reviewer authority."
+      evidence:
+        - "T023: vendored YOLO26 MLX loaded weights, then OpenCV failed on camera authorization; no event_persisted line was produced."
+        - "T025: read-only readiness/audit collector passed and still reports camera_authorization_blocked as the live gate."
+        - "T027: deterministic local camera source selection landed; it is config-level support, not two-camera live proof."
+        - "T028: npm run py:check and npm run check passed with SQLite ResourceWarning noise removed."
+      blocked_tasks:
+        - "T023 remains blocked on operator camera authorization and authorized human review."
+      missing_evidence:
+        - "Grant macOS camera access to the terminal/Codex-launched process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Run: apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --no-window --max-seconds 120 --stop-after-event"
+        - "Capture the fresh event_persisted event_id and snapshot_path from current code."
+        - "Authorized human runs show, then confirm or dismiss as appropriate."
+        - "Run journal/audit/dashboard/alert/bundle commands for the fresh event, including python3 apps/caresight-hub/scripts/live_proof_audit.py bundle <event_id> --max-event-age-minutes 60."
+
+  - id: T030
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Wait for operator camera authorization and collect the fresh live-proof oracle evidence when available."
+    inputs:
+      - "T023 live camera authorization blocker"
+      - "T025 live-proof audit collector"
+      - "T027 multi-camera source selection"
+      - "T028 clean quality gate"
+      - "T029 wait_for_operator decision"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t030-live-proof-retry.md"
+      summary: "Retried the bounded live proof with the vendored YOLO26 MLX runtime and --camera-id living_room. The command loaded model weights successfully but OpenCV still reported macOS camera authorization blocked, so no fresh event_persisted line, event_id, snapshot_path, review, journal, handoff, dashboard, alert, or bundle proof exists."
+      commands:
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --no-window --max-seconds 20 --stop-after-event"
+          status: fail
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py readiness --camera-authorization blocked"
+          status: pass
+      evidence:
+        - "YOLO26 MLX loaded with Matching weights: 594/594 and Loaded weights successfully."
+        - "OpenCV reported not authorized to capture video and Could not open camera 0."
+        - "Readiness output status is not_ready with blocker camera_authorization_blocked."
+      remaining_blockers:
+        - "Operator must grant macOS camera access to the process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T031
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T030 retry receipt"
+      - "docs/audits/2026-05-20-t030-live-proof-retry.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t031-live-proof-retry.md"
+      summary: "Retried the active live-proof gate. Readiness confirmed config/model/SQLite are present and listed the configured local cameras, but camera authorization remained unverified. The bounded live runtime loaded YOLO26 MLX weights successfully, then OpenCV again reported not authorized to capture video and could not open camera 0. No fresh oracle evidence was produced."
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py readiness --camera-authorization not_checked"
+          status: pass
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --no-window --max-seconds 20 --stop-after-event"
+          status: fail
+      evidence:
+        - "Readiness output status was not_ready with blocker camera_authorization_not_verified."
+        - "YOLO26 MLX loaded with Matching weights: 594/594 and Loaded weights successfully."
+        - "OpenCV reported not authorized to capture video and Could not open camera 0."
+      remaining_blockers:
+        - "Operator must grant macOS camera access to the process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T032
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T031 retry receipt"
+      - "docs/audits/2026-05-20-t031-live-proof-retry.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t032-live-proof-retry.md"
+      summary: "Retried the bounded live proof for T032. The command loaded YOLO26 MLX weights successfully, but OpenCV still reported macOS camera authorization blocked and could not open camera 0. No fresh event_persisted output or downstream live oracle evidence exists."
+      commands:
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --no-window --max-seconds 20 --stop-after-event"
+          status: fail
+      evidence:
+        - "YOLO26 MLX loaded with Matching weights: 594/594 and Loaded weights successfully."
+        - "OpenCV reported not authorized to capture video and Could not open camera 0."
+      remaining_blockers:
+        - "Operator must grant macOS camera access to the process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T033
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T032 retry receipt"
+      - "docs/audits/2026-05-20-t032-live-proof-retry.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t033-live-proof-retry.md"
+      summary: "Retried the bounded live proof for T033. YOLO26 MLX loaded successfully, but OpenCV still reported macOS camera authorization blocked and could not open camera 0. No fresh live oracle evidence was produced."
+      commands:
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --no-window --max-seconds 20 --stop-after-event"
+          status: fail
+      evidence:
+        - "YOLO26 MLX loaded with Matching weights: 594/594 and Loaded weights successfully."
+        - "OpenCV reported not authorized to capture video and Could not open camera 0."
+      remaining_blockers:
+        - "Operator must grant macOS camera access to the process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T034
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T033 retry receipt"
+      - "docs/audits/2026-05-20-t033-live-proof-retry.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-camera-authorization-operator-handoff.md"
+      summary: "Created a focused operator handoff for the remaining macOS camera authorization gate. The handoff includes the exact process that needs camera access, live proof command, authorized-human review commands, final audit collection commands, and completion boundary. No final live proof is claimed."
+      commands:
+        - cmd: "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-buildout/state.yaml"
+          status: pass
+      evidence:
+        - "Prior retries T030-T033 consistently loaded YOLO26 MLX and failed at OpenCV camera authorization."
+        - "Operator handoff documents the exact camera authorization and fresh event collection procedure."
+      remaining_blockers:
+        - "Operator must grant macOS camera access to the process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T035
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T034 operator handoff receipt"
+      - "docs/audits/2026-05-20-camera-authorization-operator-handoff.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t035-camera-settings-opened.md"
+      summary: "Opened macOS Camera privacy settings to help the operator grant camera access. This does not prove camera authorization was granted and does not produce live oracle evidence."
+      commands:
+        - cmd: "open 'x-apple.systempreferences:com.apple.preference.security?Privacy_Camera'"
+          status: pass
+      evidence:
+        - "Camera privacy settings open command completed successfully."
+      remaining_blockers:
+        - "Operator must enable camera access for the terminal, Codex-launched app, or process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T036
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T035 camera settings opened receipt"
+      - "docs/audits/2026-05-20-t035-camera-settings-opened.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t036-live-proof-after-settings.md"
+      summary: "Checked whether the T035 Camera settings handoff changed the live proof state. Readiness still reports camera authorization not verified. The bounded live runtime loaded YOLO26 MLX weights successfully, then OpenCV still reported camera authorization blocked. No fresh live oracle evidence was produced."
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py readiness --camera-authorization not_checked"
+          status: pass
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --no-window --max-seconds 20 --stop-after-event"
+          status: fail
+      evidence:
+        - "Readiness output status was not_ready with blocker camera_authorization_not_verified."
+        - "YOLO26 MLX loaded with Matching weights: 594/594 and Loaded weights successfully."
+        - "OpenCV reported not authorized to capture video and Could not open camera 0."
+      remaining_blockers:
+        - "Operator must enable camera access for the terminal, Codex-launched app, or process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T037
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T036 after-settings retry receipt"
+      - "docs/audits/2026-05-20-t036-live-proof-after-settings.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t037-terminal-live-proof-launch.md"
+      summary: "Launched the bounded live proof command in macOS Terminal so the operator can approve Camera access in a normal app permission context if prompted. This does not prove the live oracle; Codex cannot claim event_persisted output from the Terminal run unless the operator captures and provides it."
+      commands:
+        - cmd: "osascript -e 'tell application \"Terminal\" to activate' -e 'tell application \"Terminal\" to do script \"cd /Users/steven/Workspace/40_Code/hackathons/CareSight && apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --no-window --max-seconds 120 --stop-after-event\"'"
+          status: pass
+      evidence:
+        - "AppleScript returned tab 1 of window id 1789."
+        - "Terminal launch may allow the operator to approve a macOS Camera prompt for Terminal."
+      remaining_blockers:
+        - "Operator must approve Camera access if prompted."
+        - "Operator must capture a fresh event_persisted line from the Terminal run or rerun after authorization."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T038
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await Terminal/operator camera authorization output, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T037 Terminal launch receipt"
+      - "docs/audits/2026-05-20-t037-terminal-live-proof-launch.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS camera access to Terminal or the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t038-terminal-output.md"
+      summary: "Read the Terminal tab output from the T037 launched live-proof command. Terminal also loaded YOLO26 MLX weights successfully, then failed at macOS Camera authorization and returned to the shell prompt. No fresh event_persisted line or downstream live oracle evidence exists."
+      commands:
+        - cmd: "osascript -e 'tell application \"Terminal\" to get contents of selected tab of front window'"
+          status: pass
+      evidence:
+        - "Terminal output included Matching weights: 594/594 and Loaded weights successfully."
+        - "Terminal output included OpenCV: not authorized to capture video and Could not open camera 0."
+        - "Terminal output returned to steven@Stevens-MacBook-Pro CareSight % with no event_persisted line."
+      remaining_blockers:
+        - "Operator must grant macOS Camera access to Terminal or the process running apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python."
+        - "Operator must rerun the bounded live command and capture a fresh event_persisted line."
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+
+  - id: T039
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await operator camera authorization, then collect the fresh live-proof oracle evidence without using stale events or synthetic data."
+    inputs:
+      - "T038 Terminal output receipt"
+      - "docs/audits/2026-05-20-t038-terminal-output.md"
+      - "Current v0 live loop command"
+      - "Current live-proof audit collector"
+    constraints:
+      - "Do not mark full_outcome_complete true until the real live oracle is proven."
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs it."
+      - "Do not use stale DB rows as final proof."
+      - "Do not create, synthesize, or reclassify live events."
+      - "Keep raw video local."
+    expected_output:
+      - "Operator grants macOS Camera access to Terminal or the vendored Python runtime."
+      - "Fresh event_persisted output from current code."
+      - "event_id and snapshot_path."
+      - "Authorized human review output."
+      - "Journal, audit, dashboard, alert, and live_proof_audit bundle output."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t039-live-event-captured.md"
+      summary: "Captured a fresh live possible_floor_stay event from the Terminal run and collected read-only SQLite, dashboard, alert, and live-proof bundle evidence. The event has snapshot_path and track_id. The live-proof bundle is not_complete because authorized human review, journal entry, and report-only handoff are still missing."
+      event_id: "evt_cf80f63995794c98b8bd6ebc197bf73d"
+      snapshot_path: "apps/caresight-hub/data/snapshots/evt_cf80f63995794c98b8bd6ebc197bf73d.jpg"
+      track_id: "track_1"
+      commands:
+        - cmd: "osascript -e 'tell application \"Terminal\" to get contents of selected tab of front window'"
+          status: pass
+        - cmd: "python apps/caresight-hub/scripts/v0_review_events.py show evt_cf80f63995794c98b8bd6ebc197bf73d"
+          status: fail
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py show evt_cf80f63995794c98b8bd6ebc197bf73d"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py audit evt_cf80f63995794c98b8bd6ebc197bf73d"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py dashboard"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py alert-draft evt_cf80f63995794c98b8bd6ebc197bf73d"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py bundle evt_cf80f63995794c98b8bd6ebc197bf73d --max-event-age-minutes 60"
+          status: pass
+        - cmd: "sqlite3 apps/caresight-hub/data/caresight-v0.sqlite3 \"select e.event_id, e.status, e.camera_id, e.zone_id, json_extract(e.evidence_json, '$.snapshot_path') as snapshot_path, o.track_id from events e left join event_observations o on o.event_id=e.event_id where e.event_id='evt_cf80f63995794c98b8bd6ebc197bf73d';\""
+          status: pass
+      evidence:
+        - "Terminal output included event_persisted for evt_cf80f63995794c98b8bd6ebc197bf73d."
+        - "SQLite audit reports status awaiting_human_confirmation, snapshot path present, Observation rows: 1, Review rows: 0, Journal rows: 0, Agent handoff rows: 0."
+        - "Inspected SQLite row includes snapshot_path and track_id track_1."
+        - "live_proof_audit bundle status is not_complete with blockers missing_human_review, missing_journal_entry, and missing_report_only_handoff."
+      remaining_blockers:
+        - "Authorized human reviewer must confirm or dismiss the fresh event."
+        - "After review, collect journal, audit, dashboard, alert, and live_proof_audit bundle output again."
+
+  - id: T040
+    type: pm
+    assignee: PM
+    status: blocked
+    reasoning_hint: default
+    objective: "Await explicit authorized-human instruction to confirm or dismiss the fresh live event, then collect the final journal, handoff, audit, dashboard, alert, and live-proof bundle evidence."
+    inputs:
+      - "T039 live event receipt"
+      - "docs/audits/2026-05-20-t039-live-event-captured.md"
+      - "event_id: evt_cf80f63995794c98b8bd6ebc197bf73d"
+    constraints:
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs the exact action."
+      - "Do not mark full_outcome_complete true until the final live-proof bundle is complete."
+      - "Do not use stale DB rows as final proof."
+      - "Do not dispatch, diagnose, delete, or claim medical-device behavior."
+      - "Keep raw video local."
+    expected_output:
+      - "Authorized human confirm or dismiss command output."
+      - "Journal row created by the review path."
+      - "Report-only handoff row created by the review path."
+      - "SQLite audit output after review."
+      - "Dashboard and alert output after review."
+      - "live_proof_audit bundle status complete."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: blocked
+      audit_receipt: "docs/audits/2026-05-20-t040-human-review-required.md"
+      summary: "Verified the fresh event and snapshot still exist, but no authorized human confirm/dismiss instruction has been provided. The event remains awaiting_human_confirmation, so agents cannot proceed to mutate review state."
+      event_id: "evt_cf80f63995794c98b8bd6ebc197bf73d"
+      snapshot_path: "apps/caresight-hub/data/snapshots/evt_cf80f63995794c98b8bd6ebc197bf73d.jpg"
+      commands:
+        - cmd: "test -f apps/caresight-hub/data/snapshots/evt_cf80f63995794c98b8bd6ebc197bf73d.jpg && echo snapshot_present || echo snapshot_missing"
+          status: pass
+      evidence:
+        - "Snapshot file is present."
+        - "T039 audit showed status awaiting_human_confirmation with no review, journal, or handoff rows."
+      remaining_blockers:
+        - "Authorized human must explicitly instruct confirm or dismiss for evt_cf80f63995794c98b8bd6ebc197bf73d."
+        - "Instruction must include reviewer name and note."
+
+  - id: T041
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: default
+    objective: "Await explicit authorized-human instruction to confirm or dismiss the fresh live event, then collect the final journal, handoff, audit, dashboard, alert, and live-proof bundle evidence."
+    inputs:
+      - "T040 human-review-required receipt"
+      - "docs/audits/2026-05-20-t040-human-review-required.md"
+      - "event_id: evt_cf80f63995794c98b8bd6ebc197bf73d"
+    constraints:
+      - "Do not confirm or dismiss unless an authorized human explicitly instructs the exact action."
+      - "Do not mark full_outcome_complete true until the final live-proof bundle is complete."
+      - "Do not use stale DB rows as final proof."
+      - "Do not dispatch, diagnose, delete, or claim medical-device behavior."
+      - "Keep raw video local."
+    expected_output:
+      - "Authorized human confirm or dismiss command output."
+      - "Journal row created by the review path."
+      - "Report-only handoff row created by the review path."
+      - "SQLite audit output after review."
+      - "Dashboard and alert output after review."
+      - "live_proof_audit bundle status complete."
+      - "Final PM/Judge receipt with full_outcome_complete true only if all oracle evidence is present."
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      audit_receipt: "docs/audits/2026-05-20-t041-final-live-proof.md"
+      summary: "Completed the current tranche with a fresh operator-run live possible_floor_stay event, authorized human confirmation by Steven, SQLite-backed review/journal/report-only handoff rows, dashboard and alert derived outputs, inspected SQLite row, and a complete live-proof audit bundle."
+      proof_event_id: "evt_d9aa38bdc636459c92ea4e25f665cd0d"
+      superseded_event_id: "evt_cf80f63995794c98b8bd6ebc197bf73d"
+      reviewer: "Steven"
+      review_decision: "human_confirmed"
+      review_id: "review_f2b2b553ba9c4483b6405b1abf541a19"
+      journal_id: "journal_9fcf5e31ea414c2a80e0b9c3f7976e5e"
+      handoff_id: "handoff_dc62f62287ca4e4ab60e100f58e7a03d"
+      bundle_status: complete
+      commands:
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --max-seconds 60 --stop-after-event"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py confirm evt_d9aa38bdc636459c92ea4e25f665cd0d --reviewer \"Steven\" --note \"Reviewed live test snapshot; person is visibly lying in the floor/low zone for the configured dwell threshold. Confirmed as valid demo floor-stay event.\""
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py audit evt_d9aa38bdc636459c92ea4e25f665cd0d"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/v0_review_events.py journal evt_d9aa38bdc636459c92ea4e25f665cd0d"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py dashboard"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py alert-draft evt_d9aa38bdc636459c92ea4e25f665cd0d"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/live_proof_audit.py bundle evt_d9aa38bdc636459c92ea4e25f665cd0d --max-event-age-minutes 60"
+          status: pass
+        - cmd: "sqlite3 apps/caresight-hub/data/caresight-v0.sqlite3 \"select e.event_id, e.status, e.camera_id, e.zone_id, json_extract(e.evidence_json, '$.snapshot_path'), o.track_id, r.reviewer, r.decision, j.journal_id, h.handoff_id, h.status from events e left join event_observations o on o.event_id=e.event_id left join event_reviews r on r.event_id=e.event_id left join journal_entries j on j.event_id=e.event_id left join agent_handoffs h on h.event_id=e.event_id where e.event_id='evt_d9aa38bdc636459c92ea4e25f665cd0d';\""
+          status: pass
+        - cmd: "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-buildout/state.yaml"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      evidence:
+        - "Live command produced event_persisted for evt_d9aa38bdc636459c92ea4e25f665cd0d with snapshot_path and track_id track_5."
+        - "Human review command run by Steven returned status human_confirmed plus review, journal, and report_only handoff IDs."
+        - "SQLite audit reports status human_confirmed with Observation rows: 1, Review rows: 1, Journal rows: 1, Agent handoff rows: 1."
+        - "Inspected SQLite row includes snapshot_path, track_id track_5, reviewer Steven, decision human_confirmed, journal_id, handoff_id, and report_only handoff status."
+        - "Alert draft for the proof event has sqlite_audit_chain provenance and keeps no_autonomous_dispatch and no_medical_diagnosis boundaries."
+        - "live_proof_audit bundle for the proof event reports status complete with no blockers."
+      caveats:
+        - "Dashboard current_state still reports four older awaiting-review demo rows; these are not used as final proof."
+        - "Superseded event evt_cf80f63995794c98b8bd6ebc197bf73d remains awaiting_human_confirmation because the user chose to produce a cleaner floor-zone proof event instead of reviewing the couch snapshot."
+      remaining_required_worker_tasks: []
+      remaining_human_blockers: []
+
+checks:
+  dirty_fingerprint: "large sprint buildout diff; see git status for full file list"
+  last_verification:
+    result: pass
+    task: T041
+    commands:
+      - "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-buildout/state.yaml"
+      - "npm run check"

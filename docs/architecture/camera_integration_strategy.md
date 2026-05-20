@@ -53,36 +53,11 @@ Cons:
 - Camera-specific setup.
 - Credentials/network configuration.
 
-## 4. ONVIF
+## 4. Explicitly out of T027 deterministic scope
 
-Best future local interoperability layer.
+The deterministic v0 multi-camera config supports only configured `webcam`, `usb`, `continuity_camera`, and local `rtsp` sources. It does not perform ONVIF discovery, LAN scanning, Home Assistant entity lookup, Ring/Nest integration, cloud-camera API calls, or credential handling.
 
-Pros:
-
-- Security-camera interoperability standard.
-- Discovery/control profiles.
-- Good enterprise/home pilot direction.
-
-Cons:
-
-- Implementation complexity.
-- Camera capability variation.
-
-## 5. Home Assistant camera entity
-
-Good bridge for smart homes.
-
-Pros:
-
-- Home Assistant already aggregates many devices.
-- Can expose camera URLs/streams.
-- Strong DIY home audience.
-
-Cons:
-
-- Adds dependency on Home Assistant config.
-
-## 6. Ring / Nest
+## Future: Ring / Nest
 
 Valuable roadmap adapters, but not the MVP path.
 
@@ -173,7 +148,7 @@ Google's Device Access APIs expose camera events and livestream capabilities for
 
 Recommended product language:
 
-> CareSight can integrate with supported Nest/Google camera APIs in future versions, but the local-first home pilot should prioritize RTSP/ONVIF/Home Assistant sources.
+> CareSight can integrate with supported Nest/Google camera APIs in future versions, but the local-first home pilot should prioritize configured webcam, USB, Continuity Camera, and local RTSP sources.
 
 ---
 
@@ -181,9 +156,9 @@ Recommended product language:
 
 Implement:
 
-- `webcam.py`
-- optional `rtsp.py`
-- `ring_adapter_stub.py` with README explanation
-- `nest_adapter_stub.py` with README explanation
+- deterministic config entries for webcam, USB, Continuity Camera, and local RTSP sources
+- source selection by configured `camera_id`
+- SQLite-backed event provenance that carries the selected camera and room labels
+- operator proof after camera authorization is granted
 
 Do not spend challenge time on third-party cloud camera authentication.

@@ -1,10 +1,30 @@
 # Changelog
 
+## 2026-05-20
+
+- Documented Daily Appearance Profiles as a bounded future sprint: local-only, daily-refreshing, non-biometric person continuity using clothing/accessory descriptors, last-seen context, and optional human-assigned roles.
+- Documented the Agent/LLM Drafting Layer as a bounded local Gemma MLX plus OpenClaw/Hermes orchestration path for caregiver text, Apple Notes drafts, handoff packets, and audit summaries.
+- Added Open Questions sections to the current and hackathon roadmaps with suggested answers and rationale for unresolved product/architecture choices.
+- Updated the current roadmap now that the live v0 blackbox loop is proven for `evt_d9aa38bdc636459c92ea4e25f665cd0d`.
+
 ## 2026-05-19
 
+- Added deterministic multi-camera config/source selection for webcam, USB, Continuity Camera, and local RTSP sources without requiring camera authorization or live hardware proof.
+- Added a read-only live-proof readiness and audit-bundle collector that reports camera authorization blockers and emits SQLite-backed provenance bundles for fresh operator-supplied event IDs.
 - Added root `AGPL-3.0-only` license posture for the hackathon repository.
 - Added `NOTICE.md` and `docs/legal/LICENSE_NOTES.md` to document YOLO MLX AGPL dependency posture, model-weight caution, and future commercial packaging boundaries.
 - Updated `README.md` with license positioning and submodule clone instructions.
+- Hardened the v0 live-loop review audit path with a read-only SQLite audit command, reviewer/timestamp handoff payload fields, and automation-reviewer rejection.
+- Added a shared review service boundary so CLI and future console controls use the same reviewer-gated confirm/dismiss/journal/audit path.
+- Added a CareSight-owned YOLO26 MLX inference harness with raw Detection records, normalized Observation records, config-first model/camera/room metadata, and fail-closed adapter behavior.
+- Added deterministic track-aware floor-stay foundations with observation `track_id` persistence, short-occlusion continuity tests, dedupe/reset behavior, and an initial `missing_off_camera_extended` event policy.
+- Added deterministic medication and hydration routine policies that require a person, configured object label evidence, a routine zone, and a routine window while keeping human confirmation mandatory.
+- Added a local care console read model and caregiver alert draft path that reads SQLite through `ReviewService`, keeps delete/dispatch forbidden, and includes provenance.
+- Added constrained agent policy checks and docs for summary/draft/audit actions with required provenance and forbidden confirmation, dismissal, deletion, dispatch, diagnosis, medication confirmation, and raw-video decision access.
+- Added non-destructive SQLite schema upgrade handling so existing local `event_observations` tables gain `track_id` without deleting prior blackbox rows.
+- Closed SQLiteStore database handles deterministically to remove unclosed-connection `ResourceWarning` noise from Python verification.
+- Added bounded live-proof controls for `v0_floor_stay_live.py` with `--max-seconds` and `--stop-after-event`.
+- Hardened `v0_floor_stay_live.py --help` so argument parsing works without OpenCV imports and live runs can resolve the vendored YOLO26 package path.
 
 ## 2026-05-18
 

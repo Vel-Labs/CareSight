@@ -30,7 +30,9 @@
       "type": "string",
       "enum": [
         "possible_floor_stay",
+        "missing_off_camera_extended",
         "medication_routine_likely_observed",
+        "hydration_routine_likely_observed",
         "caregiver_alert_policy"
       ]
     },

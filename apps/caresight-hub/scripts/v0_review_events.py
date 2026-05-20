@@ -27,35 +27,45 @@ def parse_args() -> argparse.Namespace:
     journal_parser = subparsers.add_parser("journal", help="Show journal entries for an event.")
     journal_parser.add_argument("event_id")
 
+    audit_parser = subparsers.add_parser("audit", help="Show read-only SQLite audit chain.")
+    audit_parser.add_argument("event_id")
+
     return parser.parse_args()
 
 
 def main() -> None:
+    from caresight.runtime.review import ReviewService, ReviewServiceError
     from caresight.storage.sqlite_store import SQLiteStore
 
     args = parse_args()
     store = SQLiteStore(args.db)
     store.initialize()
+    service = ReviewService(store)
 
     if args.command == "list":
-        status = None if args.all else "awaiting_human_confirmation"
-        print(format_event_list(store.list_events(status=status)))
+        print(format_event_list(service.list_events(include_all=args.all)))
         return
 
     if args.command == "show":
-        print(format_event_summary(store.get_event_context(args.event_id)))
+        print(format_event_summary(service.get_event_summary(args.event_id)))
         return
 
     if args.command in {"confirm", "dismiss"}:
-        if not args.reviewer or not args.reviewer.strip():
-            raise SystemExit("--reviewer is required")
-        decision = "human_confirmed" if args.command == "confirm" else "dismissed"
-        result = store.record_event_review(
-            args.event_id,
-            reviewer=args.reviewer,
-            decision=decision,
-            note=args.note,
-        )
+        try:
+            if args.command == "confirm":
+                result = service.confirm_event(
+                    args.event_id,
+                    reviewer=args.reviewer,
+                    note=args.note,
+                )
+            else:
+                result = service.dismiss_event(
+                    args.event_id,
+                    reviewer=args.reviewer,
+                    note=args.note,
+                )
+        except ReviewServiceError as exc:
+            raise SystemExit(str(exc)) from exc
         print(f"Event {result['event_id']} status: {result['decision']}")
         print(f"Review: {result['review_id']}")
         print(f"Journal: {result['journal_id']}")
@@ -63,8 +73,12 @@ def main() -> None:
         return
 
     if args.command == "journal":
-        entries = store.list_journal_entries(args.event_id)
+        entries = service.list_journal_entries(args.event_id)
         print(format_journal(args.event_id, entries))
+        return
+
+    if args.command == "audit":
+        print(format_audit(service.get_audit_chain(args.event_id)))
         return
 
 
@@ -117,6 +131,55 @@ def format_journal(event_id: str, entries: list[dict]) -> str:
                 entry["body"],
             ]
         )
+    return "\n".join(lines)
+
+
+def format_audit(audit: dict) -> str:
+    event = audit["event"]
+    evidence = event["evidence"]
+    observations = audit["observations"]
+    reviews = audit["reviews"]
+    journal_entries = audit["journal_entries"]
+    handoffs = audit["agent_handoffs"]
+    latest_review = reviews[-1] if reviews else None
+    latest_handoff = handoffs[-1] if handoffs else None
+
+    lines = [
+        "CareSight SQLite Audit",
+        f"Event ID: {event['event_id']}",
+        f"Event type: {event['event_type']}",
+        f"Status: {event['status']}",
+        f"Occurred at: {event['occurred_at']}",
+        f"Camera: {event.get('camera_name') or event['camera_id']}",
+        f"Zone: {event.get('zone_name') or event.get('zone_id') or 'unknown zone'}",
+        f"Snapshot path: {evidence.get('snapshot_path', 'not recorded')}",
+        f"Observation rows: {len(observations)}",
+        f"Review rows: {len(reviews)}",
+        f"Journal rows: {len(journal_entries)}",
+        f"Agent handoff rows: {len(handoffs)}",
+    ]
+    if latest_review is not None:
+        lines.extend(
+            [
+                f"Latest reviewer: {latest_review['reviewer']}",
+                f"Latest review decision: {latest_review['decision']}",
+                f"Latest reviewed at: {latest_review['reviewed_at']}",
+            ]
+        )
+    if latest_handoff is not None:
+        payload = latest_handoff["payload"]
+        lines.extend(
+            [
+                f"Latest handoff status: {latest_handoff['status']}",
+                f"Latest handoff reviewer: {payload.get('reviewer', 'not recorded')}",
+                f"Latest handoff reviewed at: {payload.get('reviewed_at', 'not recorded')}",
+                f"Latest handoff journal: {payload.get('journal_id', 'not recorded')}",
+            ]
+        )
+    lines.append(
+        "Boundary: SQLite rows are canonical; agents may summarize or draft but cannot confirm, "
+        "dismiss, dispatch, diagnose, delete, or become reviewer of record."
+    )
     return "\n".join(lines)
 
 

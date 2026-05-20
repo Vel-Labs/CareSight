@@ -8,6 +8,65 @@
     "height": 720,
     "fps": 30
   },
+  "active_camera_id": "living_room",
+  "cameras": [
+    {
+      "camera_id": "living_room",
+      "name": "Living Room Built-in Webcam",
+      "source_type": "webcam",
+      "source_uri": 0,
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "room_id": "living_room",
+      "room_label": "Living Room"
+    },
+    {
+      "camera_id": "living_room_usb",
+      "name": "Living Room USB Camera",
+      "source_type": "usb",
+      "source_uri": 1,
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "room_id": "living_room",
+      "room_label": "Living Room"
+    },
+    {
+      "camera_id": "living_room_continuity",
+      "name": "Living Room Continuity Camera",
+      "source_type": "continuity_camera",
+      "source_uri": 2,
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "room_id": "living_room",
+      "room_label": "Living Room"
+    },
+    {
+      "camera_id": "kitchen_rtsp",
+      "name": "Kitchen RTSP Camera",
+      "source_type": "rtsp",
+      "source_uri": "rtsp://192.0.2.10/local-demo",
+      "width": 1280,
+      "height": 720,
+      "fps": 15,
+      "room_id": "kitchen",
+      "room_label": "Kitchen"
+    }
+  ],
+  "room": {
+    "room_id": "living_room",
+    "name": "Living Room",
+    "floor": "main"
+  },
+  "inference": {
+    "model_id": "yolo26n",
+    "model_name": "YOLO26n MLX",
+    "model_path": "apps/caresight-hub/vendor/yolo-mlx/models/yolo26n.npz",
+    "adapter": "yolo26_mlx",
+    "confidence_threshold": 0.25
+  },
   "floor_zone": {
     "zone_id": "floor_zone",
     "camera_id": "living_room",
@@ -23,6 +82,44 @@
     "severity": "high",
     "confidence": "high"
   },
+  "tracking": {
+    "occlusion_grace_seconds": 1.0,
+    "missing_seconds": 30.0,
+    "dedupe_seconds": 120.0,
+    "missing_severity": "medium"
+  },
+  "routines": [
+    {
+      "routine_id": "morning_medication",
+      "event_type": "medication_routine_likely_observed",
+      "zone_id": "medication_counter_zone",
+      "zone_name": "Medication Counter Zone",
+      "object_labels": ["bottle"],
+      "window_start": "06:00",
+      "window_end": "11:00",
+      "severity": "medium",
+      "confidence": "medium",
+      "x_min": 0.0,
+      "y_min": 0.25,
+      "x_max": 1.0,
+      "y_max": 1.0
+    },
+    {
+      "routine_id": "daytime_hydration",
+      "event_type": "hydration_routine_likely_observed",
+      "zone_id": "hydration_zone",
+      "zone_name": "Hydration Zone",
+      "object_labels": ["bottle", "cup"],
+      "window_start": "06:00",
+      "window_end": "21:00",
+      "severity": "medium",
+      "confidence": "medium",
+      "x_min": 0.0,
+      "y_min": 0.25,
+      "x_max": 1.0,
+      "y_max": 1.0
+    }
+  ],
   "storage": {
     "database_path": "apps/caresight-hub/data/caresight-v0.sqlite3"
   }

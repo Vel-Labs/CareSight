@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
+
+from caresight.runtime.cameras.sources import validate_camera_source
 
 
 @dataclass(frozen=True)
@@ -14,6 +16,47 @@ class CameraConfig:
     width: int
     height: int
     fps: int
+    room_id: str | None = None
+    room_label: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "source_type", self.source_type.strip().lower())
+        validate_camera_source(self)
+
+
+@dataclass(frozen=True)
+class RoomConfig:
+    room_id: str
+    name: str
+    floor: str | None = None
+
+
+@dataclass(frozen=True)
+class TrackingConfig:
+    occlusion_grace_seconds: float = 1.0
+    missing_seconds: float = 30.0
+    dedupe_seconds: float = 120.0
+    missing_severity: str = "medium"
+
+
+@dataclass(frozen=True)
+class RoutineConfig:
+    routine_id: str
+    event_type: str
+    zone_id: str
+    zone_name: str
+    object_labels: list[str]
+    window_start: str
+    window_end: str
+    severity: str = "medium"
+    confidence: str = "medium"
+    x_min: float = 0.0
+    y_min: float = 0.0
+    x_max: float = 1.0
+    y_max: float = 1.0
+
+    def contains_normalized_point(self, x: float, y: float) -> bool:
+        return self.x_min <= x <= self.x_max and self.y_min <= y <= self.y_max
 
 
 @dataclass(frozen=True)
@@ -46,22 +89,31 @@ class StorageConfig:
 @dataclass(frozen=True)
 class CareSightConfig:
     camera: CameraConfig
+    room: RoomConfig
     floor_zone: ZoneConfig
     floor_stay: FloorStayConfig
+    tracking: TrackingConfig
+    routines: tuple[RoutineConfig, ...]
     storage: StorageConfig
+    cameras: tuple[CameraConfig, ...] = ()
+    active_camera_id: str | None = None
 
     @classmethod
     def default(cls) -> "CareSightConfig":
+        camera = CameraConfig(
+            camera_id="living_room",
+            name="Living Room",
+            source_type="webcam",
+            source_uri=0,
+            width=1280,
+            height=720,
+            fps=30,
+            room_id="living_room",
+            room_label="Living Room",
+        )
         return cls(
-            camera=CameraConfig(
-                camera_id="living_room",
-                name="Living Room",
-                source_type="webcam",
-                source_uri=0,
-                width=1280,
-                height=720,
-                fps=30,
-            ),
+            camera=camera,
+            room=RoomConfig(room_id="living_room", name="Living Room", floor="main"),
             floor_zone=ZoneConfig(
                 zone_id="floor_zone",
                 camera_id="living_room",
@@ -77,9 +129,40 @@ class CareSightConfig:
                 severity="high",
                 confidence="high",
             ),
+            tracking=TrackingConfig(),
+            routines=(
+                RoutineConfig(
+                    routine_id="morning_medication",
+                    event_type="medication_routine_likely_observed",
+                    zone_id="medication_counter_zone",
+                    zone_name="Medication Counter Zone",
+                    object_labels=["bottle"],
+                    window_start="06:00",
+                    window_end="11:00",
+                    x_min=0.0,
+                    y_min=0.25,
+                    x_max=1.0,
+                    y_max=1.0,
+                ),
+                RoutineConfig(
+                    routine_id="daytime_hydration",
+                    event_type="hydration_routine_likely_observed",
+                    zone_id="hydration_zone",
+                    zone_name="Hydration Zone",
+                    object_labels=["bottle", "cup"],
+                    window_start="06:00",
+                    window_end="21:00",
+                    x_min=0.0,
+                    y_min=0.25,
+                    x_max=1.0,
+                    y_max=1.0,
+                ),
+            ),
             storage=StorageConfig(
                 database_path="apps/caresight-hub/data/caresight-v0.sqlite3",
             ),
+            cameras=(camera,),
+            active_camera_id=camera.camera_id,
         )
 
     @classmethod
@@ -89,12 +172,37 @@ class CareSightConfig:
 
     @classmethod
     def from_dict(cls, data: dict) -> "CareSightConfig":
+        camera = CameraConfig(**data["camera"])
+        cameras = tuple(CameraConfig(**item) for item in data.get("cameras", [data["camera"]]))
+        active_camera_id = data.get("active_camera_id", camera.camera_id)
+        selected_camera = _find_camera(cameras, active_camera_id) or camera
+        room = RoomConfig(
+            **data.get(
+                "room",
+                {
+                    "room_id": selected_camera.room_id or selected_camera.camera_id,
+                    "name": selected_camera.room_label or selected_camera.name,
+                },
+            )
+        )
+        if selected_camera.camera_id != camera.camera_id:
+            room = _room_for_camera(selected_camera, room)
         return cls(
-            camera=CameraConfig(**data["camera"]),
+            camera=selected_camera,
+            room=room,
             floor_zone=ZoneConfig(**data["floor_zone"]),
             floor_stay=FloorStayConfig(**data["floor_stay"]),
+            tracking=TrackingConfig(**data.get("tracking", {})),
+            routines=tuple(RoutineConfig(**item) for item in data.get("routines", [])),
             storage=StorageConfig(**data["storage"]),
+            cameras=cameras,
+            active_camera_id=selected_camera.camera_id,
         )
+
+    def with_selected_camera(self, camera: CameraConfig) -> "CareSightConfig":
+        room = _room_for_camera(camera, self.room)
+        zone = replace(self.floor_zone, camera_id=camera.camera_id)
+        return replace(self, camera=camera, room=room, floor_zone=zone, active_camera_id=camera.camera_id)
 
     def save(self, path: str | Path) -> None:
         target = Path(path)
@@ -103,3 +211,20 @@ class CareSightConfig:
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+
+def _find_camera(cameras: tuple[CameraConfig, ...], camera_id: str | None) -> CameraConfig | None:
+    if camera_id is None:
+        return None
+    for camera in cameras:
+        if camera.camera_id == camera_id:
+            return camera
+    return None
+
+
+def _room_for_camera(camera: CameraConfig, fallback: RoomConfig) -> RoomConfig:
+    return RoomConfig(
+        room_id=camera.room_id or fallback.room_id,
+        name=camera.room_label or fallback.name,
+        floor=fallback.floor,
+    )

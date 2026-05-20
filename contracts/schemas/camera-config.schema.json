@@ -19,7 +19,7 @@
     },
     "source_type": {
       "type": "string",
-      "enum": ["webcam", "continuity_camera", "usb", "rtsp", "onvif", "home_assistant"]
+      "enum": ["webcam", "continuity_camera", "usb", "rtsp"]
     },
     "source_uri": {
       "anyOf": [
@@ -33,6 +33,26 @@
     },
     "room": {
       "type": "string"
+    },
+    "room_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "room_label": {
+      "type": "string",
+      "minLength": 3
+    },
+    "width": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "height": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "fps": {
+      "type": "integer",
+      "minimum": 1
     },
     "privacy": {
       "type": "object",

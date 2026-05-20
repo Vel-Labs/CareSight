@@ -22,6 +22,8 @@ It should not contain YOLO, OpenCV, camera, SQLite runtime, dashboard, or alert 
 - camera adapters
 - YOLO26 MLX runner
 - detections, tracking, zones, and temporal event rules
+- CareSight-owned inference harnesses that convert raw detections into normalized observations with configured camera and room metadata
+- local track state and track metadata under `caresight/runtime/tracking/`
 - SQLite storage
 - journal generation
 - alert adapters

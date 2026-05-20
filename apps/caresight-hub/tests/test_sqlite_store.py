@@ -1,6 +1,9 @@
+import gc
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
+import sqlite3
 
 from caresight.events.floor_stay import FloorStayDetector
 from caresight.runtime.config import CareSightConfig
@@ -41,7 +44,77 @@ class SQLiteStoreTest(unittest.TestCase):
             self.assertEqual(len(observations), 1)
             self.assertEqual(observations[0]["class_name"], "person")
             self.assertEqual(observations[0]["zone_id"], "floor_zone")
+            self.assertEqual(observations[0]["track_id"], event["evidence"]["track_id"])
             self.assertEqual(observations[0]["bbox_json"], event["evidence"]["bbox_xyxy"])
+
+    def test_initialize_adds_track_id_to_existing_observations_without_deleting_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "legacy.sqlite3"
+            conn = sqlite3.connect(db_path)
+            conn.executescript(
+                """
+                CREATE TABLE event_observations (
+                  observation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  event_id TEXT NOT NULL,
+                  observed_at TEXT NOT NULL,
+                  class_name TEXT NOT NULL,
+                  confidence REAL NOT NULL,
+                  bbox_json TEXT NOT NULL,
+                  zone_id TEXT
+                );
+                INSERT INTO event_observations (
+                  event_id,
+                  observed_at,
+                  class_name,
+                  confidence,
+                  bbox_json,
+                  zone_id
+                )
+                VALUES (
+                  'evt_legacy',
+                  '2026-05-19T03:20:36Z',
+                  'person',
+                  0.91,
+                  '[1, 2, 3, 4]',
+                  'floor_zone'
+                );
+                """
+            )
+            conn.close()
+
+            store = SQLiteStore(db_path)
+            store.initialize()
+
+            conn = sqlite3.connect(db_path)
+            columns = {row[1] for row in conn.execute("PRAGMA table_info(event_observations)")}
+            row = conn.execute(
+                "SELECT event_id, class_name, track_id FROM event_observations WHERE event_id = 'evt_legacy'"
+            ).fetchone()
+            conn.close()
+
+            self.assertIn("track_id", columns)
+            self.assertEqual(row, ("evt_legacy", "person", None))
+
+    def test_store_operations_do_not_leave_unclosed_sqlite_connections(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            store = SQLiteStore(db_path)
+
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always", ResourceWarning)
+                store.initialize()
+                store.upsert_config(CareSightConfig.default())
+                self.assertEqual(store.list_zones()[0]["zone_id"], "floor_zone")
+                gc.collect()
+
+            sqlite_warnings = [
+                warning
+                for warning in caught
+                if issubclass(warning.category, ResourceWarning)
+                and "sqlite" in str(warning.message).lower()
+                and "unclosed" in str(warning.message).lower()
+            ]
+            self.assertEqual(sqlite_warnings, [])
 
 
 if __name__ == "__main__":

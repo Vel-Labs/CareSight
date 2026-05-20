@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 import json
 import sqlite3
 from datetime import UTC, datetime
@@ -18,6 +20,7 @@ class SQLiteStore:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
             conn.executescript(SCHEMA_SQL)
+            ensure_column(conn, table="event_observations", column="track_id", definition="TEXT")
 
     def upsert_config(self, config: CareSightConfig) -> None:
         with self._connect() as conn:
@@ -213,6 +216,8 @@ class SQLiteStore:
         reviewer = reviewer.strip()
         if not reviewer:
             raise ValueError("reviewer is required")
+        if is_automation_reviewer(reviewer):
+            raise ValueError("reviewer must be an authorized human, not an agent or automation")
         if decision not in {"human_confirmed", "dismissed", "needs_followup"}:
             raise ValueError(f"unsupported decision: {decision}")
 
@@ -247,7 +252,15 @@ class SQLiteStore:
             event = event_from_row(event_row)
             event["status"] = decision
             journal = self._insert_review_journal(conn, event, reviewer, decision, note, reviewed_at)
-            handoff = self._insert_agent_handoff(conn, event, decision, reviewed_at)
+            handoff = self._insert_agent_handoff(
+                conn,
+                event,
+                reviewer=reviewer,
+                decision=decision,
+                review_id=review_id,
+                journal_id=journal["journal_id"],
+                reviewed_at=reviewed_at,
+            )
 
         return {
             "review_id": review_id,
@@ -272,6 +285,35 @@ class SQLiteStore:
             ).fetchall()
         return [dict(row) for row in rows]
 
+    def list_event_reviews(self, event_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM event_reviews
+                WHERE event_id = ?
+                ORDER BY reviewed_at, review_id
+                """,
+                (event_id,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def list_agent_handoffs(self, event_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM agent_handoffs
+                WHERE event_id = ?
+                ORDER BY created_at, handoff_id
+                """,
+                (event_id,),
+            ).fetchall()
+        handoffs = []
+        for row in rows:
+            handoff = dict(row)
+            handoff["payload"] = json.loads(row["payload_json"])
+            handoffs.append(handoff)
+        return handoffs
+
     def _insert_event_observation(self, conn: sqlite3.Connection, event: dict[str, Any]) -> None:
         evidence = event["evidence"]
         bbox = evidence.get("bbox_xyxy")
@@ -287,9 +329,10 @@ class SQLiteStore:
               class_name,
               confidence,
               bbox_json,
+              track_id,
               zone_id
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 event["event_id"],
@@ -297,6 +340,7 @@ class SQLiteStore:
                 "person",
                 detection_confidence,
                 json.dumps(bbox),
+                evidence.get("track_id"),
                 event.get("zone_id"),
             ),
         )
@@ -334,8 +378,11 @@ class SQLiteStore:
         self,
         conn: sqlite3.Connection,
         event: dict[str, Any],
+        reviewer: str,
         decision: str,
-        created_at: str,
+        review_id: str,
+        journal_id: str,
+        reviewed_at: str,
     ) -> dict[str, str]:
         handoff_id = f"handoff_{uuid4().hex}"
         evidence = event["evidence"]
@@ -343,6 +390,10 @@ class SQLiteStore:
             "event_id": event["event_id"],
             "event_type": event["event_type"],
             "status": decision,
+            "review_id": review_id,
+            "reviewer": reviewer,
+            "reviewed_at": reviewed_at,
+            "journal_id": journal_id,
             "snapshot_path": evidence.get("snapshot_path"),
             "requires_human_confirmation": event["requires_human_confirmation"],
             "blocked_actions": event["blocked_actions"],
@@ -368,16 +419,21 @@ class SQLiteStore:
                 "review_acknowledgement_summary",
                 json.dumps(payload, sort_keys=True),
                 "report_only",
-                created_at,
+                reviewed_at,
             ),
         )
         return {"handoff_id": handoff_id}
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
         conn = sqlite3.connect(self.database_path)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        return conn
+        try:
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
 
 def event_from_row(row: sqlite3.Row) -> dict[str, Any]:
@@ -416,10 +472,21 @@ def review_journal_body(
     return "\n".join(lines)
 
 
+def is_automation_reviewer(reviewer: str) -> bool:
+    normalized = reviewer.strip().lower().replace("_", " ").replace("-", " ")
+    automation_names = {"agent", "ai", "llm", "dashboard", "script", "automation", "carebot"}
+    return normalized in automation_names
+
+
+def ensure_column(conn: sqlite3.Connection, *, table: str, column: str, definition: str) -> None:
+    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column in columns:
+        return
+    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 def utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-SCHEMA_SQL = (Path(__file__).resolve().parent / "migrations" / "001_init.sql").read_text(
-    encoding="utf-8"
-)
+SCHEMA_SQL = (Path(__file__).resolve().parent / "migrations" / "001_init.sql").read_text(encoding="utf-8")

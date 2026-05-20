@@ -13,16 +13,16 @@ This index tracks commands that are safe to run locally and explains their input
 Command:
 
 ```bash
-python apps/caresight-hub/scripts/yolo26_image_smoke.py
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/yolo26_image_smoke.py
 ```
 
-Purpose: run YOLO26 MLX against the bundled image smoke fixture.
+Purpose: run the CareSight-owned YOLO26 MLX inference harness against the bundled image smoke fixture.
 
-Inputs: local YOLO26 MLX environment, model path, and image fixture.
+Inputs: local YOLO26 MLX environment, `apps/caresight-hub/config/v0.local.json`, model path, room metadata, camera metadata, and image fixture.
 
-Outputs: local result image and terminal detection output.
+Outputs: local result image plus terminal JSON with raw `detections`, normalized `observations`, and runtime metadata.
 
-Validation: covered by the v0 smoke checkpoint audit; rerun before claiming model readiness on a new machine.
+Validation: covered by the v0 smoke checkpoint audit and `test_inference_harness.py`; rerun before claiming model readiness on a new machine.
 
 Agent safety: `manual-operator`.
 
@@ -31,16 +31,16 @@ Agent safety: `manual-operator`.
 Command:
 
 ```bash
-python apps/caresight-hub/scripts/yolo26_webcam_smoke.py
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/yolo26_webcam_smoke.py
 ```
 
-Purpose: verify live webcam capture and YOLO26 MLX person labels.
+Purpose: verify live webcam capture and YOLO26 MLX person labels through the CareSight-owned adapter boundary.
 
-Inputs: local camera access and YOLO26 MLX model.
+Inputs: local camera access, `apps/caresight-hub/config/v0.local.json`, camera metadata, room metadata, and YOLO26 MLX model.
 
 Outputs: local preview window and terminal diagnostics.
 
-Validation: use for manual live-camera smoke checks only.
+Validation: deterministic adapter and normalization behavior is covered by `test_inference_harness.py`; live camera behavior remains manual/operator.
 
 Agent safety: `manual-operator`.
 
@@ -56,11 +56,41 @@ Purpose: create a local `possible_floor_stay` event after a person remains in th
 
 Inputs: `apps/caresight-hub/config/v0.local.json`, local camera, YOLO26 MLX model, SQLite database path.
 
-Outputs: `event_persisted` terminal line, SQLite event row, event observation row, and local snapshot path.
+Outputs: `event_persisted` terminal line, SQLite event row, event observation row with `track_id`, and local snapshot path.
 
-Validation: `npm run py:check` covers deterministic event, SQLite, and snapshot behavior. Live camera behavior still needs manual verification.
+Validation: `npm run py:check` covers deterministic event, SQLite, tracking, and snapshot behavior. Live camera behavior still needs manual verification.
 
 Agent safety: `manual-operator`.
+
+Configured source selection:
+
+```bash
+python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room_usb --no-window --max-seconds 120 --stop-after-event
+```
+
+Purpose: select one configured local camera source from `config.cameras` while preserving `camera_id`, `source_type`, and room label in runtime config and SQLite-backed event provenance.
+
+Supported source types: `webcam`, `usb`, `continuity_camera`, and local `rtsp`. Ring, Nest, Home Assistant, ONVIF discovery, LAN scanning, cloud-camera APIs, and credential handling remain out of scope.
+
+Validation: `test_v0_config.py` verifies deterministic source selection and cloud/provider rejection without opening a camera.
+
+Bounded audit run:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --max-seconds 60 --stop-after-event
+```
+
+Purpose: let an operator collect one `event_persisted` line without leaving the live loop unbounded.
+
+Omit `--no-window` when the operator needs the preview overlay to position the floor/low zone.
+
+Readiness check:
+
+```bash
+python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help
+```
+
+Purpose: verify CLI parsing and bounded proof flags without requiring OpenCV, camera access, or YOLO runtime imports.
 
 ## v0 Review Events: List
 
@@ -112,7 +142,7 @@ Inputs: `event_id`, required `--reviewer`, optional `--note`, optional `--db <pa
 
 Outputs: updated event status, `event_reviews` row, `journal_entries` row, and report-only `agent_handoffs` row.
 
-Validation: `test_v0_review_events.py` verifies reviewer requirement, status update, review row, journal row, and handoff payload.
+Validation: `test_v0_review_events.py` verifies the shared review service path, reviewer requirement, status update, review row, journal row, and handoff payload.
 
 Agent safety: `human-review-required`.
 
@@ -130,7 +160,7 @@ Inputs: `event_id`, required `--reviewer`, optional `--note`, optional `--db <pa
 
 Outputs: updated event status, `event_reviews` row, `journal_entries` row, and report-only `agent_handoffs` row.
 
-Validation: `test_v0_review_events.py` verifies dismissed status, review row, journal row, and handoff payload.
+Validation: `test_v0_review_events.py` verifies the shared review service path, dismissed status, review row, journal row, and handoff payload.
 
 Agent safety: `human-review-required`.
 
@@ -151,3 +181,118 @@ Outputs: local journal entries in readable text.
 Validation: `test_v0_review_events.py` verifies journal rendering.
 
 Agent safety: `agent-safe-read`.
+
+## v0 Review Service Boundary
+
+The CLI delegates event listing, summaries, human confirm/dismiss transitions, journal reads, and SQLite audit-chain reads to `caresight.runtime.review.ReviewService`.
+
+State changes remain `human-review-required`: an authorized human reviewer is mandatory, automation-like reviewer names are rejected, and there are no CLI commands for deletion, emergency dispatch, diagnosis, or agent-owned acknowledgement. Review mutations are persisted through SQLite review, journal, and report-only handoff rows.
+
+## v0 Review Events: Audit
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/v0_review_events.py audit <event_id>
+```
+
+Purpose: show a read-only SQLite blackbox chain for one event after live observation and human review.
+
+Inputs: `event_id`, optional `--db <path>`.
+
+Outputs: event ID, event type, status, occurred timestamp, camera, zone, snapshot path, observation row count, review row count, journal row count, report-only handoff row count, latest reviewer, latest review timestamp, and latest handoff status.
+
+Validation: `test_v0_review_events.py` verifies audit rendering from event, observation, review, journal, and handoff rows.
+
+Agent safety: `agent-safe-read`.
+
+## Routine Event Policy Checks
+
+Routine events are currently deterministic runtime policies rather than standalone CLI commands. They require:
+
+- a person observed in the configured routine zone
+- narrow configured object-label evidence
+- a configured routine time window
+- human review before confirmation
+
+Validation: `test_routine_events.py` verifies medication and hydration routine events remain `awaiting_human_confirmation` and do not claim medication administration or medical hydration state.
+
+## Care Console Dashboard
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py dashboard
+```
+
+Purpose: render a local JSON dashboard read model from SQLite through `ReviewService`.
+
+Inputs: optional `--db <path>`.
+
+Outputs: source-of-truth marker, live-feed boundary, current state, event timeline, concern feed, review-control mapping, journal preview, and caregiver alert draft.
+
+Validation: `test_care_console.py` verifies the dashboard reads SQLite state, keeps review actions routed through `ReviewService`, and marks delete/dispatch as forbidden.
+
+Agent safety: `agent-safe-read`.
+
+## Care Console Alert Draft
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py alert-draft <event_id>
+```
+
+Purpose: draft caregiver alert text with provenance from the SQLite audit chain.
+
+Inputs: `event_id`, optional `--db <path>`.
+
+Outputs: draft text, text-to-FaceTime channel sequence, source fields, and forbidden-action boundaries.
+
+Validation: `test_care_console.py` verifies alert drafts include event provenance and remain report-only.
+
+Agent safety: `agent-safe-read`.
+
+## Live Proof Audit Readiness
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/live_proof_audit.py readiness --camera-authorization not_checked
+```
+
+Purpose: report whether the local config and YOLO26 MLX model path are ready for live proof collection, and surface camera authorization as an explicit readiness gate.
+
+Inputs: optional `--config <path>`, optional `--model <path>`, optional `--db <path>`, and `--camera-authorization granted|blocked|not_checked`.
+
+Outputs: JSON readiness report with Python/environment, model, config, SQLite path, camera authorization, blockers, and safety boundaries.
+
+Validation: `test_live_proof_audit.py` verifies that `camera_authorization=blocked` yields `camera_authorization_blocked` without requiring camera access.
+
+Agent safety: `agent-safe-read`. Agents may report readiness and blockers, but camera permission remains an operator action.
+
+## Live Proof Audit Bundle
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/live_proof_audit.py bundle <event_id>
+```
+
+Purpose: emit a read-only local audit bundle after an operator supplies a fresh `event_id` from a real `event_persisted` line.
+
+Inputs: fresh `event_id`, optional `--db <path>`, optional `--max-event-age-minutes <minutes>`, and optional `--output <path>` for a local JSON report artifact.
+
+Outputs: JSON bundle with SQLite-backed event, observation `track_id`, review, journal, report-only handoff, derived dashboard provenance, derived caregiver alert provenance, completion checks, and blockers. Missing review, journal, handoff, track ID, or stale event age yields `status: not_complete`.
+
+Validation: `test_live_proof_audit.py` seeds SQLite rows and verifies complete provenance, missing downstream rows, stale event IDs, and CLI help.
+
+Agent safety: `agent-safe-read`. The command must not create events, confirm, dismiss, dispatch, diagnose, delete, or become reviewer of record. Dashboard and alert data remain derived output, not canonical truth.
+
+## Agent Policy Checks
+
+Agent policy is enforced by runtime helpers rather than a standalone CLI command.
+
+Allowed actions are summary, caregiver-message draft, journal-note draft, and handoff audit. Forbidden actions are event confirmation, dismissal, deletion, emergency dispatch, diagnosis, medication-taken confirmation, and raw-video inspection as decision-maker.
+
+Validation: `test_agent_policy.py` verifies allowed actions require purpose and provenance, and forbidden actions raise deterministic policy errors.

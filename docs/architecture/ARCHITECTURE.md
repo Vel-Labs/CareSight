@@ -56,6 +56,25 @@ contracts/
   -> tests/ and receipts
 ```
 
+The CareSight-owned inference boundary lives under `apps/caresight-hub/caresight/runtime/inference/`.
+It separates raw YOLO26 MLX `Detection` records from normalized care `Observation` records and attaches
+configured camera and room metadata before downstream event policies consume them. The adapter fails closed
+when the model file, import, load, or prediction path is unavailable; it must not synthesize detections for a
+demo.
+
+The tracking boundary lives under `apps/caresight-hub/caresight/runtime/tracking/`.
+The v1 foundation uses a deterministic local track state machine to attach stable `track_id` evidence to
+observations and event records. Tracking supports floor-stay dwell continuity through short occlusions and
+an initial `missing_off_camera_extended` policy, but it does not diagnose distress or trigger dispatch.
+
+Routine event policies remain deterministic: person evidence, configured object-label evidence, configured
+zone, and configured routine window. Medication and hydration events are phrased as likely observed and
+remain human-confirmed workflows, not proof of administration or medical state.
+
+Agent assistance is downstream of structured records. Agents can summarize, draft, and audit payloads with
+event provenance, but cannot confirm, dismiss, delete, dispatch, diagnose, confirm medication, or inspect raw
+video as the decision-maker.
+
 ## Fail-Closed Laws
 
 - Missing or invalid contracts block promotion.

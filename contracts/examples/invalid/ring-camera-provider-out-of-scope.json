@@ -1,0 +1,12 @@
+{
+  "schema": "camera-config",
+  "camera_id": "ring_doorbell",
+  "name": "Ring Doorbell",
+  "source_type": "ring",
+  "source_uri": "https://ring.example.invalid/live",
+  "room": "Front Door",
+  "privacy": {
+    "raw_video_storage": "disabled",
+    "cloud_upload_default": false
+  }
+}

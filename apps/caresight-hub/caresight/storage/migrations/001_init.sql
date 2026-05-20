@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS event_observations (
   class_name TEXT NOT NULL,
   confidence REAL NOT NULL,
   bbox_json TEXT NOT NULL,
+  track_id TEXT,
   zone_id TEXT REFERENCES zones(zone_id)
 );
 

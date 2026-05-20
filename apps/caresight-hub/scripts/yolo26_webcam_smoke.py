@@ -1,15 +1,23 @@
 import argparse
 import re
+import sys
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 YOLO_DIR = ROOT_DIR / "vendor" / "yolo-mlx"
 MODEL_PATH = YOLO_DIR / "models" / "yolo26n.npz"
+CONFIG_PATH = ROOT_DIR / "config" / "v0.local.json"
 WINDOW_NAME = "CareSight YOLO26 MLX"
+sys.path.insert(0, str(ROOT_DIR))
+sys.path.insert(0, str(YOLO_DIR))
+
+from caresight.runtime.inference import CareSightInferenceHarness  # noqa: E402
+from caresight.runtime.inference.adapter import ModelLoadError  # noqa: E402
+
 COCO_NAMES = [
     "person",
     "bicycle",
@@ -242,8 +250,6 @@ def draw_boxes_on_camera_frame(frame, result, cv2_module):
 
 def main() -> None:
     import cv2
-    from yolo26mlx import YOLO
-
     settings = parse_args()
     if not MODEL_PATH.exists():
         raise SystemExit(
@@ -251,7 +257,12 @@ def main() -> None:
             "Run apps/caresight-hub/scripts/prepare_yolo26n_model.sh first."
         )
 
-    model = YOLO(str(MODEL_PATH))
+    harness = CareSightInferenceHarness.from_config_path(CONFIG_PATH)
+    try:
+        harness.adapter.load()
+    except ModelLoadError as error:
+        raise SystemExit(f"fail_closed={error}") from error
+
     cap = open_camera(settings, cv2)
     if not cap.isOpened():
         raise SystemExit(
@@ -271,7 +282,7 @@ def main() -> None:
             break
 
         model_input = frame if settings.raw_bgr else cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = model.predict(model_input, conf=settings.conf)
+        results = harness.adapter._runner.predict(model_input, conf=settings.conf)
         if settings.renderer == "plot":
             annotated = results[0].plot()
             display_frame = (

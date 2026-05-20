@@ -14,6 +14,7 @@
   "evidence": {
     "raw_video_stays_local": true,
     "dwell_seconds": 31,
+    "track_id": "track_1",
     "model": "yolo26n-mlx"
   }
 }

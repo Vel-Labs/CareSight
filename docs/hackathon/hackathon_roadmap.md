@@ -49,11 +49,13 @@ Do **not** depend on these for the submitted MVP:
 - medical-grade fall detection claims
 - voice cloning
 - EHR integration
-- identity recognition / face recognition
+- biometric identity recognition / face recognition
 - nursing-home compliance workflows
 - perfect medication proof
 
 The demo should say **“likely observed,” “possible event,” “requires acknowledgement,” and “caregiver confirmed”** rather than overclaiming certainty.
+
+Non-biometric daily appearance profiles are allowed as a bounded future sprint: clothing/accessory descriptors, last-seen room, and human-assigned roles for the day. They must not claim durable identity or face recognition.
 
 ---
 
@@ -515,11 +517,22 @@ shortcuts run "CareSight Send Alert" --input-path ./out/latest_alert.txt
 
 ### Purpose
 
-Use a local language model for caregiver-friendly wording, not vision.
+Use a local language model for caregiver-friendly wording, Apple Notes drafts, handoff packets, and audit summaries, not vision or authority.
+
+Recommended local stack:
+
+```text
+SQLite blackbox
+→ structured event JSON / audit chain
+→ local Gemma MLX service
+→ OpenClaw/Hermes agent wrapper
+→ constrained draft JSON
+→ human review / Apple Notes / alert text
+```
 
 ### Input
 
-Gemma receives structured event JSON:
+Gemma receives structured event JSON and local audit context:
 
 ```json
 {
@@ -528,31 +541,46 @@ Gemma receives structured event JSON:
   "duration_seconds": 31,
   "severity": "high",
   "confidence": 0.87,
-  "status": "awaiting_acknowledgement"
+  "status": "human_confirmed",
+  "reviewer": "Steven",
+  "blocked_actions": ["autonomous_emergency_dispatch", "medical_diagnosis"]
 }
 ```
 
 ### Output
 
-Gemma returns constrained JSON:
+Gemma returns constrained draft JSON:
 
 ```json
 {
-  "caregiver_summary": "Possible floor-stay event in the Living Room. The person has been low in the configured floor zone for 31 seconds.",
-  "journal_entry": "10:22 AM — Possible floor-stay event observed in Living Room. Awaiting caregiver acknowledgement.",
-  "recommended_action": "notify_primary_caregiver"
+  "caregiver_summary": "A possible floor-stay event was confirmed in the Living Room.",
+  "apple_notes_entry": "CareSight confirmed a possible floor-stay event in the Living Room. Reviewed by Steven.",
+  "alert_draft": "CareSight confirmed a possible floor-stay event in the Living Room. Please review the local record and follow your care plan.",
+  "safety_boundaries": ["draft_only", "human_review_required"]
 }
 ```
 
 ### Safety boundary
 
-Gemma does not:
+Gemma/OpenClaw/Hermes does not:
 
 - analyze raw video
+- inspect raw snapshots unless a later explicit local image-summary scope is approved
+- confirm or dismiss events
 - decide medical status
 - directly dispatch emergency services
 - run arbitrary shell commands
 - override escalation policy
+- delete or rewrite SQLite records
+- claim medication was taken
+
+### Acceptance criteria
+
+- The model is served locally through an MLX runtime.
+- Inputs are structured event/audit JSON, not raw video.
+- Outputs are constrained JSON with purpose and provenance.
+- Apple Notes and caregiver alerts are draft-only unless a human approves a local automation.
+- Forbidden-action tests prove the agent cannot confirm, dismiss, dispatch, diagnose, delete, or become reviewer of record.
 
 ---
 
@@ -578,6 +606,94 @@ This is a strong value-add because it demonstrates:
 - same event engine
 
 Keep it optional.
+
+---
+
+## v2 stretch 6 — Daily Appearance Profiles
+
+### Purpose
+
+Give caregivers a local, practical last-seen description without claiming biometric identity.
+
+This is especially useful for wandering or missing-off-camera concerns, where a caregiver may need a quick answer to:
+
+```text
+Who was last seen?
+Where were they last seen?
+What were they wearing today?
+Was this likely the same tracked person as the prior room?
+```
+
+### Build
+
+Create daily, expiring appearance profiles from person observations:
+
+```text
+track_id
++ clothing color descriptors
++ visible accessories
++ carried objects
++ last seen room/camera/time
++ optional human-assigned role for the day
+= daily appearance profile
+```
+
+Example:
+
+```json
+{
+  "appearance_profile_id": "appearance_2026_05_20_001",
+  "role_assignment": "resident_primary",
+  "assignment_source": "human_confirmed",
+  "active_date": "2026-05-20",
+  "expires_at": "2026-05-21T04:00:00Z",
+  "attributes": {
+    "upper_body_color": { "value": "blue", "confidence": 0.72 },
+    "lower_body_color": { "value": "black", "confidence": 0.68 },
+    "headwear": { "value": "dark hat", "confidence": 0.66 },
+    "eyewear": { "value": "glasses", "confidence": 0.58 }
+  },
+  "last_seen": {
+    "camera_id": "hallway",
+    "room": "Hallway",
+    "timestamp": "2026-05-20T14:04:12Z",
+    "direction_hint": "toward front door"
+  }
+}
+```
+
+### Output wording
+
+Allowed:
+
+```text
+Likely same tracked person based on clothing, accessories, timing, and room transition.
+```
+
+```text
+Last seen in Hallway wearing a blue upper layer, dark hat, and black pants.
+```
+
+Not allowed:
+
+```text
+Identity confirmed.
+This is Steven.
+Biometric match.
+```
+
+### Acceptance criteria
+
+- Profiles are local-only SQLite records.
+- Profiles refresh daily and expire after a configured window.
+- Matching uses conservative confidence thresholds.
+- Human assignment can label a profile as resident/caregiver/visitor for the day.
+- Event language remains `likely`, `possible`, or `human assigned`.
+- No face recognition or durable biometric identity claim is introduced.
+
+### Demo line
+
+> “CareSight does not need to know a person’s identity to be helpful. It can remember today’s local appearance and last-seen context so a caregiver has a useful description when something feels wrong.”
 
 ---
 
@@ -725,3 +841,47 @@ The submitted build should be described as:
 Optional v2 line:
 
 > **With OBS and FaceTime handoff, CareSight can also switch the live caregiver view to the room where the event happened.**
+
+---
+
+# Open Questions
+
+Question: Should the hackathon demo default to the proof event or unresolved concerns?
+Suggested Answer: Default to a focused proof-event view and show unresolved concerns as a separate backlog.
+Rationale: Judges need a coherent loop, but the blackbox record should still expose unresolved state.
+
+Question: Should Gemma/OpenClaw/Hermes draft Apple Notes entries automatically?
+Suggested Answer: It should draft entries automatically, but appending to Apple Notes should require explicit local automation approval.
+Rationale: Drafting is low-risk and useful; writing to user-visible systems needs an audit boundary.
+
+Question: Should the LLM see raw video or snapshots?
+Suggested Answer: No for the next sprint. The LLM should only consume structured event JSON, audit chains, and bounded descriptors.
+Rationale: YOLO26 MLX owns perception, while the LLM owns wording and summarization.
+
+Question: Should Daily Appearance Profiles be part of v1 or v2?
+Suggested Answer: Treat them as the next major v2 value sprint after demo-surface and agent drafting are stable.
+Rationale: They are highly valuable but depend on reliable tracking, profile expiration, and careful safety language.
+
+Question: Should Daily Appearance Profiles identify named people?
+Suggested Answer: No. They should describe today’s local appearance and optional human-assigned role, not durable identity.
+Rationale: Clothing/accessory descriptors are not biometric identity and should refresh daily.
+
+Question: What is the right expiration window for appearance profiles?
+Suggested Answer: Same-day expiration with a configurable 12-18 hour active window.
+Rationale: This balances caregiver utility with the reality that clothing changes day to day.
+
+Question: Should multi-camera include discovery?
+Suggested Answer: Not yet. Use explicit local camera/RTSP configuration first.
+Rationale: Discovery adds network, credential, and privacy risk before it is needed for the room-to-room demo.
+
+Question: Should routine events claim medication taken or hydration completed?
+Suggested Answer: No. Use “routine likely observed” language and require human confirmation.
+Rationale: Vision can support care awareness, not medication adherence or health-state proof.
+
+Question: Should severity escalation trigger emergency dispatch?
+Suggested Answer: No. It may escalate draft messaging and FaceTime/text handoff prompts only.
+Rationale: CareSight remains a caregiver-awareness prototype, not an emergency dispatch or medical-device system.
+
+Question: Should old demo events be deleted to clean the dashboard?
+Suggested Answer: No. Add demo filters or archive/backlog states; deletion remains forbidden.
+Rationale: SQLite is the blackbox source of truth and should preserve audit history.

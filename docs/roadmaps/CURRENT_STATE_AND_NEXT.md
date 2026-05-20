@@ -16,10 +16,16 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - v0 eventization implementation: `docs/audits/2026-05-18-v0-eventization-implementation.md`.
 - v0 review and acknowledgement CLI: `apps/caresight-hub/scripts/v0_review_events.py`.
 - Durable CLI registry: `docs/cli/COMMANDS.md`.
+- v0 SQLite audit command: `python apps/caresight-hub/scripts/v0_review_events.py audit <event_id>`.
+- CareSight-owned inference harness: `apps/caresight-hub/caresight/runtime/inference/`.
+- Deterministic tracking foundation: `apps/caresight-hub/caresight/runtime/tracking/` with `track_id` event-observation persistence.
+- Deterministic v1 routine policies: `medication_routine_likely_observed` and `hydration_routine_likely_observed`.
+- Live proof event `evt_d9aa38bdc636459c92ea4e25f665cd0d` completed the v0 blackbox loop: live floor-zone observation, SQLite event and observation with `track_id`, authorized human confirmation, journal row, report-only handoff row, focused dashboard view, caregiver alert draft, and complete live-proof bundle.
+- YOLO26 image smoke now reports human-readable COCO labels plus machine-readable `class_id` in normalized observations.
 
 ## Immediate Next Action
 
-Prove the v0 review and acknowledgement loop:
+Consolidate the validated demo surface and prepare the next sprint lane. The v0 review and acknowledgement loop is now proven for the confirmed live proof event:
 
 ```text
 possible_floor_stay event
@@ -31,8 +37,15 @@ possible_floor_stay event
   -> agent-ready handoff record
 ```
 
+Recommended next command for a clean demo view:
+
+```bash
+python3 apps/caresight-hub/scripts/care_console.py dashboard --event-id evt_d9aa38bdc636459c92ea4e25f665cd0d
+```
+
 ## Recommended Workstreams
 
+- Demo surface steward: keep the focused dashboard, journal preview, alert draft, and audit output centered on the selected proof event while preserving the separate awaiting-review backlog.
 - Contract steward: keep `possible_floor_stay` aligned with `contracts/schemas/care-event.schema.json`.
 - Runtime steward: add the Python v0 loop behind the existing `apps/caresight-hub/` boundary.
 - Storage steward: add the minimal SQLite schema and one insert/readback path.
@@ -44,13 +57,207 @@ possible_floor_stay event
 
 1. Run `python apps/caresight-hub/scripts/v0_floor_stay_live.py`.
 2. Tune `apps/caresight-hub/config/v0.local.json` if the floor zone is too large or too small.
-3. Confirm `event_persisted` prints once per continuous floor-zone dwell.
+3. Confirm `event_persisted` prints once per continuous same-track floor-zone dwell.
 4. Inspect `apps/caresight-hub/data/caresight-v0.sqlite3`.
 5. Run `python apps/caresight-hub/scripts/v0_review_events.py list`.
 6. Run `python apps/caresight-hub/scripts/v0_review_events.py show <event_id>`.
 7. Confirm or dismiss with an authorized reviewer.
-8. Verify `event_reviews`, `journal_entries`, and `agent_handoffs` rows exist.
-9. Promote the verified command and observed output into a follow-up audit receipt.
+8. Run `python apps/caresight-hub/scripts/v0_review_events.py audit <event_id>`.
+9. Verify `event_observations.track_id`, `event_reviews`, `journal_entries`, and `agent_handoffs` rows exist with reviewer, timestamps, status, and report-only handoff state.
+10. Promote the verified command and observed output into a follow-up audit receipt.
+
+Status: completed for the current tranche. See `docs/audits/2026-05-20-t041-final-live-proof.md`.
+
+## Next Sprint Candidates
+
+### 1. Demo Surface Consolidation
+
+Goal: make the proof story clean and repeatable for judges and future agents.
+
+Scope:
+
+- Keep `dashboard --event-id <event_id>` as the primary demo path.
+- Add a human-review packet command for compact approval decisions.
+- Separate stale awaiting-review demo rows from the focused proof event.
+- Export one markdown or JSON blackbox receipt from SQLite for a chosen event.
+
+Recommended answer to ambiguity: stale events should remain visible as an audit backlog, but not drive the focused demo view.
+
+### 2. Agent/LLM Drafting Layer
+
+Goal: add a local, constrained language layer that turns SQLite-backed event records into caregiver-friendly drafts without gaining authority over review decisions or raw video.
+
+Architecture:
+
+```text
+SQLite blackbox
+  -> structured event JSON / audit chain
+  -> local Gemma MLX summarizer
+  -> OpenClaw/Hermes agent wrapper
+  -> draft-only outputs
+  -> human review / Apple Notes / alert text
+```
+
+Scope:
+
+- Serve a local MLX Gemma model for summary generation.
+- Send only structured event JSON, audit chains, journal rows, review state, handoff payloads, and bounded appearance summaries to the model.
+- Produce constrained JSON outputs for caregiver summaries, Apple Notes entries, alert drafts, handoff packets, and audit summaries.
+- Add forbidden-action tests proving agents cannot confirm, dismiss, delete, dispatch, diagnose, inspect raw video, or claim medication was taken.
+- Preserve provenance and purpose on every generated draft.
+
+Example input:
+
+```json
+{
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "event_type": "possible_floor_stay",
+  "status": "human_confirmed",
+  "room": "Living Room",
+  "reviewer": "Steven",
+  "journal_entries": 1,
+  "agent_handoffs": 1,
+  "blocked_actions": ["autonomous_emergency_dispatch", "medical_diagnosis"]
+}
+```
+
+Example output:
+
+```json
+{
+  "caregiver_summary": "A possible floor-stay event was confirmed in the Living Room. The local record includes a snapshot, human review, journal entry, and report-only handoff.",
+  "apple_notes_entry": "CareSight confirmed a possible floor-stay event in the Living Room. Reviewed by Steven. No autonomous emergency dispatch or medical diagnosis was performed.",
+  "alert_draft": "CareSight confirmed a possible floor-stay event in the Living Room. Please review the local record and follow your care plan.",
+  "safety_boundaries": ["draft_only", "human_review_required"]
+}
+```
+
+Recommended answer to ambiguity: the agent may propose wording and packets, but only SQLite records and authorized human review state are canonical.
+
+### 3. Daily Appearance Profiles
+
+Goal: add non-biometric, local-only person continuity for caregiving context.
+
+Value:
+
+- Helps caregivers answer “who was last seen where, wearing what?”
+- Supports missing-off-camera and wandering narratives.
+- Gives useful descriptions during stressful moments without claiming biometric identity.
+
+Scope:
+
+- Store daily, expiring appearance profiles in SQLite.
+- Derive temporary descriptors from person observations, such as upper/lower clothing color, visible accessories, carried objects, last seen room, last seen time, and last seen event.
+- Link tracks with conservative “likely same tracked person” confidence, not definitive identity.
+- Allow human role assignment for the day, such as `resident_primary`, `caregiver_known`, `visitor_unknown`, or `unknown_person`.
+- Refresh profiles each day and expire active matching after a configurable window.
+
+Example profile:
+
+```json
+{
+  "appearance_profile_id": "appearance_2026_05_20_001",
+  "role_assignment": "resident_primary",
+  "assignment_source": "human_confirmed",
+  "active_date": "2026-05-20",
+  "expires_at": "2026-05-21T04:00:00Z",
+  "attributes": {
+    "upper_body_color": { "value": "dark gray", "confidence": 0.78 },
+    "lower_body_color": { "value": "gray", "confidence": 0.70 },
+    "eyewear": { "value": "glasses", "confidence": 0.64 },
+    "headwear": { "value": "none", "confidence": 0.58 }
+  },
+  "last_seen": {
+    "camera_id": "living_room",
+    "room": "Living Room",
+    "timestamp": "2026-05-20T02:36:31Z",
+    "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d"
+  }
+}
+```
+
+Recommended answer to ambiguity: clothing and accessories are daily appearance memory, not durable identity. CareSight may say “likely same tracked person” or “resident-assigned profile for today,” but not “this is Steven” unless a later explicit local enrollment feature is added.
+
+### 4. Tracking Reliability Upgrade
+
+Goal: make floor-stay and missing-off-camera behavior more resilient in multi-person scenes.
+
+Scope:
+
+- Trigger floor-stay from the same `track_id` staying low for configured durations.
+- Add severity scaling, such as early concern, prolonged concern, and critical attention.
+- Add occlusion grace and dedupe tests for get-up/fall-again behavior.
+- Feed daily appearance profiles with track continuity but keep identity claims bounded.
+
+Recommended answer to ambiguity: default to conservative, configurable thresholds and no autonomous emergency dispatch.
+
+### 5. Multi-Camera Narrative Proof
+
+Goal: support the stronger story that a person moved from one room to another, then an event occurred.
+
+Scope:
+
+- Configure two local cameras or one webcam plus one RTSP source.
+- Keep local-only camera rules; no Ring/Nest/cloud provider path.
+- Group dashboard timeline by room and camera.
+- Use track continuity and daily appearance profiles only as likely continuity signals.
+
+Recommended answer to ambiguity: two configured local sources are enough for v1/v2; defer ONVIF discovery and LAN scanning.
+
+### 6. Routine Event Demo
+
+Goal: demonstrate medication and hydration routine events without overclaiming.
+
+Scope:
+
+- Use person + object label + routine zone + routine window.
+- Keep event names `medication_routine_likely_observed` and `hydration_routine_likely_observed`.
+- Require human confirmation.
+- Add review packet examples and journal language.
+
+Recommended answer to ambiguity: never say “medication taken” or “hydration completed”; say the routine was likely observed.
+
+## Open Questions
+
+Question: Should the dashboard default to the latest confirmed proof event or the oldest awaiting-review concern?
+Suggested Answer: Default to latest confirmed proof event for demo mode, while keeping awaiting-review concerns in a separate backlog lane.
+Rationale: The demo narrative should be clean and auditable, but unresolved events should remain visible rather than hidden.
+
+Question: Should agents be allowed to recommend confirm or dismiss decisions?
+Suggested Answer: Agents may recommend and draft a human review packet, but may not execute confirm or dismiss or become reviewer of record.
+Rationale: Recommendations reduce operator burden while preserving the project’s human-authority boundary.
+
+Question: Should the local Gemma/OpenClaw/Hermes layer inspect raw video or snapshots?
+Suggested Answer: No for v1/v2. It should consume structured JSON, audit chains, journal rows, and bounded descriptors only.
+Rationale: YOLO26 MLX is the vision lane; the LLM layer is a drafting and audit-assistance lane.
+
+Question: Should Apple Notes writes be automatic?
+Suggested Answer: Stage Apple Notes text as a draft first, then optionally allow a human-approved local automation to append it.
+Rationale: Draft-first behavior keeps provenance clear and avoids silent changes to external user-visible records.
+
+Question: Should Daily Appearance Profiles identify named people?
+Suggested Answer: No. Use daily, human-assigned roles such as `resident_primary`, `caregiver_known`, `visitor_unknown`, and `unknown_person`.
+Rationale: Clothing/accessory descriptors are useful caregiver context but are not durable biometric identity.
+
+Question: How long should daily appearance profiles remain active?
+Suggested Answer: Default to same-day expiration with a configurable 12-18 hour active window.
+Rationale: Clothing changes frequently; stale descriptors can mislead caregivers during a high-stress event.
+
+Question: Should multi-camera support include LAN discovery or ONVIF now?
+Suggested Answer: No. Use two explicitly configured local sources first, then evaluate ONVIF discovery later.
+Rationale: Discovery adds credential, privacy, and network-scanning complexity before the two-room demo story needs it.
+
+Question: Should the system claim medication or hydration completion?
+Suggested Answer: No. Keep event names and copy at `medication_routine_likely_observed` and `hydration_routine_likely_observed`.
+Rationale: Vision can observe routine context, but cannot safely confirm ingestion or health state.
+
+Question: Should older stale awaiting-review demo events be dismissed, archived, or left untouched?
+Suggested Answer: Add an archive/backlog state or demo filter rather than deleting records; dismiss only with explicit human review.
+Rationale: SQLite is the blackbox source of truth, so old records should remain auditable while the demo avoids confusing them with proof events.
+
+Question: Should severity escalation ever trigger emergency dispatch?
+Suggested Answer: No for hackathon core. Escalation can draft text and suggest FaceTime/text handoff, but cannot dispatch.
+Rationale: The project is a caregiver-awareness prototype, not a medical device or emergency response system.
 
 ## Validation Before Advancing
 
@@ -70,4 +277,4 @@ npm run check
 - HIPAA claims.
 - autonomous emergency dispatch.
 - cloud raw-video upload defaults.
-- multi-camera support before v0 works.
+- biometric identity recognition or face recognition without an explicit future local-enrollment decision.
