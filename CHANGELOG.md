@@ -6,6 +6,7 @@
 - Added a fake agent provider boundary that stores validated and blocked drafts in local SQLite without calling Gemma, OpenClaw, TTS, or external services.
 - Added Care Console commands for fake-provider agent drafts and staged-only action requests, including list/readback coverage and documentation.
 - Downloaded the selected Gemma/Holler MLX model candidates into the ignored local runtime model directory and recorded an audit receipt.
+- Reorganized local model artifacts into purpose lanes for vision, reasoning, and TTS.
 - Clarified that OpenClaw/Hermes are not installed agent surfaces yet; they remain future wrappers behind CareSight action-request policy.
 
 ## 2026-05-20

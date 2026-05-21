@@ -116,6 +116,6 @@ Rationale: OpenClaw and Hermes are useful because they provide service integrati
 
 ## 2026-05-21: Keep Downloaded MLX Models Local and Ignored
 
-Gemma and Holler MLX model artifacts are local runtime dependencies under `apps/caresight-hub/models/` and are ignored by Git. Repo commits should track manifests, audit notes, config, and integration code, not multi-gigabyte model weights.
+Gemma and Holler MLX model artifacts are local runtime dependencies under `apps/caresight-hub/models/` and are ignored by Git. The local model folder is organized by purpose lane: `vision/yolo26-mlx/`, `reasoning/gemma/`, and `tts/holler/`. Repo commits should track manifests, audit notes, config, and integration code, not multi-gigabyte model weights.
 
-Rationale: the hackathon appliance needs local model availability, but public Git history should stay portable and avoid committing large generated artifacts.
+Rationale: the hackathon appliance needs local model availability, but public Git history should stay portable and avoid committing large generated artifacts. Purpose lanes keep future provider code from treating every MLX artifact as interchangeable.

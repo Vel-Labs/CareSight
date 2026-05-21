@@ -27,7 +27,7 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - Sprint 02 agent-assist contracts are complete for this tranche: `agent-draft`, `agent-action-request`, `tts-utterance`, and `forbidden-claim-vocabulary` schemas/examples validate through the contract corpus.
 - The Sprint 02 fake provider is complete for this tranche: validated and blocked agent drafts are stored in SQLite through `agent_drafts`, with forbidden-claim reasons and safe rewrites for blocked drafts.
 - Sprint 02 action-request staging is complete for this tranche: `care_console.py agent-draft`, `stage-action-request`, and `list-action-requests` write and inspect local SQLite rows only. Staged requests remain `not_executed` and require human approval.
-- Local model candidates have been downloaded under ignored `apps/caresight-hub/models/mlx/` directories for follow-up provider benchmarking: Gemma E2B 4-bit, Gemma E4B 4-bit, Holler 0.6B, and Holler 0.6B 6-bit.
+- Local model candidates have been downloaded under ignored purpose lanes for follow-up provider benchmarking: `models/vision/yolo26-mlx/`, `models/reasoning/gemma/`, and `models/tts/holler/`.
 - OpenClaw/Hermes have not been installed or wired yet. They remain future service-capable wrappers behind CareSight-owned action-request policy for Apple Notes, iMessage, FaceTime, OBS, and TTS.
 
 ## Immediate Next Action

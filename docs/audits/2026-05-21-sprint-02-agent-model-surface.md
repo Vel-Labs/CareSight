@@ -25,16 +25,28 @@ The service-capable agent surface remains a follow-up integration: OpenClaw/Herm
 
 ## Local Model Downloads
 
-The following model artifacts were downloaded into ignored local runtime paths:
+The following model artifacts were downloaded into ignored local runtime paths, grouped by purpose lane:
 
 | Model | Local path | Local size |
 | --- | --- | ---: |
-| `mlx-community/gemma-4-e2b-it-4bit` | `apps/caresight-hub/models/mlx/gemma-4-e2b-it-4bit` | 3.4G |
-| `mlx-community/gemma-4-e4b-it-4bit` | `apps/caresight-hub/models/mlx/gemma-4-e4b-it-4bit` | 4.9G |
-| `sentiuminc/holler-0.6b` | `apps/caresight-hub/models/mlx/holler-0.6b` | 2.3G |
-| `sentiuminc/holler-0.6b-6bit` | `apps/caresight-hub/models/mlx/holler-0.6b-6bit` | 1.7G |
+| YOLO26 MLX converted model | `apps/caresight-hub/models/vision/yolo26-mlx/converted/yolo26n.npz` | symlink to vendored YOLO model cache |
+| YOLO26 MLX upstream cache | `apps/caresight-hub/models/vision/yolo26-mlx/upstream/models` | symlink to vendored YOLO model cache |
+| `mlx-community/gemma-4-e2b-it-4bit` | `apps/caresight-hub/models/reasoning/gemma/gemma-4-e2b-it-4bit` | 3.4G |
+| `mlx-community/gemma-4-e4b-it-4bit` | `apps/caresight-hub/models/reasoning/gemma/gemma-4-e4b-it-4bit` | 4.9G |
+| `sentiuminc/holler-0.6b` | `apps/caresight-hub/models/tts/holler/holler-0.6b` | 2.3G |
+| `sentiuminc/holler-0.6b-6bit` | `apps/caresight-hub/models/tts/holler/holler-0.6b-6bit` | 1.7G |
 
 Model artifacts are intentionally ignored by Git through `apps/caresight-hub/models/`.
+
+## Model Lane Contract
+
+Use these lanes for future local model setup and provider code:
+
+- `apps/caresight-hub/models/vision/yolo26-mlx/`: vision models and symlinks for YOLO26 MLX.
+- `apps/caresight-hub/models/reasoning/gemma/`: Gemma MLX reasoning/summarization candidates.
+- `apps/caresight-hub/models/tts/holler/`: Holler MLX text-to-speech candidates.
+
+Provider code should reference purpose lanes instead of a generic `models/mlx/` bucket.
 
 ## Recommendation
 
@@ -47,7 +59,9 @@ Do not wire either model into caregiver-visible actions until the provider task 
 ## Validation
 
 - `npm run check`: passed before this audit correction.
-- `apps/caresight-hub/models/mlx/*`: present locally after `hf download`.
+- `apps/caresight-hub/models/reasoning/gemma/*`: present locally after `hf download`.
+- `apps/caresight-hub/models/tts/holler/*`: present locally after `hf download`.
+- `apps/caresight-hub/models/vision/yolo26-mlx/*`: present locally as purpose-lane symlinks to the existing YOLO26 model cache.
 - `git status --ignored apps/caresight-hub/models`: model directories are ignored after the `.gitignore` update.
 
 ## Remaining Gate
