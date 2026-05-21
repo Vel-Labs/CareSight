@@ -403,6 +403,7 @@ docs/roadmaps/caresight_sprint_pack/05-sprint-multi-camera-narrative-proof.md
 docs/roadmaps/caresight_sprint_pack/06-sprint-routine-event-demo.md
 docs/roadmaps/caresight_sprint_pack/07-contract-json-pack.md
 docs/roadmaps/caresight_sprint_pack/08-readme-product-shape.md
+docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md
 docs/roadmaps/caresight_sprint_pack/README.md
 docs/roadmaps/features/feature-01-core-primitive.md
 docs/roadmaps/features/future-care-facility.md

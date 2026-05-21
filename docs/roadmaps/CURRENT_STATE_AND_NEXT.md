@@ -121,12 +121,14 @@ Sprint pack index:
 - [`06-sprint-routine-event-demo.md`](caresight_sprint_pack/06-sprint-routine-event-demo.md) - medication and hydration likely-observed routine demo.
 - [`07-contract-json-pack.md`](caresight_sprint_pack/07-contract-json-pack.md) - contract continuity audit source pack for checking the schemas absorbed into earlier implementation sprints.
 - [`08-readme-product-shape.md`](caresight_sprint_pack/08-readme-product-shape.md) - product story, README copy, value-adds, and demo narrative.
+- [`09-sprint-01-02-production-validation.md`](caresight_sprint_pack/09-sprint-01-02-production-validation.md) - production-readiness checklist for Sprint 01 and Sprint 02 seeded-real A/B validation.
 
 Sprint pack review:
 
 - The pack is aligned with the current CareSight ethos: contracts and SQLite remain canonical, YOLO26 MLX remains the vision lane, agents remain draft/report-only, and external adapters are downstream of policy.
 - Treat [`00-master-codex-prompt.md`](caresight_sprint_pack/00-master-codex-prompt.md) as a boundary document, not a mandate to implement all six workstreams in one change. Execute one sprint at a time, starting with Sprint 01.
 - Treat [`07-contract-json-pack.md`](caresight_sprint_pack/07-contract-json-pack.md) as a contract audit/checkpoint, not a standalone build sprint. Each implementation sprint absorbs the contract pieces it needs before runtime work; Sprint 07 later validates continuity across the absorbed schemas, examples, validators, runtime outputs, and docs.
+- Treat [`09-sprint-01-02-production-validation.md`](caresight_sprint_pack/09-sprint-01-02-production-validation.md) as the current production-readiness gate before claiming Sprint 01 or Sprint 02 complete under the production standard.
 - Hardware, model, pricing, and external-tool claims in the sprint pack are roadmap guidance only. Re-check live sources before using them in purchase recommendations, marketing copy, or proof claims.
 
 Recommended execution order:

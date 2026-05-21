@@ -21,14 +21,15 @@ This pack is written to be pasted directly into Codex sessions or copied into `d
 7. `06-sprint-routine-event-demo.md` — medication/hydration routine demo without overclaiming.
 8. `07-contract-json-pack.md` — contract continuity audit source pack for checking absorbed schema work.
 9. `08-readme-product-shape.md` — product story, README copy, value-adds, and demo narrative.
+10. `09-sprint-01-02-production-validation.md` — production-readiness checklist for Sprint 01 and Sprint 02 seeded-real A/B validation.
 
 ## Recommended execution order
 
 ```text
-01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08
+01 -> 02 -> 09 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08
 ```
 
-Use `07-contract-json-pack.md` as a contract continuity audit after the implementation layers have absorbed the contract pieces they consume. Sprint 01 owns `human-review-packet` and `blackbox-receipt`; Sprint 02 owns `agent-draft`, `agent-action-request`, `tts-utterance`, and forbidden claim/action vocabulary; Sprint 03 owns `appearance-profile`.
+Use `09-sprint-01-02-production-validation.md` after Sprint 01 and Sprint 02 implementation work to avoid treating fixtures, templates, fake providers, or dry-run payloads as production-ready. Use `07-contract-json-pack.md` as a contract continuity audit after the implementation layers have absorbed the contract pieces they consume. Sprint 01 owns `human-review-packet` and `blackbox-receipt`; Sprint 02 owns `agent-draft`, `agent-action-request`, `tts-utterance`, and forbidden claim/action vocabulary; Sprint 03 owns `appearance-profile`.
 
 ## Global rule
 

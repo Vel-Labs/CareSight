@@ -13,6 +13,7 @@
 - Updated scaffold validation so upstream Hermes submodule files are treated as external vendor content rather than CareSight-owned placeholder/file-tree material.
 - Added staged Hermes handoff payloads with escalation level, emergency-contact allowlists, and bounded response options for text updates, local screen capture by request, and FaceTime handoff by request.
 - Corrected Sprint 01/Sprint 02 status language to distinguish implemented staging surfaces from production-ready operation and listed the remaining human/runtime gates.
+- Added a Sprint 01/02 production validation checklist for seeded-real A/B validation, Sprint 02 product requirements, and production acceptance gates.
 
 ## 2026-05-20
 
