@@ -314,6 +314,120 @@ class SQLiteStore:
             handoffs.append(handoff)
         return handoffs
 
+    def insert_agent_draft(self, draft: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            event_row = conn.execute(
+                "SELECT event_id FROM events WHERE event_id = ?",
+                (draft["event_id"],),
+            ).fetchone()
+            if event_row is None:
+                raise KeyError(draft["event_id"])
+            conn.execute(
+                """
+                INSERT INTO agent_drafts (
+                  draft_id,
+                  event_id,
+                  created_at,
+                  provider,
+                  purpose,
+                  validation_status,
+                  draft_text,
+                  safe_rewrite,
+                  blocked_claims_json,
+                  safety_boundaries_json,
+                  provenance_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    draft["draft_id"],
+                    draft["event_id"],
+                    draft["created_at"],
+                    draft["provider"],
+                    draft["purpose"],
+                    draft["validation_status"],
+                    draft["draft_text"],
+                    draft.get("safe_rewrite"),
+                    json.dumps(draft["blocked_claims"], sort_keys=True),
+                    json.dumps(draft["safety_boundaries"], sort_keys=True),
+                    json.dumps(draft["provenance"], sort_keys=True),
+                ),
+            )
+
+    def list_agent_drafts(self, event_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM agent_drafts
+                WHERE event_id = ?
+                ORDER BY created_at, draft_id
+                """,
+                (event_id,),
+            ).fetchall()
+        return [agent_draft_from_row(row) for row in rows]
+
+    def get_agent_draft(self, draft_id: str) -> dict[str, Any]:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM agent_drafts WHERE draft_id = ?",
+                (draft_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(draft_id)
+        return agent_draft_from_row(row)
+
+    def insert_agent_action_request(self, request: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            draft_row = conn.execute(
+                "SELECT draft_id FROM agent_drafts WHERE draft_id = ? AND event_id = ?",
+                (request["source_draft_id"], request["event_id"]),
+            ).fetchone()
+            if draft_row is None:
+                raise KeyError(request["source_draft_id"])
+            conn.execute(
+                """
+                INSERT INTO agent_action_requests (
+                  request_id,
+                  event_id,
+                  created_at,
+                  requested_action,
+                  stage,
+                  execution_state,
+                  requires_human_approval,
+                  source_draft_id,
+                  destination,
+                  safety_boundaries_json,
+                  provenance_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    request["request_id"],
+                    request["event_id"],
+                    request["created_at"],
+                    request["requested_action"],
+                    request["stage"],
+                    request["execution_state"],
+                    int(request["requires_human_approval"]),
+                    request["source_draft_id"],
+                    request.get("destination"),
+                    json.dumps(request["safety_boundaries"], sort_keys=True),
+                    json.dumps(request["provenance"], sort_keys=True),
+                ),
+            )
+
+    def list_agent_action_requests(self, event_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM agent_action_requests
+                WHERE event_id = ?
+                ORDER BY created_at, request_id
+                """,
+                (event_id,),
+            ).fetchall()
+        return [agent_action_request_from_row(row) for row in rows]
+
     def _insert_event_observation(self, conn: sqlite3.Connection, event: dict[str, Any]) -> None:
         evidence = event["evidence"]
         bbox = evidence.get("bbox_xyxy")
@@ -451,6 +565,41 @@ def event_from_row(row: sqlite3.Row) -> dict[str, Any]:
         "allowed_actions": json.loads(row["allowed_actions_json"]),
         "blocked_actions": json.loads(row["blocked_actions_json"]),
         "evidence": json.loads(row["evidence_json"]),
+    }
+
+
+def agent_draft_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "schema": "agent-draft",
+        "draft_id": row["draft_id"],
+        "event_id": row["event_id"],
+        "created_at": row["created_at"],
+        "provider": row["provider"],
+        "source_of_truth": "sqlite",
+        "purpose": row["purpose"],
+        "validation_status": row["validation_status"],
+        "draft_text": row["draft_text"],
+        "safe_rewrite": row["safe_rewrite"],
+        "blocked_claims": json.loads(row["blocked_claims_json"]),
+        "safety_boundaries": json.loads(row["safety_boundaries_json"]),
+        "provenance": json.loads(row["provenance_json"]),
+    }
+
+
+def agent_action_request_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "schema": "agent-action-request",
+        "request_id": row["request_id"],
+        "event_id": row["event_id"],
+        "created_at": row["created_at"],
+        "requested_action": row["requested_action"],
+        "stage": row["stage"],
+        "execution_state": row["execution_state"],
+        "requires_human_approval": bool(row["requires_human_approval"]),
+        "source_draft_id": row["source_draft_id"],
+        "destination": row["destination"],
+        "safety_boundaries": json.loads(row["safety_boundaries_json"]),
+        "provenance": json.loads(row["provenance_json"]),
     }
 
 

@@ -82,3 +82,31 @@ CREATE TABLE IF NOT EXISTS agent_handoffs (
   status TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS agent_drafts (
+  draft_id TEXT PRIMARY KEY,
+  event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  purpose TEXT NOT NULL,
+  validation_status TEXT NOT NULL CHECK(validation_status IN ('validated', 'blocked')),
+  draft_text TEXT NOT NULL,
+  safe_rewrite TEXT,
+  blocked_claims_json TEXT NOT NULL,
+  safety_boundaries_json TEXT NOT NULL,
+  provenance_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS agent_action_requests (
+  request_id TEXT PRIMARY KEY,
+  event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  requested_action TEXT NOT NULL,
+  stage TEXT NOT NULL CHECK(stage = 'staged'),
+  execution_state TEXT NOT NULL CHECK(execution_state = 'not_executed'),
+  requires_human_approval INTEGER NOT NULL,
+  source_draft_id TEXT NOT NULL REFERENCES agent_drafts(draft_id) ON DELETE CASCADE,
+  destination TEXT,
+  safety_boundaries_json TEXT NOT NULL,
+  provenance_json TEXT NOT NULL
+);

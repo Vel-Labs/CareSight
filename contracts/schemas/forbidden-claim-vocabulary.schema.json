@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/forbidden-claim-vocabulary.schema.json",
+  "title": "ForbiddenClaimVocabulary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "vocabulary_id", "version", "claims", "bounded_replacements"],
+  "properties": {
+    "schema": {
+      "const": "forbidden-claim-vocabulary"
+    },
+    "vocabulary_id": {
+      "type": "string",
+      "pattern": "^forbidden_claims_[a-z0-9_-]+$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+$"
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim_id", "category", "blocked_phrases", "reason"],
+        "properties": {
+          "claim_id": {
+            "type": "string",
+            "pattern": "^claim_[a-z0-9_]+$"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "medical_device",
+              "hipaa_compliance",
+              "autonomous_emergency_dispatch",
+              "medication_administration",
+              "vision_overcertainty"
+            ]
+          },
+          "blocked_phrases": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 3
+            }
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10
+          }
+        }
+      },
+      "contains": {
+        "type": "object",
+        "required": ["category"],
+        "properties": {
+          "category": {
+            "const": "autonomous_emergency_dispatch"
+          }
+        }
+      }
+    },
+    "bounded_replacements": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "possible event",
+          "likely observed",
+          "requires human review",
+          "authorized human confirmed",
+          "local record available"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "possible event"
+          }
+        },
+        {
+          "contains": {
+            "const": "requires human review"
+          }
+        }
+      ]
+    }
+  }
+}

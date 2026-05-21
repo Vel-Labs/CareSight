@@ -1,0 +1,17 @@
+{
+  "schema": "tts-utterance",
+  "utterance_id": "tts_evt_bad_medication",
+  "event_id": "evt_bad_medication",
+  "created_at": "2026-05-20T03:18:00Z",
+  "provider": "fake",
+  "source_draft_id": "draft_evt_bad_medication",
+  "text": "Medication was taken and confirmed medication adherence is complete.",
+  "voice_policy": "neutral_system_voice",
+  "validation_status": "validated",
+  "safety_boundaries": [
+    "draft_only",
+    "human_review_required",
+    "no_voice_cloning",
+    "no_autonomous_dispatch"
+  ]
+}

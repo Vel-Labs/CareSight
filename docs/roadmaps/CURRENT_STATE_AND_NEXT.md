@@ -22,10 +22,23 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - Deterministic v1 routine policies: `medication_routine_likely_observed` and `hydration_routine_likely_observed`.
 - Live proof event `evt_d9aa38bdc636459c92ea4e25f665cd0d` completed the v0 blackbox loop: live floor-zone observation, SQLite event and observation with `track_id`, authorized human confirmation, journal row, report-only handoff row, focused dashboard view, caregiver alert draft, and complete live-proof bundle.
 - YOLO26 image smoke now reports human-readable COCO labels plus machine-readable `class_id` in normalized observations.
+- Sprint 01 contract-backed demo surfaces are complete: `human-review-packet` and `blackbox-receipt` contracts exist, read-only demo-surface builders derive from SQLite audit chains, and `care_console.py` exposes `review-packet` and `blackbox-receipt` as agent-safe read commands.
+- Sprint 01 demo surface audit receipt: `docs/audits/2026-05-20-sprint-01-demo-surface.md`.
+- Sprint 02 agent-assist contracts are complete for this tranche: `agent-draft`, `agent-action-request`, `tts-utterance`, and `forbidden-claim-vocabulary` schemas/examples validate through the contract corpus.
+- The Sprint 02 fake provider is complete for this tranche: validated and blocked agent drafts are stored in SQLite through `agent_drafts`, with forbidden-claim reasons and safe rewrites for blocked drafts.
+- Sprint 02 action-request staging is complete for this tranche: `care_console.py agent-draft`, `stage-action-request`, and `list-action-requests` write and inspect local SQLite rows only. Staged requests remain `not_executed` and require human approval.
+- Local model candidates have been downloaded under ignored `apps/caresight-hub/models/mlx/` directories for follow-up provider benchmarking: Gemma E2B 4-bit, Gemma E4B 4-bit, Holler 0.6B, and Holler 0.6B 6-bit.
+- OpenClaw/Hermes have not been installed or wired yet. They remain future service-capable wrappers behind CareSight-owned action-request policy for Apple Notes, iMessage, FaceTime, OBS, and TTS.
 
 ## Immediate Next Action
 
-Consolidate the validated demo surface and prepare the next sprint lane. The v0 review and acknowledgement loop is now proven for the confirmed live proof event:
+Consolidate the validated demo surface and prepare the next sprint lane from the CareSight sprint pack.
+
+Primary sprint entrypoint: [`docs/roadmaps/caresight_sprint_pack/00-master-codex-prompt.md`](caresight_sprint_pack/00-master-codex-prompt.md).
+
+Recommended first implementation lane: [`docs/roadmaps/caresight_sprint_pack/01-sprint-demo-surface-consolidation.md`](caresight_sprint_pack/01-sprint-demo-surface-consolidation.md).
+
+The v0 review and acknowledgement loop is now proven for the confirmed live proof event:
 
 ```text
 possible_floor_stay event
@@ -41,11 +54,13 @@ Recommended next command for a clean demo view:
 
 ```bash
 python3 apps/caresight-hub/scripts/care_console.py dashboard --event-id evt_d9aa38bdc636459c92ea4e25f665cd0d
+python3 apps/caresight-hub/scripts/care_console.py review-packet evt_d9aa38bdc636459c92ea4e25f665cd0d --format markdown
+python3 apps/caresight-hub/scripts/care_console.py blackbox-receipt evt_d9aa38bdc636459c92ea4e25f665cd0d --format markdown
 ```
 
 ## Recommended Workstreams
 
-- Demo surface steward: keep the focused dashboard, journal preview, alert draft, and audit output centered on the selected proof event while preserving the separate awaiting-review backlog.
+- Demo surface steward: execute [`Sprint 01 - Demo Surface Consolidation`](caresight_sprint_pack/01-sprint-demo-surface-consolidation.md) by keeping the focused dashboard, journal preview, alert draft, review packet, and blackbox receipt centered on the selected proof event while preserving the separate awaiting-review backlog.
 - Contract steward: keep `possible_floor_stay` aligned with `contracts/schemas/care-event.schema.json`.
 - Runtime steward: add the Python v0 loop behind the existing `apps/caresight-hub/` boundary.
 - Storage steward: add the minimal SQLite schema and one insert/readback path.
@@ -70,7 +85,40 @@ Status: completed for the current tranche. See `docs/audits/2026-05-20-t041-fina
 
 ## Next Sprint Candidates
 
-### 1. Demo Surface Consolidation
+Sprint pack index:
+
+- [`README.md`](caresight_sprint_pack/README.md) - pack overview and global rule.
+- [`00-master-codex-prompt.md`](caresight_sprint_pack/00-master-codex-prompt.md) - full sprint prompt, boundaries, implementation order, and validation expectations.
+- [`01-sprint-demo-surface-consolidation.md`](caresight_sprint_pack/01-sprint-demo-surface-consolidation.md) - focused dashboard, review packet, blackbox receipt, and stale-backlog handling.
+- [`02-sprint-agent-llm-drafting-layer.md`](caresight_sprint_pack/02-sprint-agent-llm-drafting-layer.md) - local fake/Gemma drafting, action requests, TTS staging, and forbidden-action tests.
+- [`03-sprint-daily-appearance-profiles.md`](caresight_sprint_pack/03-sprint-daily-appearance-profiles.md) - non-biometric same-day appearance continuity.
+- [`04-sprint-tracking-reliability-upgrade.md`](caresight_sprint_pack/04-sprint-tracking-reliability-upgrade.md) - same-track dwell, occlusion grace, dedupe, missing-off-camera, and escalation-stage evidence.
+- [`05-sprint-multi-camera-narrative-proof.md`](caresight_sprint_pack/05-sprint-multi-camera-narrative-proof.md) - explicit local multi-camera narrative proof without cloud providers or discovery.
+- [`06-sprint-routine-event-demo.md`](caresight_sprint_pack/06-sprint-routine-event-demo.md) - medication and hydration likely-observed routine demo.
+- [`07-contract-json-pack.md`](caresight_sprint_pack/07-contract-json-pack.md) - contract continuity audit source pack for checking the schemas absorbed into earlier implementation sprints.
+- [`08-readme-product-shape.md`](caresight_sprint_pack/08-readme-product-shape.md) - product story, README copy, value-adds, and demo narrative.
+
+Sprint pack review:
+
+- The pack is aligned with the current CareSight ethos: contracts and SQLite remain canonical, YOLO26 MLX remains the vision lane, agents remain draft/report-only, and external adapters are downstream of policy.
+- Treat [`00-master-codex-prompt.md`](caresight_sprint_pack/00-master-codex-prompt.md) as a boundary document, not a mandate to implement all six workstreams in one change. Execute one sprint at a time, starting with Sprint 01.
+- Treat [`07-contract-json-pack.md`](caresight_sprint_pack/07-contract-json-pack.md) as a contract audit/checkpoint, not a standalone build sprint. Each implementation sprint absorbs the contract pieces it needs before runtime work; Sprint 07 later validates continuity across the absorbed schemas, examples, validators, runtime outputs, and docs.
+- Hardware, model, pricing, and external-tool claims in the sprint pack are roadmap guidance only. Re-check live sources before using them in purchase recommendations, marketing copy, or proof claims.
+
+Recommended execution order:
+
+```text
+01 demo surface consolidation
+  -> 02 agent/LLM drafting layer
+  -> 03 daily appearance profiles
+  -> 04 tracking reliability upgrade
+  -> 05 multi-camera narrative proof
+  -> 06 routine event demo
+  -> 07 contract continuity audit
+  -> 08 README/product-shape refresh
+```
+
+### 1. [Demo Surface Consolidation](caresight_sprint_pack/01-sprint-demo-surface-consolidation.md)
 
 Goal: make the proof story clean and repeatable for judges and future agents.
 
@@ -83,7 +131,7 @@ Scope:
 
 Recommended answer to ambiguity: stale events should remain visible as an audit backlog, but not drive the focused demo view.
 
-### 2. Agent/LLM Drafting Layer
+### 2. [Agent/LLM Drafting Layer](caresight_sprint_pack/02-sprint-agent-llm-drafting-layer.md)
 
 Goal: add a local, constrained language layer that turns SQLite-backed event records into caregiver-friendly drafts without gaining authority over review decisions or raw video.
 
@@ -134,7 +182,7 @@ Example output:
 
 Recommended answer to ambiguity: the agent may propose wording and packets, but only SQLite records and authorized human review state are canonical.
 
-### 3. Daily Appearance Profiles
+### 3. [Daily Appearance Profiles](caresight_sprint_pack/03-sprint-daily-appearance-profiles.md)
 
 Goal: add non-biometric, local-only person continuity for caregiving context.
 
@@ -178,7 +226,7 @@ Example profile:
 
 Recommended answer to ambiguity: clothing and accessories are daily appearance memory, not durable identity. CareSight may say “likely same tracked person” or “resident-assigned profile for today,” but not “this is Steven” unless a later explicit local enrollment feature is added.
 
-### 4. Tracking Reliability Upgrade
+### 4. [Tracking Reliability Upgrade](caresight_sprint_pack/04-sprint-tracking-reliability-upgrade.md)
 
 Goal: make floor-stay and missing-off-camera behavior more resilient in multi-person scenes.
 
@@ -191,7 +239,7 @@ Scope:
 
 Recommended answer to ambiguity: default to conservative, configurable thresholds and no autonomous emergency dispatch.
 
-### 5. Multi-Camera Narrative Proof
+### 5. [Multi-Camera Narrative Proof](caresight_sprint_pack/05-sprint-multi-camera-narrative-proof.md)
 
 Goal: support the stronger story that a person moved from one room to another, then an event occurred.
 
@@ -204,7 +252,7 @@ Scope:
 
 Recommended answer to ambiguity: two configured local sources are enough for v1/v2; defer ONVIF discovery and LAN scanning.
 
-### 6. Routine Event Demo
+### 6. [Routine Event Demo](caresight_sprint_pack/06-sprint-routine-event-demo.md)
 
 Goal: demonstrate medication and hydration routine events without overclaiming.
 
@@ -258,6 +306,18 @@ Rationale: SQLite is the blackbox source of truth, so old records should remain 
 Question: Should severity escalation ever trigger emergency dispatch?
 Suggested Answer: No for hackathon core. Escalation can draft text and suggest FaceTime/text handoff, but cannot dispatch.
 Rationale: The project is a caregiver-awareness prototype, not a medical device or emergency response system.
+
+## Recommended Next Work
+
+1. Start [`Sprint 02 - Agent/LLM Drafting Layer`](caresight_sprint_pack/02-sprint-agent-llm-drafting-layer.md).
+2. Absorb the Sprint 07 contract pieces Sprint 02 actually consumes: `agent-draft`, `agent-action-request`, `tts-utterance`, and forbidden claim/action vocabulary.
+3. Add valid and invalid examples before provider/runtime behavior.
+4. Implement the fake provider first, then optional Gemma MLX support only after deterministic tests pass.
+5. Keep OpenClaw/Hermes, Apple Notes, iMessage, OBS, FaceTime, and TTS behind CareSight action-request policy; no silent external action execution.
+6. Preserve Sprint 03 ownership of `appearance-profile` contracts and non-biometric descriptor behavior.
+7. Keep [`07-contract-json-pack.md`](caresight_sprint_pack/07-contract-json-pack.md) as the later continuity audit that checks whether contracts absorbed into Sprints 01, 02, and 03 remain consistent across schemas, examples, validators, runtime output, CLI docs, and audit receipts.
+
+Do not start Gemma/OpenClaw/Hermes behavior until the Sprint 02 contract slice is validated. That keeps the agent/action gateway downstream of a concise, inspectable schema surface.
 
 ## Validation Before Advancing
 

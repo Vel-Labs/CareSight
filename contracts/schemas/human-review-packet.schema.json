@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/human-review-packet.schema.json",
+  "title": "HumanReviewPacket",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "packet_id",
+    "event_id",
+    "event_type",
+    "status",
+    "created_at",
+    "source_of_truth",
+    "summary",
+    "evidence",
+    "review_state",
+    "available_human_actions",
+    "blocked_actions",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "human-review-packet"
+    },
+    "packet_id": {
+      "type": "string",
+      "pattern": "^review_packet_[a-z0-9_-]+$"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[a-z0-9_-]+$"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "possible_floor_stay",
+        "missing_off_camera_extended",
+        "medication_routine_likely_observed",
+        "hydration_routine_likely_observed",
+        "caregiver_alert_policy"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "possible",
+        "likely_observed",
+        "awaiting_human_confirmation",
+        "human_confirmed",
+        "dismissed"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_of_truth": {
+      "const": "sqlite"
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["headline", "bounded_language", "requires_human_confirmation"],
+      "properties": {
+        "headline": {
+          "type": "string",
+          "minLength": 3
+        },
+        "bounded_language": {
+          "const": true
+        },
+        "requires_human_confirmation": {
+          "type": "boolean"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["camera_id", "observation_count"],
+      "properties": {
+        "camera_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "room": {
+          "type": ["string", "null"]
+        },
+        "zone_id": {
+          "type": ["string", "null"],
+          "minLength": 3
+        },
+        "track_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "snapshot_path": {
+          "type": ["string", "null"]
+        },
+        "observation_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "review_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_count", "latest_reviewer", "latest_decision"],
+      "properties": {
+        "review_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "latest_reviewer": {
+          "type": ["string", "null"]
+        },
+        "latest_decision": {
+          "type": ["string", "null"],
+          "enum": ["human_confirmed", "dismissed", "needs_followup", null]
+        }
+      }
+    },
+    "available_human_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["confirm", "dismiss", "needs_followup"]
+      }
+    },
+    "blocked_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "autonomous_emergency_dispatch",
+          "raw_video_cloud_upload",
+          "medication_confirmed_without_authorized_human",
+          "medical_diagnosis"
+        ]
+      },
+      "contains": {
+        "const": "autonomous_emergency_dispatch"
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "source_fields"],
+      "properties": {
+        "source": {
+          "const": "sqlite_audit_chain"
+        },
+        "source_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    }
+  }
+}

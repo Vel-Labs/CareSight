@@ -1,7 +1,22 @@
 # Changelog
 
+## Unreleased
+
+- Added Sprint 02 agent-assist contract schemas and corpus examples for forbidden claims, agent drafts, staged action requests, and TTS utterances.
+- Added a fake agent provider boundary that stores validated and blocked drafts in local SQLite without calling Gemma, OpenClaw, TTS, or external services.
+- Added Care Console commands for fake-provider agent drafts and staged-only action requests, including list/readback coverage and documentation.
+- Downloaded the selected Gemma/Holler MLX model candidates into the ignored local runtime model directory and recorded an audit receipt.
+- Clarified that OpenClaw/Hermes are not installed agent surfaces yet; they remain future wrappers behind CareSight action-request policy.
+
 ## 2026-05-20
 
+- Reframed Sprint 07 as a contract continuity audit; implementation sprints now absorb the contract pieces they consume before runtime behavior.
+- Recorded the Sprint 01 demo surface audit receipt and read-only authority decision for review packets and blackbox receipts.
+- Added `care_console.py review-packet` and `blackbox-receipt` read-only commands, plus focused dashboard backlog separation for Sprint 01.
+- Added read-only demo surface builders for human review packets and blackbox receipts derived from SQLite audit chains.
+- Added Sprint 01 contract schemas and corpus examples for human review packets and blackbox receipts.
+- Clarified the sprint-pack execution order as `01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08`, with Sprint 07 as a continuity audit rather than a standalone build step.
+- Added the CareSight sprint pack to the roadmap index and updated the current-state roadmap with direct sprint-pack links, review notes, and Sprint 01 as the recommended next implementation lane.
 - Documented Daily Appearance Profiles as a bounded future sprint: local-only, daily-refreshing, non-biometric person continuity using clothing/accessory descriptors, last-seen context, and optional human-assigned roles.
 - Documented the Agent/LLM Drafting Layer as a bounded local Gemma MLX plus OpenClaw/Hermes orchestration path for caregiver text, Apple Notes drafts, handoff packets, and audit summaries.
 - Added Open Questions sections to the current and hackathon roadmaps with suggested answers and rationale for unresolved product/architecture choices.

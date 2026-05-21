@@ -1,0 +1,23 @@
+{
+  "schema": "agent-draft",
+  "draft_id": "draft_evt_bad_medical_device",
+  "event_id": "evt_bad_medical_device",
+  "created_at": "2026-05-20T03:15:00Z",
+  "provider": "fake",
+  "source_of_truth": "sqlite",
+  "purpose": "caregiver_summary",
+  "validation_status": "validated",
+  "draft_text": "CareSight is a medical device that diagnosed a fall.",
+  "safe_rewrite": null,
+  "safety_boundaries": [
+    "draft_only",
+    "human_review_required",
+    "sqlite_canonical",
+    "no_autonomous_dispatch"
+  ],
+  "provenance": {
+    "source": "sqlite_audit_chain",
+    "source_fields": ["events"]
+  },
+  "blocked_claims": []
+}

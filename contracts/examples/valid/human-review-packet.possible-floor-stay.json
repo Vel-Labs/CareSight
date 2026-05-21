@@ -1,0 +1,39 @@
+{
+  "schema": "human-review-packet",
+  "packet_id": "review_packet_evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "event_type": "possible_floor_stay",
+  "status": "awaiting_human_confirmation",
+  "created_at": "2026-05-20T02:37:00Z",
+  "source_of_truth": "sqlite",
+  "summary": {
+    "headline": "Possible floor-stay event in Living Room",
+    "bounded_language": true,
+    "requires_human_confirmation": true
+  },
+  "evidence": {
+    "camera_id": "living_room",
+    "room": "Living Room",
+    "zone_id": "floor_zone",
+    "track_ids": ["track_5"],
+    "snapshot_path": "apps/caresight-hub/data/snapshots/evt_d9aa38bdc636459c92ea4e25f665cd0d.jpg",
+    "observation_count": 1
+  },
+  "review_state": {
+    "review_count": 0,
+    "latest_reviewer": null,
+    "latest_decision": null
+  },
+  "available_human_actions": ["confirm", "dismiss", "needs_followup"],
+  "blocked_actions": ["autonomous_emergency_dispatch", "medical_diagnosis"],
+  "provenance": {
+    "source": "sqlite_audit_chain",
+    "source_fields": [
+      "events",
+      "event_observations",
+      "event_reviews",
+      "journal_entries",
+      "agent_handoffs"
+    ]
+  }
+}

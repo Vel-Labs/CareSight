@@ -1,0 +1,30 @@
+{
+  "schema": "blackbox-receipt",
+  "receipt_id": "receipt_evt_bad_diagnosis",
+  "event_id": "evt_bad_diagnosis",
+  "created_at": "2026-05-20T02:40:00Z",
+  "source_of_truth": "sqlite",
+  "completion_status": "complete",
+  "event": {
+    "event_type": "possible_floor_stay",
+    "status": "human_confirmed",
+    "occurred_at": "2026-05-20T02:36:31Z",
+    "camera_id": "living_room",
+    "zone_id": "floor_zone",
+    "severity": "high",
+    "confidence": "high"
+  },
+  "counts": {
+    "observations": 1,
+    "reviews": 1,
+    "journal_entries": 1,
+    "agent_handoffs": 1
+  },
+  "human_review": {
+    "reviewer": "Steven",
+    "decision": "human_confirmed",
+    "reviewed_at": "2026-05-20T02:38:02Z"
+  },
+  "blocked_actions": ["autonomous_emergency_dispatch"],
+  "safety_boundaries": ["raw_video_local", "human_review_required", "no_autonomous_dispatch"]
+}

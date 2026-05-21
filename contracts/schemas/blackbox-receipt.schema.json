@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/blackbox-receipt.schema.json",
+  "title": "BlackboxReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "event_id",
+    "created_at",
+    "source_of_truth",
+    "completion_status",
+    "event",
+    "counts",
+    "blocked_actions",
+    "safety_boundaries"
+  ],
+  "properties": {
+    "schema": {
+      "const": "blackbox-receipt"
+    },
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^receipt_[a-z0-9_-]+$"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[a-z0-9_-]+$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_of_truth": {
+      "const": "sqlite"
+    },
+    "completion_status": {
+      "type": "string",
+      "enum": ["complete", "not_complete"]
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 3
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_type", "status", "occurred_at", "camera_id", "severity", "confidence"],
+      "properties": {
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "possible_floor_stay",
+            "missing_off_camera_extended",
+            "medication_routine_likely_observed",
+            "hydration_routine_likely_observed",
+            "caregiver_alert_policy"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "possible",
+            "likely_observed",
+            "awaiting_human_confirmation",
+            "human_confirmed",
+            "dismissed"
+          ]
+        },
+        "occurred_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "camera_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "zone_id": {
+          "type": ["string", "null"],
+          "minLength": 3
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observations", "reviews", "journal_entries", "agent_handoffs"],
+      "properties": {
+        "observations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reviews": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "journal_entries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "agent_handoffs": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "track_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "human_review": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["reviewer", "decision", "reviewed_at"],
+      "properties": {
+        "reviewer": {
+          "type": "string",
+          "minLength": 2
+        },
+        "decision": {
+          "type": "string",
+          "enum": ["human_confirmed", "dismissed", "needs_followup"]
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "derived_outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dashboard_includes_event": {
+          "type": "boolean"
+        },
+        "alert_draft_has_provenance": {
+          "type": "boolean"
+        }
+      }
+    },
+    "blocked_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "autonomous_emergency_dispatch",
+          "raw_video_cloud_upload",
+          "medication_confirmed_without_authorized_human",
+          "medical_diagnosis"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "autonomous_emergency_dispatch"
+          }
+        },
+        {
+          "contains": {
+            "const": "medical_diagnosis"
+          }
+        }
+      ]
+    },
+    "safety_boundaries": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "raw_video_local",
+          "human_review_required",
+          "sqlite_canonical",
+          "dashboard_derived",
+          "read_only_receipt",
+          "no_autonomous_dispatch",
+          "no_medical_diagnosis"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "human_review_required"
+          }
+        },
+        {
+          "contains": {
+            "const": "no_autonomous_dispatch"
+          }
+        },
+        {
+          "contains": {
+            "const": "no_medical_diagnosis"
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "completion_status": {
+            "const": "not_complete"
+          }
+        },
+        "required": ["completion_status"]
+      },
+      "then": {
+        "required": ["blockers"],
+        "properties": {
+          "blockers": {
+            "type": "array",
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "completion_status": {
+            "const": "complete"
+          }
+        },
+        "required": ["completion_status"]
+      },
+      "then": {
+        "required": ["human_review"],
+        "properties": {
+          "human_review": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  ]
+}

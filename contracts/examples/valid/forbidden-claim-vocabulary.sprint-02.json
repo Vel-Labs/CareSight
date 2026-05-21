@@ -1,0 +1,44 @@
+{
+  "schema": "forbidden-claim-vocabulary",
+  "vocabulary_id": "forbidden_claims_sprint_02",
+  "version": "v1",
+  "claims": [
+    {
+      "claim_id": "claim_medical_device",
+      "category": "medical_device",
+      "blocked_phrases": ["medical device", "certified fall detector"],
+      "reason": "CareSight is a caregiver awareness prototype, not a regulated medical device."
+    },
+    {
+      "claim_id": "claim_hipaa_compliance",
+      "category": "hipaa_compliance",
+      "blocked_phrases": ["HIPAA compliant", "HIPAA-ready"],
+      "reason": "CareSight must not claim clinical compliance posture."
+    },
+    {
+      "claim_id": "claim_autonomous_dispatch",
+      "category": "autonomous_emergency_dispatch",
+      "blocked_phrases": ["called 911", "dispatched emergency services"],
+      "reason": "CareSight stages human review and does not perform autonomous emergency dispatch."
+    },
+    {
+      "claim_id": "claim_medication_administration",
+      "category": "medication_administration",
+      "blocked_phrases": ["medication was taken", "confirmed medication"],
+      "reason": "Vision may support likely observed routine events but cannot confirm administration."
+    },
+    {
+      "claim_id": "claim_vision_overcertainty",
+      "category": "vision_overcertainty",
+      "blocked_phrases": ["fall detected", "diagnosed"],
+      "reason": "CareSight language must stay bounded to possible events and likely observations."
+    }
+  ],
+  "bounded_replacements": [
+    "possible event",
+    "likely observed",
+    "requires human review",
+    "authorized human confirmed",
+    "local record available"
+  ]
+}

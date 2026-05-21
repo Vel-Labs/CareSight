@@ -229,9 +229,45 @@ Purpose: render a local JSON dashboard read model from SQLite through `ReviewSer
 
 Inputs: optional `--db <path>`.
 
-Outputs: source-of-truth marker, live-feed boundary, current state, event timeline, concern feed, review-control mapping, journal preview, and caregiver alert draft.
+Outputs: source-of-truth marker, focused-event mode when `--event-id` is used, selected event summary, separate awaiting-review backlog, live-feed boundary, current state, event timeline, concern feed, review-control mapping, journal preview, and caregiver alert draft.
 
 Validation: `test_care_console.py` verifies the dashboard reads SQLite state, keeps review actions routed through `ReviewService`, and marks delete/dispatch as forbidden.
+
+Agent safety: `agent-safe-read`.
+
+## Care Console Review Packet
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py review-packet <event_id> --format json
+```
+
+Purpose: render a read-only human review packet from the SQLite audit chain.
+
+Inputs: `event_id`, optional `--db <path>`, optional `--format json|markdown`, and optional `--output <path>`.
+
+Outputs: event status, bounded headline, evidence summary, track IDs, snapshot path, review state, available human actions, blocked actions, and provenance.
+
+Validation: `test_care_console.py` verifies JSON and Markdown review-packet output from SQLite without mutating event lifecycle state.
+
+Agent safety: `agent-safe-read`.
+
+## Care Console Blackbox Receipt
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py blackbox-receipt <event_id> --format json
+```
+
+Purpose: render a read-only blackbox receipt for a selected event's observation, human review, journal, handoff, dashboard, and alert provenance.
+
+Inputs: `event_id`, optional `--db <path>`, optional `--format json|markdown`, and optional `--output <path>`.
+
+Outputs: completion status, blockers for incomplete chains, counts for observations/reviews/journal/handoffs, track IDs, human review summary, derived-output checks, blocked actions, and safety boundaries.
+
+Validation: `test_care_console.py` verifies complete receipt output after human review and the demo-surface tests verify incomplete receipts report blockers.
 
 Agent safety: `agent-safe-read`.
 
@@ -250,6 +286,60 @@ Inputs: `event_id`, optional `--db <path>`.
 Outputs: draft text, text-to-FaceTime channel sequence, source fields, and forbidden-action boundaries.
 
 Validation: `test_care_console.py` verifies alert drafts include event provenance and remain report-only.
+
+Agent safety: `agent-safe-read`.
+
+## Care Console Agent Draft
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py agent-draft <event_id> --purpose caregiver_summary
+```
+
+Purpose: create and persist a fake-provider agent draft from the SQLite audit chain.
+
+Inputs: `event_id`, optional `--db <path>`, and optional `--purpose caregiver_summary|alert_draft|apple_notes_entry|handoff_packet|audit_summary`.
+
+Outputs: `agent-draft` JSON with provider `fake`, source-of-truth marker, validation status, draft text, safety boundaries, provenance, and any blocked claim reasons.
+
+Validation: `test_agent_assist.py` and `test_care_console.py` verify validated drafts and blocked drafts are persisted in SQLite without real Gemma, OpenClaw, TTS, or external service calls.
+
+Agent safety: `agent-safe-read`.
+
+## Care Console Stage Action Request
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py stage-action-request <event_id> --draft-id <draft_id> --action create_apple_note --destination apple_notes
+```
+
+Purpose: stage a local action request from a validated agent draft without executing it.
+
+Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|create_apple_note|prepare_handoff_packet|play_tts_utterance`, optional `--destination caregiver_console|apple_notes|local_tts|handoff_packet`, and optional `--db <path>`.
+
+Outputs: `agent-action-request` JSON with `stage: staged`, `execution_state: not_executed`, `requires_human_approval: true`, source draft, destination, safety boundaries, and provenance.
+
+Validation: `test_agent_assist.py` verifies staged requests stay local and blocked drafts cannot stage action requests. `test_care_console.py` verifies CLI staging persists only local SQLite rows.
+
+Agent safety: `agent-safe-read`. Agents may stage and list action requests, but Sprint 02 provides no command that executes the requested action.
+
+## Care Console List Action Requests
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py list-action-requests <event_id>
+```
+
+Purpose: list staged local action requests for one event.
+
+Inputs: `event_id` and optional `--db <path>`.
+
+Outputs: JSON array of staged `agent-action-request` records.
+
+Validation: `test_care_console.py` verifies list output after staging.
 
 Agent safety: `agent-safe-read`.
 

@@ -13,6 +13,18 @@ Anything that defines project meaning, lifecycle state, schema shape, example sh
 - `examples/valid/`: examples that must pass contract validation.
 - `examples/invalid/`: examples that must fail contract validation.
 
+## Sprint 01 Demo Surface Contracts
+
+- `human-review-packet`: a read-only, SQLite-derived packet for compact human review decisions. It can expose available human actions, but it does not perform review lifecycle changes.
+- `blackbox-receipt`: a read-only, SQLite-derived receipt for a selected event's observation, review, journal, handoff, dashboard, and alert provenance. Incomplete receipts must declare blockers instead of synthesizing success.
+
+## Sprint 02 Agent Assist Contracts
+
+- `forbidden-claim-vocabulary`: canonical blocked claim categories and bounded replacement language for agent and TTS outputs.
+- `agent-draft`: draft-only caregiver, note, handoff, and audit text derived from SQLite-backed records. Validated drafts must avoid forbidden claims; blocked drafts must preserve block reasons and a safe rewrite.
+- `agent-action-request`: staged-only local action intent. The contract requires `stage: staged`, `execution_state: not_executed`, and human approval before any future downstream execution lane exists.
+- `tts-utterance`: validated draft-only utterance text for a neutral system voice. It forbids voice cloning and the same overclaim patterns as agent drafts.
+
 ## Ownership
 
 - Contracts may be read by tests, `packages/core/`, docs, future adapters, and future demos.

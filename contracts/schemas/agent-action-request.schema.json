@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/agent-action-request.schema.json",
+  "title": "AgentActionRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "request_id",
+    "event_id",
+    "created_at",
+    "requested_action",
+    "stage",
+    "execution_state",
+    "requires_human_approval",
+    "source_draft_id",
+    "safety_boundaries",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "agent-action-request"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^action_req_[a-z0-9_-]+$"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[a-z0-9_-]+$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requested_action": {
+      "type": "string",
+      "enum": [
+        "send_caregiver_message",
+        "create_apple_note",
+        "prepare_handoff_packet",
+        "play_tts_utterance"
+      ]
+    },
+    "stage": {
+      "const": "staged"
+    },
+    "execution_state": {
+      "const": "not_executed"
+    },
+    "requires_human_approval": {
+      "const": true
+    },
+    "source_draft_id": {
+      "type": "string",
+      "pattern": "^draft_[a-z0-9_-]+$"
+    },
+    "destination": {
+      "type": ["string", "null"],
+      "enum": ["caregiver_console", "apple_notes", "local_tts", "handoff_packet", null]
+    },
+    "safety_boundaries": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "stage_only",
+          "human_review_required",
+          "no_external_execution",
+          "no_autonomous_dispatch",
+          "sqlite_canonical"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "stage_only"
+          }
+        },
+        {
+          "contains": {
+            "const": "no_external_execution"
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "source_fields"],
+      "properties": {
+        "source": {
+          "const": "sqlite_audit_chain"
+        },
+        "source_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/tts-utterance.schema.json",
+  "title": "TtsUtterance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "utterance_id",
+    "event_id",
+    "created_at",
+    "provider",
+    "source_draft_id",
+    "text",
+    "voice_policy",
+    "validation_status",
+    "safety_boundaries"
+  ],
+  "properties": {
+    "schema": {
+      "const": "tts-utterance"
+    },
+    "utterance_id": {
+      "type": "string",
+      "pattern": "^tts_[a-z0-9_-]+$"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^evt_[a-z0-9_-]+$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provider": {
+      "type": "string",
+      "enum": ["fake", "holler_mlx"]
+    },
+    "source_draft_id": {
+      "type": "string",
+      "pattern": "^draft_[a-z0-9_-]+$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 400,
+      "not": {
+        "type": "string",
+        "pattern": "([Mm]edical device|[Hh][Ii][Pp][Aa][Aa] compliant|[Dd]ispatch(ed)? emergency|[Cc]alled 911|[Mm]edication was taken|[Cc]onfirmed medication|[Ff]all detected|[Dd]iagnosed)"
+      }
+    },
+    "voice_policy": {
+      "type": "string",
+      "enum": ["neutral_system_voice", "no_voice_cloning"]
+    },
+    "validation_status": {
+      "const": "validated"
+    },
+    "safety_boundaries": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "draft_only",
+          "human_review_required",
+          "no_voice_cloning",
+          "no_autonomous_dispatch",
+          "no_medication_confirmation"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "draft_only"
+          }
+        },
+        {
+          "contains": {
+            "const": "no_voice_cloning"
+          }
+        }
+      ]
+    }
+  }
+}

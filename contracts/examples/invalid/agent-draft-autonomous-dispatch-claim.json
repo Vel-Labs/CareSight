@@ -1,0 +1,23 @@
+{
+  "schema": "agent-draft",
+  "draft_id": "draft_evt_bad_dispatch",
+  "event_id": "evt_bad_dispatch",
+  "created_at": "2026-05-20T03:16:00Z",
+  "provider": "fake",
+  "source_of_truth": "sqlite",
+  "purpose": "alert_draft",
+  "validation_status": "validated",
+  "draft_text": "CareSight called 911 and dispatched emergency services automatically.",
+  "safe_rewrite": null,
+  "safety_boundaries": [
+    "draft_only",
+    "human_review_required",
+    "sqlite_canonical",
+    "no_autonomous_dispatch"
+  ],
+  "provenance": {
+    "source": "sqlite_audit_chain",
+    "source_fields": ["events"]
+  },
+  "blocked_claims": []
+}

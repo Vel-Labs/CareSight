@@ -11,9 +11,9 @@ describe("contract corpus", () => {
     expect(result).toEqual({
       ok: true,
       checked: {
-        schemas: 8,
-        validExamples: 10,
-        invalidExamples: 6
+        schemas: 14,
+        validExamples: 16,
+        invalidExamples: 13
       }
     });
   });

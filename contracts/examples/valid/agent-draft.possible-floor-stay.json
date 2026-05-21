@@ -1,0 +1,31 @@
+{
+  "schema": "agent-draft",
+  "draft_id": "draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_summary",
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "created_at": "2026-05-20T03:10:00Z",
+  "provider": "fake",
+  "source_of_truth": "sqlite",
+  "purpose": "caregiver_summary",
+  "validation_status": "validated",
+  "draft_text": "CareSight recorded a possible floor-stay event in the Living Room. The local record includes a snapshot path, human review state, journal context, and a report-only handoff for caregiver review.",
+  "safe_rewrite": null,
+  "safety_boundaries": [
+    "draft_only",
+    "human_review_required",
+    "sqlite_canonical",
+    "no_autonomous_dispatch",
+    "no_medical_diagnosis",
+    "no_medication_confirmation"
+  ],
+  "provenance": {
+    "source": "sqlite_audit_chain",
+    "source_fields": [
+      "events",
+      "event_observations",
+      "event_reviews",
+      "journal_entries",
+      "agent_handoffs"
+    ]
+  },
+  "blocked_claims": []
+}

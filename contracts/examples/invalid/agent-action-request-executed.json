@@ -1,0 +1,21 @@
+{
+  "schema": "agent-action-request",
+  "request_id": "action_req_evt_bad_executed",
+  "event_id": "evt_bad_executed",
+  "created_at": "2026-05-20T03:17:00Z",
+  "requested_action": "send_caregiver_message",
+  "stage": "sent",
+  "execution_state": "executed",
+  "requires_human_approval": false,
+  "source_draft_id": "draft_evt_bad_executed",
+  "destination": "caregiver_console",
+  "safety_boundaries": [
+    "human_review_required",
+    "no_autonomous_dispatch",
+    "sqlite_canonical"
+  ],
+  "provenance": {
+    "source": "sqlite_audit_chain",
+    "source_fields": ["events", "agent_drafts"]
+  }
+}

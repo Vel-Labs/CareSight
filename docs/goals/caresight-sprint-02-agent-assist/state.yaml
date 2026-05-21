@@ -1,0 +1,453 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "CareSight Sprint 02 Agent Assist"
+  slug: "caresight-sprint-02-agent-assist"
+  kind: existing_plan
+  tranche: "Sprint 02: contracts first, fake provider first, validated local persistence, staged action requests only, CLI/docs, then source-backed local model recommendation."
+  status: done
+  oracle:
+    signal: "Final Judge audit confirms Sprint 02 contracts, examples, fake-provider validation/persistence, staged-only action requests, CLI docs, and source-backed model recommendations are verified without forbidden CareSight claims or external execution."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Passing deterministic checks plus final audit receipt with full_outcome_complete: true."
+  intake:
+    original_request: "The next move is Sprint 02: contracts first, valid/invalid examples, fake provider, SQLite storage for validated/blocked drafts, staged-only action requests, CLI/docs, then Gemma MLX and TTS model selection for a 16 GB Mac mini."
+    interpreted_outcome: "CareSight Hub gains a safe local-first agent-assist tranche with audited contracts and fake-provider behavior before any real Gemma/TTS provider decision."
+    input_shape: existing_plan
+    audience: "CareSight Hub demo operators, caregivers, and future coding agents."
+    authority: requested
+    proof_type: test
+    completion_proof: "Contract/runtime/CLI checks pass, docs and changelog are updated, no external action execution exists, and model selection is source-backed after fake-provider proof."
+    likely_misfire: "Shipping real LLM/TTS or action execution before fake-provider safety proof, or allowing drafts to make medical, HIPAA, emergency, or medication-confirmation claims."
+    blind_spots_considered:
+      - "Forbidden claims need to be canonical and enforced before generated caregiver-facing text exists."
+      - "Blocked drafts must remain inspectable in SQLite without becoming confirmed caregiver messages."
+      - "Action-request staging must not trigger external execution or dispatch."
+      - "The CLI surface must remain documented in docs/cli/COMMANDS.md."
+      - "Model selection must consider total system budget on a 16 GB RAM Mac mini, not model benchmarks alone."
+    existing_plan_facts:
+      - "Add Sprint 02 contracts first: agent-draft, agent-action-request, tts-utterance, forbidden-claim vocabulary."
+      - "Add valid and invalid examples."
+      - "Implement fake provider first."
+      - "Store validated and blocked drafts in SQLite."
+      - "Add action-request staging only, no external execution."
+      - "Add CLI commands and docs."
+      - "After fake provider passes, identify which Gemma MLX model is best fit."
+      - "Consider mlx-community/gemma-4-e4b-it-4bit and mlx-community/gemma-4-e2b-it-4bit."
+      - "Consider sentiuminc/holler-0.6b and sentiuminc/holler-0.6b-6bit for TTS."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/caresight-sprint-02-agent-assist/"
+    command: "npx goalbuddy board docs/goals/caresight-sprint-02-agent-assist"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Validate the Sprint 02 plan against CareSight repo boundaries, safety rules, and the requested contracts-first sequence before implementation."
+    inputs:
+      - "AGENTS.md instructions from the user prompt"
+      - "README.md"
+      - "ROADMAP.md"
+      - "REPO_PROFILE.json"
+      - "docs/project/PROJECT_BRIEF.md"
+      - "docs/architecture/ARCHITECTURE.md"
+      - "docs/architecture/REPO_BOUNDARIES.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/hackathon/hackathon_roadmap.md"
+      - "contracts/README.md"
+      - "docs/goals/caresight-sprint-02-agent-assist/goal.md"
+      - "docs/goals/caresight-sprint-02-agent-assist/state.yaml"
+    constraints:
+      - "Read-only."
+      - "Do not browse model pages or inspect implementation code beyond the required repo boundary docs in this task."
+      - "Preserve the user-provided sequence unless a safety or architecture conflict requires reordering."
+      - "No product file edits."
+    expected_output:
+      - "Decision: approved | revise_before_worker | blocked"
+      - "Validated or revised Worker order"
+      - "Risks and stop conditions for Sprint 02"
+      - "Exact allowed_files and verify commands for T002 if approved"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Sprint 02 plan is aligned with the required CareSight boundaries: contracts/examples first, fake provider before real Gemma/TTS, SQLite local persistence, staged-only action requests, documented CLI commands, and source-backed model selection after fake-provider proof."
+      risks:
+        - "Forbidden-claim vocabulary must block medical-device, HIPAA, emergency-dispatch, medication-confirmation, and overconfident vision-language claims."
+        - "Action requests must remain staged records only, with no external execution path."
+        - "Model selection must use current primary sources and consider the full 16 GB Mac mini system budget."
+      approved_worker_order:
+        - T002
+        - T003
+        - T004
+        - T005
+        - T006
+        - T999
+      t002_allowed_files:
+        - "contracts/**"
+        - "packages/core/**"
+        - "tests/**"
+        - "docs/cli/COMMANDS.md"
+        - "docs/FILE_TREE.md"
+        - "docs/architecture/**"
+        - "docs/roadmaps/**"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      t002_verify:
+        - "npm test"
+        - "npm run check"
+        - "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-02-agent-assist/state.yaml"
+  - id: T002
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add Sprint 02 canonical contracts, forbidden-claim vocabulary, and valid/invalid examples for agent drafts, action requests, and TTS utterances."
+    inputs:
+      - "T001 receipt"
+      - "contracts/README.md"
+      - "Existing contract schemas and examples"
+      - "CareSight-specific forbidden-claim rules in AGENTS.md"
+    constraints:
+      - "Contracts own canonical schemas and examples."
+      - "packages/core owns TypeScript validation and contract enforcement helpers only."
+      - "Do not implement runtime provider behavior in packages/core."
+      - "Forbidden claims must cover medical-device, HIPAA-compliance, emergency-dispatch, medication-confirmation, and overconfident vision-language claims."
+      - "Use possible event / likely observed language unless authorized human confirmation is represented."
+      - "Update docs when behavior changes."
+      - "Update CHANGELOG.md."
+      - "Record DECISIONS.md only if architecture changes beyond the existing contract/core/runtime boundary."
+    allowed_files:
+      - "contracts/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/FILE_TREE.md"
+      - "docs/architecture/**"
+      - "docs/roadmaps/**"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm test"
+      - "npm run check"
+      - "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-02-agent-assist/state.yaml"
+    stop_if:
+      - "Need to define caregiver-facing claims outside the forbidden vocabulary boundary without clear repo precedent."
+      - "Need files outside allowed_files."
+      - "Existing validators make the requested contract shape ambiguous."
+      - "Verification fails twice for unrelated pre-existing reasons."
+    receipt:
+      result: done
+      changed_files:
+        - "contracts/schemas/forbidden-claim-vocabulary.schema.json"
+        - "contracts/schemas/agent-draft.schema.json"
+        - "contracts/schemas/agent-action-request.schema.json"
+        - "contracts/schemas/tts-utterance.schema.json"
+        - "contracts/examples/valid/forbidden-claim-vocabulary.sprint-02.json"
+        - "contracts/examples/valid/agent-draft.possible-floor-stay.json"
+        - "contracts/examples/valid/agent-action-request.staged-note.json"
+        - "contracts/examples/valid/tts-utterance.possible-floor-stay.json"
+        - "contracts/examples/invalid/agent-draft-medical-device-claim.json"
+        - "contracts/examples/invalid/agent-draft-autonomous-dispatch-claim.json"
+        - "contracts/examples/invalid/agent-action-request-executed.json"
+        - "contracts/examples/invalid/tts-utterance-medication-confirmed.json"
+        - "packages/core/src/validate-contracts.ts"
+        - "tests/contracts/contract-corpus.test.ts"
+        - "contracts/README.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "npm run validate:contracts"
+          status: pass
+        - cmd: "npm test -- tests/contracts"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added Sprint 02 canonical contract schemas, valid examples, invalid examples, validator routing, contract README notes, changelog entry, and regenerated FILE_TREE. The corpus now validates 14 schemas, 16 valid examples, and 13 invalid examples."
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the fake agent provider and SQLite persistence for validated and blocked drafts without calling real Gemma, OpenClaw, TTS, or external services."
+    inputs:
+      - "T002 receipt"
+      - "Sprint 02 contracts and examples"
+      - "Existing apps/caresight-hub SQLite runtime patterns"
+    constraints:
+      - "Fake provider first; no real model provider in this task."
+      - "Store structured records locally first."
+      - "Persist both validated and blocked drafts with event_id, reviewer/status context when present, timestamps, snapshot_path when applicable, and block reasons."
+      - "Do not confirm or dismiss events."
+      - "Do not trigger emergency dispatch or any external execution."
+      - "Update docs and changelog for behavior changes."
+    allowed_files:
+      - "apps/caresight-hub/**"
+      - "contracts/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/FILE_TREE.md"
+      - "docs/architecture/**"
+      - "docs/roadmaps/**"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm test"
+      - "pytest"
+      - "npm run quality-gate"
+      - "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-02-agent-assist/state.yaml"
+    stop_if:
+      - "A real model, network provider, TTS engine, or external service would be needed."
+      - "Persistence would overwrite or reinterpret existing human review records."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for unrelated pre-existing reasons."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/agent_assist/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/agent_assist/service.py"
+        - "apps/caresight-hub/caresight/storage/migrations/001_init.sql"
+        - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+        - "apps/caresight-hub/tests/test_agent_assist.py"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Implemented a fake agent provider that derives bounded draft text from SQLite audit context and persists both validated and blocked drafts in agent_drafts. Blocked drafts retain forbidden-claim reasons and a safe rewrite; no real Gemma, OpenClaw, TTS, event confirmation, dismissal, dispatch, or external execution path was added."
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add action-request staging CLI commands and documentation, preserving staging-only behavior with no external execution."
+    inputs:
+      - "T003 receipt"
+      - "Sprint 02 contracts"
+      - "Existing CLI command style and docs/cli/COMMANDS.md"
+    constraints:
+      - "Every supported CLI command must be documented in docs/cli/COMMANDS.md."
+      - "Agents may list/show/summarize events and draft caregiver messages, but must not confirm or dismiss events unless explicitly instructed by a human."
+      - "Action requests may be staged and inspected only."
+      - "No emergency dispatch, live integration, Ring/Nest integration, or external execution."
+      - "Update deterministic lifecycle tests where practical."
+      - "Update CHANGELOG.md."
+    allowed_files:
+      - "apps/caresight-hub/**"
+      - "contracts/**"
+      - "packages/core/**"
+      - "tests/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/FILE_TREE.md"
+      - "docs/architecture/**"
+      - "docs/roadmaps/**"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "npm test"
+      - "pytest"
+      - "npm run quality-gate"
+      - "documented CLI smoke commands from docs/cli/COMMANDS.md"
+      - "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-02-agent-assist/state.yaml"
+    stop_if:
+      - "A CLI path would execute an external action instead of staging it."
+      - "Need to confirm or dismiss an event without explicit human instruction."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for unrelated pre-existing reasons."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/agent_assist/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/agent_assist/service.py"
+        - "apps/caresight-hub/caresight/storage/migrations/001_init.sql"
+        - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+        - "apps/caresight-hub/scripts/care_console.py"
+        - "apps/caresight-hub/tests/test_agent_assist.py"
+        - "apps/caresight-hub/tests/test_care_console.py"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Added Care Console agent-draft, stage-action-request, and list-action-requests commands. Action requests persist only as local SQLite rows with stage=staged, execution_state=not_executed, requires_human_approval=true, and no external execution path. Blocked drafts cannot stage requests."
+  - id: T005
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: low
+    objective: "After fake-provider proof passes, gather source-backed evidence for local Gemma MLX and TTS MLX options that fit a 16 GB Mac mini system budget."
+    inputs:
+      - "T003 receipt proving fake provider passes"
+      - "T004 receipt if CLI staging affects provider needs"
+      - "https://huggingface.co/mlx-community/gemma-4-e4b-it-4bit"
+      - "https://huggingface.co/mlx-community/gemma-4-e2b-it-4bit"
+      - "https://huggingface.co/sentiuminc/holler-0.6b"
+      - "https://huggingface.co/sentiuminc/holler-0.6b-6bit"
+    constraints:
+      - "Read-only."
+      - "Use current primary sources for model metadata and licensing."
+      - "Consider total CareSight system budget on a 16 GB RAM Mac mini, not only nominal model size."
+      - "Keep Gemma/OpenClaw as summary or orchestration only."
+      - "Do not implement model integration in this task."
+    expected_output:
+      - "Source-backed comparison table"
+      - "Recommended Gemma MLX model for Sprint 02 or a deferral with rationale"
+      - "Recommended TTS path or deferral with rationale"
+      - "Risks: RAM pressure, latency, licensing, quality, offline behavior"
+      - "Candidate follow-up Worker task only if fake-provider proof and model evidence justify it"
+    receipt:
+      result: done
+      summary: "Source-backed model scan completed after fake-provider proof. Recommendation: use mlx-community/gemma-4-e2b-it-4bit as the first real Gemma candidate if Sprint 02 later grows a real provider, and prefer sentiuminc/holler-0.6b-6bit for any later local TTS proof. Keep both deferred until an explicit provider integration task exists."
+      evidence:
+        - "https://huggingface.co/mlx-community/gemma-4-e2b-it-4bit: Apache-2.0, MLX, 4-bit precision, converted from google/gemma-4-e2b-it, 1B params, 3.58 GB files info, 107129 downloads last month at lookup time."
+        - "https://huggingface.co/mlx-community/gemma-4-e4b-it-4bit: Apache-2.0, MLX, 4-bit precision, converted from google/gemma-4-e4b-it, 2B params, 5.22 GB files info, 43451 downloads last month at lookup time."
+        - "https://huggingface.co/sentiuminc/holler-0.6b-6bit: Apache-2.0, MLX TTS, 6-bit quantized, 1.7 GB download vs 2.3 GB bf16, about 1.7 GB Metal RAM, about 170ms TTFA at 16 codebooks and 147ms at 12 codebooks on M1 Pro 16GB per model card."
+        - "https://huggingface.co/sentiuminc/holler-0.6b: Apache-2.0, MLX TTS, bf16/full precision, 2.3 GB stated variant size, about 2.4 GB Metal RAM, about 200ms TTFA on M1 Pro 16GB per model card."
+      recommendation:
+        gemma: "mlx-community/gemma-4-e2b-it-4bit"
+        gemma_rationale: "The E2B 4-bit model leaves more RAM headroom for YOLO26, OpenCV/camera capture, SQLite, dashboard/CLI, and potential TTS on a 16 GB Mac mini. The E4B option is plausible but costs about 1.64 GB more model-file footprint before runtime overhead."
+        tts: "sentiuminc/holler-0.6b-6bit"
+        tts_rationale: "The 6-bit Holler variant is explicitly positioned as smaller, lower-RAM, and faster than bf16, with M1 Pro 16GB performance data. It is a better future candidate for local appliance constraints than the bf16 variant."
+      risks:
+        - "Hugging Face file size is not total runtime memory; integrated proof must measure RAM while YOLO26/camera/dashboard are also running."
+        - "Gemma pages are MLX-VLM oriented and show Any-to-Any/image prompt usage; CareSight should send structured SQLite JSON only and must not use image inspection as decision-maker."
+        - "Holler model cards mention voice samples and voice design; CareSight must keep neutral system voice/no voice cloning boundaries."
+        - "No model was downloaded or benchmarked in this Scout task."
+  - id: T006
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Decide whether Sprint 02 should add a real Gemma/TTS provider now, defer it, or prepare a separate post-Sprint task based on fake-provider proof and source-backed model evidence."
+    inputs:
+      - "T003 receipt"
+      - "T004 receipt"
+      - "T005 receipt"
+    constraints:
+      - "Read-only."
+      - "Do not approve real provider work unless fake provider is verified and the local system budget is credible."
+      - "No external execution or autonomous actions."
+      - "Prefer deferral if model evidence is stale, unclear, too memory-heavy, or not safety-contained."
+    expected_output:
+      - "Decision: implement_now | defer | separate_goal"
+      - "Rationale tied to evidence"
+      - "If implement_now, exact Worker objective, allowed_files, verify commands, and stop_if"
+    receipt:
+      result: done
+      decision: defer
+      full_outcome_complete: false
+      rationale: "Sprint 02 has verified contracts, fake-provider SQLite persistence, and staged-only action requests. A real Gemma/TTS provider would require a new measured integration package with runtime memory/latency proof on the 16 GB target while YOLO26 and the local app are active. That is a separate post-Sprint task, not a prerequisite for this tranche."
+      recommendation:
+        gemma_first_candidate: "mlx-community/gemma-4-e2b-it-4bit"
+        tts_first_candidate: "sentiuminc/holler-0.6b-6bit"
+      next_task_if_approved_later:
+        objective: "Add a real local Gemma provider behind the existing fake-provider contract and measure total-process memory while YOLO26/camera/dashboard remain active."
+        allowed_files:
+          - "apps/caresight-hub/**"
+          - "docs/cli/COMMANDS.md"
+          - "docs/audits/**"
+          - "docs/roadmaps/**"
+          - "CHANGELOG.md"
+        verify:
+          - "npm run check"
+          - "manual memory/latency receipt on 16 GB Mac mini-class hardware"
+        stop_if:
+          - "Model integration needs network inference, cloud API, or raw-video model input."
+          - "Measured total system memory leaves insufficient headroom for YOLO26/camera/dashboard."
+          - "Provider output bypasses forbidden-claim validation or staged-only action policy."
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether Sprint 02 is complete against the original user outcome and CareSight safety boundaries."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "docs/goals/caresight-sprint-02-agent-assist/goal.md"
+      - "docs/goals/caresight-sprint-02-agent-assist/state.yaml"
+    constraints:
+      - "Read-only."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if contracts/examples, fake-provider persistence, staged-only CLI/docs, or model recommendation evidence are missing."
+      - "Reject completion if any claim frames CareSight as a medical device, HIPAA compliant, autonomous emergency dispatch, or medication-confirming from vision alone."
+      - "Reject completion if external action execution was introduced."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence mapped to the original request"
+      - "Missing evidence"
+      - "Next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "Sprint 02 is complete for the requested tranche: contracts and examples were added first, the fake provider was implemented before real model work, validated and blocked drafts persist in SQLite, action requests are staged only with no external execution, CLI commands are documented and tested, and source-backed model recommendations were recorded after fake-provider proof."
+      evidence:
+        - "T002: Sprint 02 contract schemas/examples validate in the corpus: forbidden-claim-vocabulary, agent-draft, agent-action-request, and tts-utterance."
+        - "T003: Fake provider persists validated and blocked drafts in SQLite with forbidden-claim reasons and safe rewrites."
+        - "T004: Care Console agent-draft, stage-action-request, and list-action-requests are documented and tested; staged requests remain not_executed."
+        - "T005: Model scan recommends mlx-community/gemma-4-e2b-it-4bit and sentiuminc/holler-0.6b-6bit for 16 GB Mac mini constraints."
+        - "T006: Real provider work is deferred to a separate measured integration task."
+      commands:
+        - cmd: "npm run check"
+          status: pass
+        - cmd: "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-02-agent-assist/state.yaml"
+          status: pass_before_final_receipt
+      dirty_diff_note: "git status includes pre-existing Sprint 01/demo-surface dirty files as well as this Sprint 02 work; no unrelated files were reverted."
+      missing_evidence: []
+      next_task_if_not_complete: null
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: pass
+    task: T999
+    commands:
+      - "npm run check"
+      - "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-02-agent-assist/state.yaml"

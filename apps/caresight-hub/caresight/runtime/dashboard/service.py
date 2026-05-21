@@ -21,6 +21,9 @@ def build_dashboard_state(service: DashboardReviewService, *, event_id: str | No
     requested_event = next((event for event in all_events if event["event_id"] == event_id), None)
     current_event = requested_event or (awaiting_events[0] if awaiting_events else (all_events[0] if all_events else None))
     current_event_id = current_event["event_id"] if current_event else None
+    backlog_events = [
+        event for event in awaiting_events if current_event_id is None or event["event_id"] != current_event_id
+    ]
     journal_preview = []
     alert_draft = None
 
@@ -31,8 +34,23 @@ def build_dashboard_state(service: DashboardReviewService, *, event_id: str | No
     return {
         "source_of_truth": "sqlite",
         "view": {
+            "mode": "focused_event" if event_id else "inbox",
             "requested_event_id": event_id,
             "focused_event_found": event_id is None or requested_event is not None,
+        },
+        "focused_event": _focused_event(current_event),
+        "awaiting_review_backlog": {
+            "count": len(backlog_events),
+            "events": [
+                {
+                    "event_id": event["event_id"],
+                    "event_type": event["event_type"],
+                    "status": event["status"],
+                    "severity": event["severity"],
+                    "age_label": "awaiting_review_backlog",
+                }
+                for event in backlog_events
+            ],
         },
         "live_feed": {"status": "operator_view_required", "raw_video_stays_local": True},
         "current_state": {
@@ -67,4 +85,19 @@ def build_dashboard_state(service: DashboardReviewService, *, event_id: str | No
         },
         "journal_preview": journal_preview,
         "caregiver_alert_draft": alert_draft,
+    }
+
+
+def _focused_event(event: dict[str, Any] | None) -> dict[str, Any] | None:
+    if event is None:
+        return None
+    return {
+        "event_id": event["event_id"],
+        "event_type": event["event_type"],
+        "status": event["status"],
+        "occurred_at": event["occurred_at"],
+        "camera_id": event["camera_id"],
+        "zone_id": event.get("zone_id"),
+        "severity": event["severity"],
+        "confidence": event["confidence"],
     }

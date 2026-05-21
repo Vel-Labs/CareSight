@@ -9,11 +9,17 @@ const addFormats = require("ajv-formats") as (ajv: InstanceType<typeof Ajv2020>)
 
 const schemaByName = new Map([
   ["alert-policy", "alert-policy.schema.json"],
+  ["agent-action-request", "agent-action-request.schema.json"],
+  ["agent-draft", "agent-draft.schema.json"],
+  ["blackbox-receipt", "blackbox-receipt.schema.json"],
   ["camera-config", "camera-config.schema.json"],
   ["care-event", "care-event.schema.json"],
   ["caregiver-role", "caregiver-role.schema.json"],
+  ["forbidden-claim-vocabulary", "forbidden-claim-vocabulary.schema.json"],
+  ["human-review-packet", "human-review-packet.schema.json"],
   ["project-capability", "project-capability.schema.json"],
   ["routine", "routine.schema.json"],
+  ["tts-utterance", "tts-utterance.schema.json"],
   ["llm-provider", "llm-provider.schema.json"]
 ]);
 

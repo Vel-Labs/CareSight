@@ -101,3 +101,21 @@ Rationale: live proof should become easier to audit without letting stale rows, 
 CareSight v0 supports configured source selection for `webcam`, `usb`, `continuity_camera`, and local `rtsp` sources by camera ID or unambiguous source type. The runtime rejects cloud/provider camera scope and credential-bearing RTSP URLs, and it still writes selected camera provenance through the existing SQLite event path.
 
 Rationale: the demo needs credible multi-camera setup without claiming live proof, adding discovery, handling credentials, or making any source other than SQLite canonical for event lifecycle state.
+
+## 2026-05-20: Keep Sprint 01 Demo Packets and Receipts Read-Only
+
+Human review packets and blackbox receipts are derived from SQLite audit-chain records. They may summarize evidence, review state, journal counts, report-only handoffs, dashboard inclusion, and alert-draft provenance, but they must not create events, confirm, dismiss, delete, dispatch, diagnose, or become canonical truth.
+
+Rationale: the demo needs a clean, repeatable proof surface for judges and future agents while preserving the bounded control loop and keeping SQLite plus authorized human review as the authority boundary.
+
+## 2026-05-21: Keep Sprint 02 Agent Actions Staged Before OpenClaw/Hermes
+
+Sprint 02 implements a CareSight-owned fake provider, `agent_drafts`, and `agent_action_requests` before any OpenClaw or Hermes agent surface. OpenClaw/Hermes may later wrap staged requests for Apple Notes, iMessage, FaceTime, OBS, or TTS, but they must not bypass CareSight policy, SQLite provenance, forbidden-claim validation, or human approval.
+
+Rationale: OpenClaw and Hermes are useful because they provide service integrations, not because they should become the authority layer. CareSight must own the contract, staging, audit, and approval boundary before service-capable agents are connected.
+
+## 2026-05-21: Keep Downloaded MLX Models Local and Ignored
+
+Gemma and Holler MLX model artifacts are local runtime dependencies under `apps/caresight-hub/models/` and are ignored by Git. Repo commits should track manifests, audit notes, config, and integration code, not multi-gigabyte model weights.
+
+Rationale: the hackathon appliance needs local model availability, but public Git history should stay portable and avoid committing large generated artifacts.

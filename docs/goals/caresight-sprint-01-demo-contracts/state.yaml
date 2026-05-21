@@ -1,0 +1,367 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "CareSight Sprint 01 Demo Surface and Contract Pack"
+  slug: "caresight-sprint-01-demo-contracts"
+  kind: existing_plan
+  tranche: "Implement Sprint 01 Demo Surface Consolidation end to end, and fold in Sprint 07 contract JSON alignment only if Judge confirms it is quick, bounded, and directly supports Sprint 01/Sprint 02 boundaries."
+  status: done
+  oracle:
+    signal: "`npm run check` passes, and `care_console.py review-packet` plus `care_console.py blackbox-receipt` produce schema-valid, SQLite-derived bounded outputs for `evt_d9aa38bdc636459c92ea4e25f665cd0d`."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Receipts show changed files, exact commands, passing verification, generated packet/receipt evidence, docs/changelog updates, and no safety-boundary drift."
+  intake:
+    original_request: "Goal-prep Sprint 01, possibly 07 as quick tack-on, review 00 as needed, and work agents in parallel."
+    interpreted_outcome: "Prepare and execute a GoalBuddy-backed Sprint 01 implementation path with parallel read-only mapping and bounded Worker slices, using Sprint 07 contract alignment before Agent/LLM work if feasible."
+    input_shape: existing_plan
+    audience: "CareSight operators, future Codex agents, hackathon demo reviewers, and caregiver-aware product reviewers."
+    authority: requested
+    proof_type: test
+    completion_proof: "Sprint 01 behavior is implemented, documented, and verified by concrete commands, including schema-valid review-packet and blackbox-receipt outputs for the proven live event."
+    likely_misfire: "Completing only contracts/docs, or starting Agent/LLM drafting before the review-packet/receipt and contract boundaries are implemented and validated."
+    blind_spots_considered:
+      - "Contract JSON pack may need reconciliation with existing validator style before copy-in."
+      - "Dashboard focused-mode changes may accidentally hide stale awaiting-review audit backlog."
+      - "Receipt generation must not synthesize missing rows as success."
+      - "CLI additions must be documented and agent-safe by default."
+      - "Parallel Workers are only safe after disjoint write scopes are proven."
+      - "docs/FILE_TREE.md may need regeneration for scaffold validation."
+    existing_plan_facts:
+      - "Recommended sprint order is 01 -> 07 -> 02 -> 03 -> 04 -> 05 -> 06 -> 08."
+      - "Sprint 01 is demo surface consolidation."
+      - "Sprint 07 is contract JSON pack alignment and may be folded in only if quick."
+      - "00-master-codex-prompt.md is a boundary document to review as needed during execution."
+      - "Do not start Gemma/OpenClaw/Hermes implementation in this tranche."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  parallel_agents_requested: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/caresight-sprint-01-demo-contracts/"
+    command: "npx goalbuddy board docs/goals/caresight-sprint-01-demo-contracts"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: pm
+    assignee: PM
+    status: done
+    reasoning_hint: medium
+    objective: "Use GoalBuddy parallel planning to launch read-only evidence mapping for Sprint 01 and Sprint 07 feasibility."
+    inputs:
+      - "docs/goals/caresight-sprint-01-demo-contracts/goal.md"
+      - "docs/goals/caresight-sprint-01-demo-contracts/state.yaml"
+      - "docs/roadmaps/caresight_sprint_pack/00-master-codex-prompt.md"
+      - "docs/roadmaps/caresight_sprint_pack/01-sprint-demo-surface-consolidation.md"
+      - "docs/roadmaps/caresight_sprint_pack/07-contract-json-pack.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "AGENTS.md"
+    constraints:
+      - "Read-only except updating this board with Scout receipts and the next active task."
+      - "Run `goalbuddy parallel-plan docs/goals/caresight-sprint-01-demo-contracts` before spawning parallel agents."
+      - "Use goal_scout for read-only mapping tasks if spawning agents."
+      - "Do not implement Sprint 01 in this task."
+    expected_output:
+      - "Parallel-plan result or PM fallback rationale."
+      - "Receipts for read-only evidence mapping."
+      - "Decision whether T002 has enough evidence to judge the first Worker slices."
+    receipt:
+      result: done
+      summary: "Ran GoalBuddy update check, absolute-path parallel-plan, and three parallel read-only goal_scout agents for contracts, runtime/CLI, and sprint-boundary evidence. Scouts agree Sprint 01 is correctly scoped; Sprint 07 as a whole is too broad, but the blackbox-receipt and human-review-packet contract alignment is a suitable bounded checkpoint."
+      evidence:
+        - "parallel-plan: active PM task is not itself safe to parallelize, so PM used user-approved parallel goal_scout sidecars."
+        - "Contract Scout: validator uses strict AJV 2020, schemaByName map, and exact corpus count test; new schemas require packages/core/src/validate-contracts.ts and tests/contracts/contract-corpus.test.ts updates."
+        - "Contract Scout: only blackbox-receipt and human-review-packet are directly Sprint 01-supporting; full Sprint 07 agent/action/appearance/TTS schemas should be deferred."
+        - "Runtime Scout: ReviewService.get_audit_chain(event_id) returns event, observations, reviews, journal_entries, and agent_handoffs and is the clean input for review-packet and blackbox-receipt."
+        - "Runtime Scout: LiveProofAuditCollector already builds a blackbox-style read-only bundle and can inform receipt design."
+        - "Boundary Scout: do not broaden Sprint 07 beyond Sprint 01 schemas before Worker execution; do not start Gemma/OpenClaw/Hermes."
+      commands:
+        - cmd: "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-update.mjs --json"
+          status: pass
+        - cmd: "npx goalbuddy parallel-plan /Users/steven/Workspace/40_Code/hackathons/CareSight/docs/goals/caresight-sprint-01-demo-contracts --json"
+          status: pass
+      next_task: T002
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Decide the safest implementation sequence and whether Sprint 07 is a quick tack-on or a deferred follow-up."
+    inputs:
+      - "T001 receipt and Scout findings"
+      - "Sprint 01 and Sprint 07 roadmap files"
+      - "Current contract validator style and existing runtime/CLI surfaces"
+    constraints:
+      - "Read-only."
+      - "Do not implement."
+      - "Preserve CareSight safety boundaries and the 01 -> 07 -> 02 ordering."
+      - "Pick the largest safe useful Worker slices with explicit allowed_files, verify commands, and stop conditions."
+    expected_output:
+      - "Decision: fold Sprint 07 into Sprint 01 contract slice, partially fold, or defer."
+      - "Exact Worker objectives."
+      - "Disjoint allowed_files if parallel Workers are safe."
+      - "Verification commands."
+      - "Stop conditions."
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      summary: "Judge sidecar timed out, so PM applied a read-only Judge fallback from Scout evidence. Decision: defer full Sprint 07; fold in only the Sprint 01 contract JSON alignment for blackbox-receipt and human-review-packet. The first Worker slice is contracts/examples plus validator/test count updates. Runtime/CLI/dashboard Workers must wait for the contract slice."
+      evidence:
+        - "Contract Scout: full Sprint 07 includes agent-draft, action-request, appearance-profile, and TTS schemas and is broader than a quick tack-on."
+        - "Contract Scout: new schema examples require schemaByName entries in packages/core/src/validate-contracts.ts and updated exact corpus counts in tests/contracts/contract-corpus.test.ts."
+        - "Boundary Scout: copying all Sprint 07 schemas risks starting Agent/LLM scope early."
+        - "Runtime Scout: ReviewService.get_audit_chain is the correct downstream input after contract slice."
+      worker_sequence:
+        - "T003 contract schemas/examples/validator counts."
+        - "T004 read-only demo_surface builders."
+        - "T005 CLI plus focused dashboard/backlog."
+        - "T006 audit/docs/full verification."
+      required_board_updates:
+        - "Add packages/core/src/validate-contracts.ts and tests/contracts/contract-corpus.test.ts to T003 allowed_files."
+        - "Limit T003 stop_if to defer full Sprint 07 beyond blackbox-receipt and human-review-packet."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement the contract and example slice selected by Judge for Sprint 01, including Sprint 07 alignment only if approved."
+    allowed_files:
+      - "contracts/schemas/blackbox-receipt.schema.json"
+      - "contracts/schemas/human-review-packet.schema.json"
+      - "contracts/examples/valid/blackbox-receipt.possible-floor-stay.json"
+      - "contracts/examples/valid/human-review-packet.possible-floor-stay.json"
+      - "contracts/examples/invalid/blackbox-receipt-emergency-dispatch.json"
+      - "contracts/examples/invalid/blackbox-receipt-claims-diagnosis.json"
+      - "contracts/examples/invalid/human-review-packet-missing-provenance.json"
+      - "packages/core/src/validate-contracts.ts"
+      - "tests/contracts/contract-corpus.test.ts"
+      - "contracts/README.md"
+      - "DECISIONS.md"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run validate:contracts"
+      - "npm run test:focused"
+    stop_if:
+      - "Need to weaken an existing schema to make new examples pass."
+      - "Sprint 07 requires broad schema migration beyond blackbox receipt, human review packet, and concise agent-boundary vocabulary."
+      - "Need files outside allowed_files."
+      - "Validation fails twice for unclear reasons."
+    receipt:
+      result: done
+      changed_files:
+        - "contracts/schemas/blackbox-receipt.schema.json"
+        - "contracts/schemas/human-review-packet.schema.json"
+        - "contracts/examples/valid/blackbox-receipt.possible-floor-stay.json"
+        - "contracts/examples/valid/human-review-packet.possible-floor-stay.json"
+        - "contracts/examples/invalid/blackbox-receipt-emergency-dispatch.json"
+        - "contracts/examples/invalid/blackbox-receipt-claims-diagnosis.json"
+        - "contracts/examples/invalid/human-review-packet-missing-provenance.json"
+        - "packages/core/src/validate-contracts.ts"
+        - "tests/contracts/contract-corpus.test.ts"
+        - "contracts/README.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "npm run validate:contracts && npm run test:focused"
+          status: pass
+      summary: "Implemented the bounded Sprint 01 contract slice locally after Worker 019e47b4-e037-7832-824a-1db085851107 timed out and was shut down with no allowed-file changes. Added blackbox-receipt and human-review-packet schemas, two valid examples, three invalid examples, validator schema routing, updated corpus counts, contract README notes, changelog entry, and regenerated FILE_TREE. Full Sprint 07 agent/action/appearance/TTS schemas remain deferred."
+      remaining_blockers: []
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Implement read-only demo surface services for human review packets and blackbox receipts from SQLite audit chains."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/demo_surface/__init__.py"
+      - "apps/caresight-hub/caresight/runtime/demo_surface/review_packet.py"
+      - "apps/caresight-hub/caresight/runtime/demo_surface/blackbox_receipt.py"
+      - "apps/caresight-hub/tests/test_demo_surface.py"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_demo_surface.py'"
+      - "npm run py:check"
+    stop_if:
+      - "Need to mutate SQLite from receipt or packet builders."
+      - "Need to synthesize missing observation/review/journal/handoff rows as success."
+      - "Need files outside allowed_files."
+      - "Python verification fails twice for unclear reasons."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/demo_surface/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/review_packet.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/blackbox_receipt.py"
+        - "apps/caresight-hub/tests/test_demo_surface.py"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_demo_surface.py'"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+      summary: "Added read-only demo_surface packet and receipt builders plus markdown renderers from SQLite audit-chain dictionaries. Blackbox receipts mark missing review/journal/handoff chains as not_complete with blockers. Added focused tests for packet provenance, incomplete receipts, complete human-reviewed receipts, and boundary markdown."
+      remaining_blockers: []
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Wire Sprint 01 CLI and focused dashboard/backlog behavior, then document the commands."
+    allowed_files:
+      - "apps/caresight-hub/scripts/care_console.py"
+      - "apps/caresight-hub/caresight/runtime/dashboard/service.py"
+      - "apps/caresight-hub/tests/test_care_console.py"
+      - "apps/caresight-hub/tests/test_live_proof_audit.py"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run py:check"
+      - "python3 apps/caresight-hub/scripts/care_console.py dashboard --event-id evt_d9aa38bdc636459c92ea4e25f665cd0d"
+      - "python3 apps/caresight-hub/scripts/care_console.py review-packet evt_d9aa38bdc636459c92ea4e25f665cd0d --format json"
+      - "python3 apps/caresight-hub/scripts/care_console.py blackbox-receipt evt_d9aa38bdc636459c92ea4e25f665cd0d --format json"
+    stop_if:
+      - "Need to confirm, dismiss, delete, dispatch, diagnose, or otherwise mutate event lifecycle state."
+      - "Focused dashboard hides stale awaiting-review records instead of separating them as backlog."
+      - "Need files outside allowed_files."
+      - "CLI output cannot be generated because the local proof event database is unavailable; record blocker and add deterministic fixture tests instead."
+    receipt:
+      result: done
+      changed_files:
+        - "apps/caresight-hub/scripts/care_console.py"
+        - "apps/caresight-hub/caresight/runtime/dashboard/service.py"
+        - "apps/caresight-hub/tests/test_care_console.py"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+      commands:
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py dashboard --event-id evt_d9aa38bdc636459c92ea4e25f665cd0d"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py review-packet evt_d9aa38bdc636459c92ea4e25f665cd0d --format json"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/care_console.py blackbox-receipt evt_d9aa38bdc636459c92ea4e25f665cd0d --format json"
+          status: pass
+      summary: "Wired care_console review-packet and blackbox-receipt read-only commands with JSON/Markdown/output support. Dashboard focused mode now exposes focused_event and a separate awaiting_review_backlog instead of letting stale rows drive the proof view. CLI docs and current-state roadmap now include the new demo commands."
+      remaining_blockers: []
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Create Sprint 01 audit receipt and finish docs/changelog/file-tree synchronization."
+    allowed_files:
+      - "docs/audits/2026-05-20-sprint-01-demo-surface.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/cli/COMMANDS.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run validate:scaffold"
+      - "npm run check"
+    stop_if:
+      - "Audit would claim live proof not demonstrated by commands."
+      - "Need implementation files outside allowed_files."
+      - "`npm run check` fails twice for reasons unrelated to stale docs/FILE_TREE.md."
+    receipt:
+      result: done
+      changed_files:
+        - "docs/audits/2026-05-20-sprint-01-demo-surface.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+        - "docs/FILE_TREE.md"
+      commands:
+        - cmd: "npm run validate:scaffold"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      summary: "Recorded Sprint 01 audit evidence for dashboard, review-packet, and blackbox-receipt commands against evt_d9aa38bdc636459c92ea4e25f665cd0d. Added a decision preserving packets/receipts as read-only SQLite-derived surfaces, linked the audit from current-state roadmap, regenerated FILE_TREE, and passed the full repo gate."
+      remaining_blockers: []
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether Sprint 01 and any approved Sprint 07 contract alignment satisfy the original user outcome for this tranche."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+      - "Generated review-packet and blackbox-receipt evidence"
+    constraints:
+      - "Read-only."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if the Agent/LLM drafting layer was started before Sprint 01 and contract alignment were proven."
+      - "Reject completion if commands, docs, changelog, or audit evidence are missing."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "mapping from receipts to goal oracle"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "Sprint 01 tranche is complete. The implementation maps to the oracle: npm run check passes, review-packet and blackbox-receipt commands produce SQLite-derived bounded outputs for evt_d9aa38bdc636459c92ea4e25f665cd0d, stale awaiting-review rows remain visible as backlog, and full Sprint 07 agent/action/appearance/TTS work was not started."
+      evidence:
+        - "T003 added and validated blackbox-receipt and human-review-packet contracts, examples, validator routing, and corpus counts."
+        - "T004 added read-only demo_surface builders and tests for packets, complete receipts, incomplete receipts, and boundary markdown."
+        - "T005 added care_console.py review-packet and blackbox-receipt commands plus focused dashboard/backlog separation."
+        - "T006 recorded docs/audits/2026-05-20-sprint-01-demo-surface.md, updated DECISIONS.md, linked current-state docs, regenerated FILE_TREE, and passed npm run check."
+        - "git diff --check passed."
+        - "Markdown review-packet output includes SQLite source-of-truth and no autonomous dispatch language."
+        - "Markdown blackbox-receipt output shows completion_status complete, observation/review/journal/handoff counts of 1, track_5, and blocked actions."
+      blocked_tasks: []
+      required_board_updates: []
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: unknown
+    task: null
+    commands: []
