@@ -143,3 +143,9 @@ Rationale: Hermes carries its own docs, skills, examples, and template placehold
 CareSight urgent handoffs may target an allowlisted emergency-contact role, but the staged message must ask for human direction instead of initiating a call or attaching media. The current supported options are text acknowledgement, local screen capture by request, and FaceTime handoff by request.
 
 Rationale: escalation should help caregivers act quickly without making CareSight an emergency dispatch system or letting Hermes control cameras, calls, messages, or raw video by default.
+
+## 2026-05-21: Sprint Done Means Operationally Ready
+
+CareSight sprint status must not call a sprint complete when only contracts, fixtures, templates, fake providers, staged payloads, or dry-run surfaces exist. Those are implementation milestones. A sprint is production-ready only when the real local runtime path is configured, exercised end to end, human-validated where required, and backed by an audit receipt.
+
+Rationale: the project is safety-sensitive and local-first. Overstating scaffolded or staged behavior as complete weakens trust and makes it harder to see which human and runtime gates remain.

@@ -22,16 +22,37 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - Deterministic v1 routine policies: `medication_routine_likely_observed` and `hydration_routine_likely_observed`.
 - Live proof event `evt_d9aa38bdc636459c92ea4e25f665cd0d` completed the v0 blackbox loop: live floor-zone observation, SQLite event and observation with `track_id`, authorized human confirmation, journal row, report-only handoff row, focused dashboard view, caregiver alert draft, and complete live-proof bundle.
 - YOLO26 image smoke now reports human-readable COCO labels plus machine-readable `class_id` in normalized observations.
-- Sprint 01 contract-backed demo surfaces are complete: `human-review-packet` and `blackbox-receipt` contracts exist, read-only demo-surface builders derive from SQLite audit chains, and `care_console.py` exposes `review-packet` and `blackbox-receipt` as agent-safe read commands.
+- Sprint 01 contract-backed demo surfaces are implemented but not yet production-validated: `human-review-packet` and `blackbox-receipt` contracts exist, read-only demo-surface builders derive from SQLite audit chains, and `care_console.py` exposes `review-packet` and `blackbox-receipt` as agent-safe read commands. Human validation still needs to confirm that the generated packet/receipt are demo-ready and operationally useful.
 - Sprint 01 demo surface audit receipt: `docs/audits/2026-05-20-sprint-01-demo-surface.md`.
-- Sprint 02 agent-assist contracts are complete for this tranche: `agent-draft`, `agent-action-request`, `tts-utterance`, and `forbidden-claim-vocabulary` schemas/examples validate through the contract corpus.
-- The Sprint 02 fake provider is complete for this tranche: validated and blocked agent drafts are stored in SQLite through `agent_drafts`, with forbidden-claim reasons and safe rewrites for blocked drafts.
-- Sprint 02 action-request staging is complete for this tranche: `care_console.py agent-draft`, `stage-action-request`, and `list-action-requests` write and inspect local SQLite rows only. Staged requests remain `not_executed` and require human approval.
+- Sprint 02 agent-assist infrastructure is implemented but not production-ready: `agent-draft`, `agent-action-request`, `tts-utterance`, and `forbidden-claim-vocabulary` schemas/examples validate through the contract corpus, but real Gemma serving, Hermes invocation, live iMessage, FaceTime, OBS, and TTS are not operational.
+- The Sprint 02 fake provider is a safety proof, not the finished provider: validated and blocked agent drafts are stored in SQLite through `agent_drafts`, with forbidden-claim reasons and safe rewrites for blocked drafts.
+- Sprint 02 action-request staging is implemented as a pre-execution gate: `care_console.py agent-draft`, `stage-action-request`, and `list-action-requests` write and inspect local SQLite rows only. Staged requests remain `not_executed` and require human approval.
 - Local model candidates have been downloaded under ignored purpose lanes for follow-up provider benchmarking: `models/vision/yolo26-mlx/`, `models/reasoning/gemma/`, and `models/tts/holler/`.
 - Hermes is vendored as a pinned workspace submodule at `apps/caresight-hub/vendor/hermes-agent`; OpenClaw remains uninstalled and available as the policy-heavy gateway fallback.
 - Hermes is now the preferred first harness trial for staged iMessage/Notes/FaceTime-style actions. `care_console.py agent-harness-plan` renders non-executing routing plans only.
 - `apps/caresight-hub/config/hermes/` contains safe repo-local Hermes templates for a local OpenAI-compatible Gemma MLX endpoint; OpenRouter is not required by default and remains an explicit cloud fallback only.
 - Staged Hermes handoff payloads now support `routine`, `attention`, and `urgent_handoff` levels, allowlisted emergency-contact routing, and bounded response options for journal text updates, local screen capture by request, or FaceTime handoff by request.
+
+## Production Readiness Correction
+
+The sprint status language must distinguish implementation scaffolding from production-ready operation. Under the current project standard, a sprint is not production-ready until the real runtime path works end to end with configured local dependencies, human validation, and an audit receipt.
+
+Sprint 01 remaining production gates:
+
+1. Human review of generated `review-packet` and `blackbox-receipt` output for the accepted live proof event.
+2. Confirmation that packet/receipt language is caregiver-ready and does not overclaim medical, emergency, or identity facts.
+3. A fresh run against a new event, not only the historical proof event.
+
+Sprint 02 remaining production gates:
+
+1. Serve Gemma locally through an OpenAI-compatible endpoint and prove a real draft path can use it.
+2. Invoke Hermes from CareSight through the staged payload boundary.
+3. Configure a real allowlisted caregiver/emergency-contact record without committing secrets.
+4. Prove one dry-run iMessage payload and one human-approved live send path.
+5. Configure and validate OBS virtual camera or a documented local screen-capture path before offering visual handoff.
+6. Configure and validate FaceTime handoff as a human-approved action, not an autonomous call.
+7. Configure and validate local TTS output from a validated utterance.
+8. Record SQLite execution-attempt rows for every attempted external action.
 
 ## Immediate Next Action
 

@@ -8,6 +8,8 @@ Sprint 01 added contract-backed, read-only demo surfaces for the proven CareSigh
 
 - `human-review-packet`
 - `blackbox-receipt`
+
+This audit proves the read-only packet/receipt implementation and deterministic command output. It does not by itself prove production readiness. Human validation still needs to confirm that the packet and receipt are understandable, useful in the actual demo flow, and acceptable for caregiver-facing language.
 - focused dashboard mode with separate awaiting-review backlog
 
 These surfaces are derived from SQLite audit-chain records through `ReviewService`. They do not confirm, dismiss, delete, dispatch, diagnose, or create events.

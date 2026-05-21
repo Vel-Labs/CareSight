@@ -6,6 +6,8 @@ Date: 2026-05-21
 
 Use Hermes as the first controlled harness trial for CareSight service wrappers, with OpenClaw retained as the gateway/policy fallback.
 
+This is an implementation audit for staged routing, not a production-readiness receipt. Hermes is vendored and payloads are rendered, but CareSight does not yet invoke Hermes, serve Gemma, send iMessage, start FaceTime, run OBS, or play TTS.
+
 ## Evidence
 
 - Hermes documents iMessage through BlueBubbles, including webhook ingress, REST API egress, group chats, attachments, reactions, read receipts, and setup variables.
@@ -56,9 +58,14 @@ The payload does not attach raw video, start FaceTime, send iMessage, run OBS, o
 
 Before enabling a real harness:
 
+- serve Gemma locally behind the configured OpenAI-compatible endpoint
+- call Hermes from CareSight with a staged payload and capture the result
 - create local secret handling for BlueBubbles/OpenClaw credentials
 - add allowlists for caregiver recipients and group chats
 - add SQLite execution-attempt logs
 - require human approval per staged action
 - prove the harness cannot bypass CareSight forbidden-claim validation
 - measure memory and latency with YOLO26, Gemma, and the selected harness running
+- run one human-approved allowlisted iMessage test
+- run one human-approved FaceTime or screen-share handoff test
+- run one validated local TTS playback test
