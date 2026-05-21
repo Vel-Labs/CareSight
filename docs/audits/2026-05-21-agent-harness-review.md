@@ -20,6 +20,7 @@ Use Hermes as the first controlled harness trial for CareSight service wrappers,
 - `prepare_facetime_handoff` defaults to Hermes as a handoff plan, not call execution.
 - `play_tts_utterance` routes to the Holler TTS model lane.
 - OpenClaw can be forced with `--prefer openclaw` for gateway fallback review.
+- Urgent handoffs use an allowlisted `emergency_contact` role and can offer a text update, local screen capture by request, or FaceTime handoff by request.
 
 ## Current Implementation
 
@@ -28,6 +29,7 @@ Use Hermes as the first controlled harness trial for CareSight service wrappers,
 - Added model-lane routing for Gemma reasoning and Holler TTS.
 - Added Hermes as a pinned workspace vendor submodule at `apps/caresight-hub/vendor/hermes-agent`.
 - Added safe Hermes config templates under `apps/caresight-hub/config/hermes/` for a local OpenAI-compatible Gemma endpoint.
+- Added `care_console.py hermes-handoff-payload` to render the non-executing Hermes payload for staged requests.
 - No OpenClaw or Hermes process is invoked by CareSight.
 - No Apple Notes, iMessage, FaceTime, OBS, or TTS action is executed.
 
@@ -39,6 +41,16 @@ Hermes supports custom OpenAI-compatible endpoints. CareSight's default plan is:
 - configure Hermes with `provider: custom`
 - route validated drafts through staged `agent_action_requests`
 - keep OpenRouter unset unless a human explicitly approves cloud fallback testing
+
+## Urgent Handoff Wording
+
+The staged urgent-handoff payload asks for caregiver direction:
+
+- provide a text update for the journal
+- request a local screen capture from the configured video feed
+- request a FaceTime handoff to view the feed
+
+The payload does not attach raw video, start FaceTime, send iMessage, run OBS, or claim an emergency.
 
 ## Remaining Gate
 

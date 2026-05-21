@@ -210,6 +210,7 @@ apps/caresight-hub/vendor/yolo-mlx/tests/test_tracking.py
 apps/caresight-hub/vendor/yolo-mlx/webAI-contributor-license-agreement.md
 contracts/README.md
 contracts/examples/invalid/agent-action-request-executed.json
+contracts/examples/invalid/agent-action-request-missing-allowlist.json
 contracts/examples/invalid/agent-draft-autonomous-dispatch-claim.json
 contracts/examples/invalid/agent-draft-medical-device-claim.json
 contracts/examples/invalid/blackbox-receipt-claims-diagnosis.json
@@ -223,6 +224,7 @@ contracts/examples/invalid/raw-video-cloud-upload-default.json
 contracts/examples/invalid/ring-camera-provider-out-of-scope.json
 contracts/examples/invalid/tts-utterance-medication-confirmed.json
 contracts/examples/valid/agent-action-request.staged-note.json
+contracts/examples/valid/agent-action-request.urgent-handoff.json
 contracts/examples/valid/agent-draft.possible-floor-stay.json
 contracts/examples/valid/blackbox-receipt.possible-floor-stay.json
 contracts/examples/valid/caregiver-alert-policy.json

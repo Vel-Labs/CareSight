@@ -317,13 +317,13 @@ python apps/caresight-hub/scripts/care_console.py stage-action-request <event_id
 
 Purpose: stage a local action request from a validated agent draft without executing it.
 
-Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|send_imessage_draft|create_apple_note|prepare_handoff_packet|prepare_facetime_handoff|play_tts_utterance`, optional `--destination caregiver_console|imessage|apple_notes|facetime|local_tts|handoff_packet`, and optional `--db <path>`.
+Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|send_imessage_draft|create_apple_note|prepare_handoff_packet|prepare_facetime_handoff|play_tts_utterance`, optional `--destination caregiver_console|imessage|apple_notes|facetime|local_tts|handoff_packet`, optional `--escalation-level routine|attention|urgent_handoff`, optional `--recipient-role caregiver|emergency_contact`, repeatable `--allowed-contact-id contact_<id>`, repeatable `--response-option acknowledge_text_update|request_local_screen_capture|request_facetime_handoff|dismiss_after_review`, and optional `--db <path>`.
 
-Outputs: `agent-action-request` JSON with `stage: staged`, `execution_state: not_executed`, `requires_human_approval: true`, source draft, destination, safety boundaries, and provenance.
+Outputs: `agent-action-request` JSON with `stage: staged`, `execution_state: not_executed`, `requires_human_approval: true`, source draft, destination, escalation level, recipient role, allowlisted contact IDs, response options, safety boundaries, and provenance.
 
 Validation: `test_agent_assist.py` verifies staged requests stay local and blocked drafts cannot stage action requests. `test_care_console.py` verifies CLI staging persists only local SQLite rows.
 
-Agent safety: `agent-safe-read`. Agents may stage and list action requests, but Sprint 02 provides no command that executes the requested action.
+Agent safety: `agent-safe-read`. Agents may stage and list action requests, but Sprint 02 provides no command that executes the requested action. iMessage and FaceTime destinations require allowlisted contact IDs.
 
 ## Care Console Agent Harness Plan
 
@@ -342,6 +342,24 @@ Outputs: selected harness, source draft, action request, model lane, routing met
 Validation: `test_agent_assist.py` and `test_care_console.py` verify iMessage defaults to the Hermes harness plan, TTS routes to the Holler model lane, and the command never performs external execution.
 
 Agent safety: `agent-safe-read`. This command plans routing only; it does not send iMessage, append Apple Notes, open FaceTime, invoke TTS, or call OpenClaw/Hermes.
+
+## Care Console Hermes Handoff Payload
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py hermes-handoff-payload <request_id>
+```
+
+Purpose: render the non-executing Hermes payload for a staged action request.
+
+Inputs: `request_id` and optional `--db <path>`.
+
+Outputs: selected destination, recipient role, allowlisted contact IDs, escalation level, caregiver-facing message text, response options, media options, payload provenance, and safety boundaries.
+
+Validation: `test_agent_assist.py` and `test_care_console.py` verify urgent iMessage handoffs offer a local screen capture or FaceTime handoff by request only, remain `payload_only`, and never include raw video execution.
+
+Agent safety: `agent-safe-read`. This command does not send iMessage, append Apple Notes, open FaceTime, invoke TTS, attach screenshots, expose raw video, or call Hermes.
 
 ## Care Console Hermes Config Plan
 

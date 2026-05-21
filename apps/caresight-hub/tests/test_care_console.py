@@ -282,6 +282,7 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(request["stage"], "staged")
             self.assertEqual(request["execution_state"], "not_executed")
             self.assertTrue(request["requires_human_approval"])
+            self.assertEqual(request["escalation_level"], "attention")
 
             list_result = subprocess.run(
                 [
@@ -333,6 +334,16 @@ class CareConsoleTest(unittest.TestCase):
                     "send_imessage_draft",
                     "--destination",
                     "imessage",
+                    "--escalation-level",
+                    "urgent_handoff",
+                    "--recipient-role",
+                    "emergency_contact",
+                    "--allowed-contact-id",
+                    "contact_emergency_primary",
+                    "--response-option",
+                    "request_local_screen_capture",
+                    "--response-option",
+                    "request_facetime_handoff",
                 ],
                 capture_output=True,
                 check=False,
@@ -359,6 +370,27 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(plan["selected_harness"], "hermes")
             self.assertEqual(plan["execution_state"], "plan_only")
             self.assertEqual(plan["external_execution"], "not_allowed_by_this_command")
+
+            payload_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "hermes-handoff-payload",
+                    request["request_id"],
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(payload_result.returncode, 0, payload_result.stderr)
+            payload = json.loads(payload_result.stdout)
+            self.assertEqual(payload["execution_state"], "payload_only")
+            self.assertEqual(payload["recipient_role"], "emergency_contact")
+            self.assertIn("screen capture", payload["message_text"])
+            self.assertIn("FaceTime handoff", payload["message_text"])
 
     def test_hermes_config_plan_cli_reports_local_model_route(self) -> None:
         with seeded_review_service() as seed:

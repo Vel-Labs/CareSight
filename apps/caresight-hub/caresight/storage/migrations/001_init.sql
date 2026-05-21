@@ -107,6 +107,10 @@ CREATE TABLE IF NOT EXISTS agent_action_requests (
   requires_human_approval INTEGER NOT NULL,
   source_draft_id TEXT NOT NULL REFERENCES agent_drafts(draft_id) ON DELETE CASCADE,
   destination TEXT,
+  escalation_level TEXT NOT NULL DEFAULT 'attention',
+  recipient_role TEXT,
+  allowed_contact_ids_json TEXT NOT NULL DEFAULT '[]',
+  response_options_json TEXT NOT NULL DEFAULT '[]',
   safety_boundaries_json TEXT NOT NULL,
   provenance_json TEXT NOT NULL
 );

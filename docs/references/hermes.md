@@ -27,6 +27,16 @@ The default route is Hermes `provider: custom` plus `base_url: http://127.0.0.1:
 
 OpenRouter is not required for this path. Treat OpenRouter as an explicit cloud fallback only, because care context may leave the local machine.
 
+## Handoff Payloads
+
+`care_console.py hermes-handoff-payload <request_id>` renders the message Hermes would receive for a staged request. For urgent handoffs, the payload targets an allowlisted `emergency_contact` and offers bounded options:
+
+- text update for the journal
+- local screen capture by human request
+- FaceTime handoff by human request
+
+The payload remains `payload_only`; it does not send iMessage, attach screenshots, start FaceTime, run OBS, or expose raw video to Hermes.
+
 ## Security Cautions
 
 - Treat BlueBubbles credentials as local secrets.

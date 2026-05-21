@@ -31,6 +31,7 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - Hermes is vendored as a pinned workspace submodule at `apps/caresight-hub/vendor/hermes-agent`; OpenClaw remains uninstalled and available as the policy-heavy gateway fallback.
 - Hermes is now the preferred first harness trial for staged iMessage/Notes/FaceTime-style actions. `care_console.py agent-harness-plan` renders non-executing routing plans only.
 - `apps/caresight-hub/config/hermes/` contains safe repo-local Hermes templates for a local OpenAI-compatible Gemma MLX endpoint; OpenRouter is not required by default and remains an explicit cloud fallback only.
+- Staged Hermes handoff payloads now support `routine`, `attention`, and `urgent_handoff` levels, allowlisted emergency-contact routing, and bounded response options for journal text updates, local screen capture by request, or FaceTime handoff by request.
 
 ## Immediate Next Action
 

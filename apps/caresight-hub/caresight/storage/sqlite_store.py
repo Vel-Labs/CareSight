@@ -21,6 +21,25 @@ class SQLiteStore:
         with self._connect() as conn:
             conn.executescript(SCHEMA_SQL)
             ensure_column(conn, table="event_observations", column="track_id", definition="TEXT")
+            ensure_column(
+                conn,
+                table="agent_action_requests",
+                column="escalation_level",
+                definition="TEXT NOT NULL DEFAULT 'attention'",
+            )
+            ensure_column(conn, table="agent_action_requests", column="recipient_role", definition="TEXT")
+            ensure_column(
+                conn,
+                table="agent_action_requests",
+                column="allowed_contact_ids_json",
+                definition="TEXT NOT NULL DEFAULT '[]'",
+            )
+            ensure_column(
+                conn,
+                table="agent_action_requests",
+                column="response_options_json",
+                definition="TEXT NOT NULL DEFAULT '[]'",
+            )
 
     def upsert_config(self, config: CareSightConfig) -> None:
         with self._connect() as conn:
@@ -396,10 +415,14 @@ class SQLiteStore:
                   requires_human_approval,
                   source_draft_id,
                   destination,
+                  escalation_level,
+                  recipient_role,
+                  allowed_contact_ids_json,
+                  response_options_json,
                   safety_boundaries_json,
                   provenance_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     request["request_id"],
@@ -411,6 +434,10 @@ class SQLiteStore:
                     int(request["requires_human_approval"]),
                     request["source_draft_id"],
                     request.get("destination"),
+                    request.get("escalation_level", "attention"),
+                    request.get("recipient_role"),
+                    json.dumps(request.get("allowed_contact_ids", []), sort_keys=True),
+                    json.dumps(request.get("response_options", []), sort_keys=True),
                     json.dumps(request["safety_boundaries"], sort_keys=True),
                     json.dumps(request["provenance"], sort_keys=True),
                 ),
@@ -608,6 +635,10 @@ def agent_action_request_from_row(row: sqlite3.Row) -> dict[str, Any]:
         "requires_human_approval": bool(row["requires_human_approval"]),
         "source_draft_id": row["source_draft_id"],
         "destination": row["destination"],
+        "escalation_level": row["escalation_level"],
+        "recipient_role": row["recipient_role"],
+        "allowed_contact_ids": json.loads(row["allowed_contact_ids_json"]),
+        "response_options": json.loads(row["response_options_json"]),
         "safety_boundaries": json.loads(row["safety_boundaries_json"]),
         "provenance": json.loads(row["provenance_json"]),
     }

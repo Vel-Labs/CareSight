@@ -7,6 +7,7 @@ from caresight.runtime.agent_assist import (
     build_agent_draft,
     build_harness_plan,
     build_hermes_config_plan,
+    build_hermes_handoff_payload,
     stage_action_request,
     validate_draft_text,
 )
@@ -73,6 +74,7 @@ class AgentAssistTest(unittest.TestCase):
             self.assertIn("no_external_execution", request["safety_boundaries"])
             self.assertEqual(stored[0]["request_id"], request["request_id"])
             self.assertEqual(stored[0]["execution_state"], "not_executed")
+            self.assertEqual(stored[0]["escalation_level"], "attention")
 
     def test_blocked_draft_cannot_stage_action_request(self) -> None:
         with seeded_store() as seed:
@@ -99,6 +101,9 @@ class AgentAssistTest(unittest.TestCase):
                 source_draft_id=draft["draft_id"],
                 requested_action="send_imessage_draft",
                 destination="imessage",
+                escalation_level="urgent_handoff",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
             )
             plan = build_harness_plan(request, draft=draft)
 
@@ -107,6 +112,44 @@ class AgentAssistTest(unittest.TestCase):
             self.assertEqual(plan["external_execution"], "not_allowed_by_this_command")
             self.assertEqual(plan["model_lane"]["provider"], "gemma_mlx")
             self.assertIn("no_raw_video_to_agent", plan["safety_boundaries"])
+            self.assertIn("allowlisted_recipient_only", request["safety_boundaries"])
+
+    def test_imessage_staging_requires_allowlisted_contact(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id)
+
+            with self.assertRaises(ValueError):
+                stage_action_request(
+                    seed.store,
+                    event_id=seed.event_id,
+                    source_draft_id=draft["draft_id"],
+                    requested_action="send_imessage_draft",
+                    destination="imessage",
+                )
+
+    def test_hermes_handoff_payload_offers_screen_capture_or_facetime_without_execution(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                escalation_level="urgent_handoff",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+                response_options=["request_local_screen_capture", "request_facetime_handoff"],
+            )
+            payload = build_hermes_handoff_payload(request, draft=draft)
+
+            self.assertEqual(payload["execution_state"], "payload_only")
+            self.assertEqual(payload["recipient_role"], "emergency_contact")
+            self.assertIn("possible urgent event", payload["message_text"])
+            self.assertIn("screen capture", payload["message_text"])
+            self.assertIn("FaceTime handoff", payload["message_text"])
+            self.assertEqual(payload["media_options"]["obs_virtual_camera"], "operator_configured_only")
+            self.assertIn("no_raw_video_to_agent", payload["safety_boundaries"])
 
     def test_harness_plan_routes_tts_to_holler_lane(self) -> None:
         with seeded_store() as seed:

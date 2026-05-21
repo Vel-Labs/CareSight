@@ -137,6 +137,10 @@ def stage_action_request(
     source_draft_id: str,
     requested_action: str,
     destination: str | None = None,
+    escalation_level: str = "attention",
+    recipient_role: str | None = None,
+    allowed_contact_ids: list[str] | None = None,
+    response_options: list[str] | None = None,
 ) -> dict[str, Any]:
     draft = store.get_agent_draft(source_draft_id)
     if draft["event_id"] != event_id:
@@ -152,6 +156,34 @@ def stage_action_request(
         "play_tts_utterance",
     }:
         raise ValueError(f"unsupported staged action: {requested_action}")
+    if escalation_level not in {"routine", "attention", "urgent_handoff"}:
+        raise ValueError(f"unsupported escalation level: {escalation_level}")
+    allowed_contacts = allowed_contact_ids or []
+    if destination in {"imessage", "facetime"} and not allowed_contacts:
+        raise ValueError("imessage/facetime staging requires at least one allowlisted contact id")
+    if recipient_role not in {None, "caregiver", "emergency_contact"}:
+        raise ValueError(f"unsupported recipient role: {recipient_role}")
+    resolved_response_options = response_options or _default_response_options(requested_action)
+    allowed_options = {
+        "acknowledge_text_update",
+        "request_local_screen_capture",
+        "request_facetime_handoff",
+        "dismiss_after_review",
+    }
+    unsupported_options = [option for option in resolved_response_options if option not in allowed_options]
+    if unsupported_options:
+        raise ValueError(f"unsupported response options: {', '.join(unsupported_options)}")
+    safety_boundaries = [
+        "stage_only",
+        "human_review_required",
+        "no_external_execution",
+        "no_autonomous_dispatch",
+        "sqlite_canonical",
+    ]
+    if destination in {"imessage", "facetime"}:
+        safety_boundaries.append("allowlisted_recipient_only")
+    if requested_action in {"send_imessage_draft", "prepare_facetime_handoff"}:
+        safety_boundaries.append("no_raw_video_to_agent")
 
     request = {
         "schema": "agent-action-request",
@@ -164,13 +196,11 @@ def stage_action_request(
         "requires_human_approval": True,
         "source_draft_id": source_draft_id,
         "destination": destination,
-        "safety_boundaries": [
-            "stage_only",
-            "human_review_required",
-            "no_external_execution",
-            "no_autonomous_dispatch",
-            "sqlite_canonical",
-        ],
+        "escalation_level": escalation_level,
+        "recipient_role": recipient_role,
+        "allowed_contact_ids": allowed_contacts,
+        "response_options": resolved_response_options,
+        "safety_boundaries": safety_boundaries,
         "provenance": {
             "source": "sqlite_audit_chain",
             "source_fields": ["events", "agent_drafts", "agent_action_requests"],
@@ -178,6 +208,12 @@ def stage_action_request(
     }
     store.insert_agent_action_request(request)
     return request
+
+
+def _default_response_options(requested_action: str) -> list[str]:
+    if requested_action in {"send_imessage_draft", "prepare_facetime_handoff"}:
+        return ["acknowledge_text_update", "request_local_screen_capture", "request_facetime_handoff"]
+    return ["acknowledge_text_update"]
 
 
 def _safe_rewrite(audit: dict[str, Any]) -> str:

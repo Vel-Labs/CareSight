@@ -137,3 +137,9 @@ Rationale: Hermes provides the service-capable agent surface, but CareSight stil
 CareSight scaffold validation tracks the Hermes submodule through `.gitmodules`, CareSight-owned config templates, docs, and audit records, but it does not recurse through the upstream Hermes working tree for file-tree or placeholder governance.
 
 Rationale: Hermes carries its own docs, skills, examples, and template placeholders that are not CareSight contract placeholders. Validating those upstream files as CareSight-owned governance would create false failures and make the local file tree noisy without improving CareSight safety.
+
+## 2026-05-21: Make Emergency Contact Escalation a Bounded Ask
+
+CareSight urgent handoffs may target an allowlisted emergency-contact role, but the staged message must ask for human direction instead of initiating a call or attaching media. The current supported options are text acknowledgement, local screen capture by request, and FaceTime handoff by request.
+
+Rationale: escalation should help caregivers act quickly without making CareSight an emergency dispatch system or letting Hermes control cameras, calls, messages, or raw video by default.

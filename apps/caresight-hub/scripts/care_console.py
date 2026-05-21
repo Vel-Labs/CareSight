@@ -62,6 +62,19 @@ def parse_args() -> argparse.Namespace:
         "--destination",
         choices=["caregiver_console", "imessage", "apple_notes", "facetime", "local_tts", "handoff_packet"],
     )
+    stage_parser.add_argument("--escalation-level", choices=["routine", "attention", "urgent_handoff"], default="attention")
+    stage_parser.add_argument("--recipient-role", choices=["caregiver", "emergency_contact"])
+    stage_parser.add_argument("--allowed-contact-id", action="append", default=[])
+    stage_parser.add_argument(
+        "--response-option",
+        action="append",
+        choices=[
+            "acknowledge_text_update",
+            "request_local_screen_capture",
+            "request_facetime_handoff",
+            "dismiss_after_review",
+        ],
+    )
     list_actions_parser = subparsers.add_parser(
         "list-action-requests",
         help="List staged local action requests for an event.",
@@ -73,6 +86,11 @@ def parse_args() -> argparse.Namespace:
     )
     harness_parser.add_argument("request_id")
     harness_parser.add_argument("--prefer", choices=["hermes", "openclaw", "auto"], default="auto")
+    payload_parser = subparsers.add_parser(
+        "hermes-handoff-payload",
+        help="Render the non-executing Hermes handoff payload for one staged action request.",
+    )
+    payload_parser.add_argument("request_id")
     subparsers.add_parser(
         "hermes-config-plan",
         help="Render the workspace-local Hermes and local model serving plan.",
@@ -93,6 +111,7 @@ def main() -> None:
         build_agent_draft,
         build_harness_plan,
         build_hermes_config_plan,
+        build_hermes_handoff_payload,
         stage_action_request,
     )
     from caresight.runtime.review import ReviewService
@@ -141,6 +160,10 @@ def main() -> None:
             source_draft_id=args.draft_id,
             requested_action=args.action,
             destination=args.destination,
+            escalation_level=args.escalation_level,
+            recipient_role=args.recipient_role,
+            allowed_contact_ids=args.allowed_contact_id,
+            response_options=args.response_option,
         )
         print(json.dumps(request, indent=2, sort_keys=True))
         return
@@ -154,6 +177,12 @@ def main() -> None:
         draft = store.get_agent_draft(request["source_draft_id"])
         plan = build_harness_plan(request, draft=draft, preferred_harness=args.prefer)
         print(json.dumps(plan, indent=2, sort_keys=True))
+        return
+
+    if args.command == "hermes-handoff-payload":
+        request = store.get_agent_action_request(args.request_id)
+        draft = store.get_agent_draft(request["source_draft_id"])
+        print(json.dumps(build_hermes_handoff_payload(request, draft=draft), indent=2, sort_keys=True))
         return
 
 

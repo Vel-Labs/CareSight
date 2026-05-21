@@ -61,6 +61,37 @@
       "type": ["string", "null"],
       "enum": ["caregiver_console", "imessage", "apple_notes", "facetime", "local_tts", "handoff_packet", null]
     },
+    "escalation_level": {
+      "type": "string",
+      "enum": ["routine", "attention", "urgent_handoff"],
+      "default": "attention"
+    },
+    "recipient_role": {
+      "type": ["string", "null"],
+      "enum": ["caregiver", "emergency_contact", null]
+    },
+    "allowed_contact_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^contact_[a-z0-9_-]+$"
+      }
+    },
+    "response_options": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "acknowledge_text_update",
+          "request_local_screen_capture",
+          "request_facetime_handoff",
+          "dismiss_after_review"
+        ]
+      }
+    },
     "safety_boundaries": {
       "type": "array",
       "minItems": 3,
@@ -72,7 +103,9 @@
           "human_review_required",
           "no_external_execution",
           "no_autonomous_dispatch",
-          "sqlite_canonical"
+          "sqlite_canonical",
+          "allowlisted_recipient_only",
+          "no_raw_video_to_agent"
         ]
       },
       "allOf": [
@@ -107,5 +140,52 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "destination": {
+            "enum": ["imessage", "facetime"]
+          }
+        },
+        "required": ["destination"]
+      },
+      "then": {
+        "required": ["allowed_contact_ids", "recipient_role"],
+        "properties": {
+          "allowed_contact_ids": true,
+          "recipient_role": true,
+          "safety_boundaries": {
+            "type": "array",
+            "contains": {
+              "const": "allowlisted_recipient_only"
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "requested_action": {
+            "enum": ["send_imessage_draft", "prepare_facetime_handoff"]
+          }
+        },
+        "required": ["requested_action"]
+      },
+      "then": {
+        "required": ["response_options"],
+        "properties": {
+          "response_options": true,
+          "safety_boundaries": {
+            "type": "array",
+            "contains": {
+              "const": "no_raw_video_to_agent"
+            }
+          }
+        }
+      }
+    }
+  ]
 }

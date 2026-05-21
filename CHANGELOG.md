@@ -11,6 +11,7 @@
 - Added a non-executing Hermes/OpenClaw harness planning layer for staged action requests, including iMessage and FaceTime handoff planning.
 - Vendored Hermes as a pinned workspace submodule and added safe local config templates for routing Hermes to a local OpenAI-compatible Gemma MLX endpoint.
 - Updated scaffold validation so upstream Hermes submodule files are treated as external vendor content rather than CareSight-owned placeholder/file-tree material.
+- Added staged Hermes handoff payloads with escalation level, emergency-contact allowlists, and bounded response options for text updates, local screen capture by request, and FaceTime handoff by request.
 
 ## 2026-05-20
 
