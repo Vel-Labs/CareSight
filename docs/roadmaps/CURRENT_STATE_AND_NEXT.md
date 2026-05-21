@@ -28,8 +28,9 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - The Sprint 02 fake provider is complete for this tranche: validated and blocked agent drafts are stored in SQLite through `agent_drafts`, with forbidden-claim reasons and safe rewrites for blocked drafts.
 - Sprint 02 action-request staging is complete for this tranche: `care_console.py agent-draft`, `stage-action-request`, and `list-action-requests` write and inspect local SQLite rows only. Staged requests remain `not_executed` and require human approval.
 - Local model candidates have been downloaded under ignored purpose lanes for follow-up provider benchmarking: `models/vision/yolo26-mlx/`, `models/reasoning/gemma/`, and `models/tts/holler/`.
-- OpenClaw/Hermes have not been installed or wired yet. They remain future service-capable wrappers behind CareSight-owned action-request policy for Apple Notes, iMessage, FaceTime, OBS, and TTS.
-- Hermes is now the preferred first harness trial for staged iMessage/Notes/FaceTime-style actions; OpenClaw remains the policy-heavy gateway fallback. `care_console.py agent-harness-plan` renders non-executing routing plans only.
+- Hermes is vendored as a pinned workspace submodule at `apps/caresight-hub/vendor/hermes-agent`; OpenClaw remains uninstalled and available as the policy-heavy gateway fallback.
+- Hermes is now the preferred first harness trial for staged iMessage/Notes/FaceTime-style actions. `care_console.py agent-harness-plan` renders non-executing routing plans only.
+- `apps/caresight-hub/config/hermes/` contains safe repo-local Hermes templates for a local OpenAI-compatible Gemma MLX endpoint; OpenRouter is not required by default and remains an explicit cloud fallback only.
 
 ## Immediate Next Action
 

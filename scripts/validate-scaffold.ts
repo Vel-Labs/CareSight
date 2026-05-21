@@ -166,6 +166,7 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
     "images",
     "results"
   ]);
+  const ignoredVendorRoots = new Set(["apps/caresight-hub/vendor/hermes-agent"]);
   const entries = await readdir(path.join(dir, prefix), { withFileTypes: true });
   const files: string[] = [];
 
@@ -174,6 +175,9 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
       continue;
     }
     const relative = path.join(prefix, entry.name);
+    if (ignoredVendorRoots.has(relative)) {
+      continue;
+    }
     if (entry.isDirectory()) {
       files.push(...(await listRepoFiles(dir, relative)));
     } else {

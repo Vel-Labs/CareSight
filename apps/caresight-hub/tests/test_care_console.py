@@ -360,6 +360,28 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(plan["execution_state"], "plan_only")
             self.assertEqual(plan["external_execution"], "not_allowed_by_this_command")
 
+    def test_hermes_config_plan_cli_reports_local_model_route(self) -> None:
+        with seeded_review_service() as seed:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "hermes-config-plan",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["schema"], "hermes-config-plan")
+            self.assertEqual(payload["harness"], "hermes")
+            self.assertFalse(payload["local_model_serving"]["openrouter_required"])
+            self.assertEqual(payload["local_model_serving"]["base_url"], "http://127.0.0.1:8080/v1")
+
 
 class Seed:
     def __init__(self, tmpdir: tempfile.TemporaryDirectory[str]):

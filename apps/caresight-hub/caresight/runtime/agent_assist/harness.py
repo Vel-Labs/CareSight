@@ -21,6 +21,16 @@ MODEL_LANES = {
     },
 }
 
+HERMES_CONFIG = {
+    "vendor_path": "apps/caresight-hub/vendor/hermes-agent",
+    "pinned_tag": "v2026.5.16",
+    "workspace_config": "apps/caresight-hub/config/hermes/config.caresight.local.yaml",
+    "workspace_env_example": "apps/caresight-hub/config/hermes/env.caresight.example",
+    "model_routes": "apps/caresight-hub/config/hermes/model-routes.json",
+    "local_openai_base_url": "http://127.0.0.1:8080/v1",
+    "default_reasoning_model": "gemma-4-e2b-it-4bit",
+}
+
 
 HARNESS_CANDIDATES = {
     "hermes": {
@@ -111,3 +121,45 @@ def choose_model_lane(requested_action: str) -> dict[str, str]:
     if requested_action == "play_tts_utterance":
         return MODEL_LANES["tts"]
     return MODEL_LANES["reasoning"]
+
+
+def build_hermes_config_plan() -> dict[str, Any]:
+    return {
+        "schema": "hermes-config-plan",
+        "harness": "hermes",
+        "role": "service-capable runner behind CareSight staged action requests",
+        "vendor": {
+            "path": HERMES_CONFIG["vendor_path"],
+            "pinned_tag": HERMES_CONFIG["pinned_tag"],
+            "install_scope": "workspace_vendor_submodule",
+            "global_install_performed": False,
+        },
+        "local_model_serving": {
+            "default": "local_openai_compatible_endpoint",
+            "base_url": HERMES_CONFIG["local_openai_base_url"],
+            "model": HERMES_CONFIG["default_reasoning_model"],
+            "reasoning_lane": MODEL_LANES["reasoning"],
+            "tts_lane": MODEL_LANES["tts"],
+            "openrouter_required": False,
+            "openrouter_use": "explicit_cloud_fallback_only",
+        },
+        "workspace_files": {
+            "config_template": HERMES_CONFIG["workspace_config"],
+            "env_example": HERMES_CONFIG["workspace_env_example"],
+            "model_routes": HERMES_CONFIG["model_routes"],
+        },
+        "routing_policy": {
+            "input_source": "validated_agent_drafts",
+            "action_source": "agent_action_requests",
+            "execution": "not_enabled",
+            "approval": "human_required_before_any_live_harness",
+        },
+        "safety_boundaries": [
+            "sqlite_canonical",
+            "stage_only",
+            "no_external_execution",
+            "no_raw_video_to_agent",
+            "no_autonomous_dispatch",
+            "no_cloud_router_by_default",
+        ],
+    }

@@ -125,3 +125,15 @@ Rationale: the hackathon appliance needs local model availability, but public Gi
 CareSight will prefer Hermes for the first controlled harness trial because its current docs show a direct BlueBubbles iMessage route and broad self-hosting/integration posture. OpenClaw remains the gateway/policy fallback because its docs expose strong pairing, allowlist, session, and config-write controls.
 
 Rationale: the first harness should prove user-visible service routing without weakening CareSight's staging boundary. Hermes appears to be the simpler first route for iMessage/Notes/FaceTime-style workflows, while OpenClaw is valuable when gateway control and multi-agent routing become more important.
+
+## 2026-05-21: Serve Hermes Through a Local OpenAI-Compatible Endpoint
+
+CareSight vendors Hermes as a pinned workspace dependency and configures it to use a local OpenAI-compatible endpoint for Gemma MLX by default. OpenRouter and other hosted routers remain explicit cloud fallback options only.
+
+Rationale: Hermes provides the service-capable agent surface, but CareSight still needs local-first privacy, SQLite provenance, and bounded staging. A local endpoint lets Hermes use the Gemma reasoning lane without sending care context to a hosted router by default.
+
+## 2026-05-21: Treat Hermes Upstream Files as External Vendor Content
+
+CareSight scaffold validation tracks the Hermes submodule through `.gitmodules`, CareSight-owned config templates, docs, and audit records, but it does not recurse through the upstream Hermes working tree for file-tree or placeholder governance.
+
+Rationale: Hermes carries its own docs, skills, examples, and template placeholders that are not CareSight contract placeholders. Validating those upstream files as CareSight-owned governance would create false failures and make the local file tree noisy without improving CareSight safety.

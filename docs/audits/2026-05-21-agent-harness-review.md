@@ -26,8 +26,19 @@ Use Hermes as the first controlled harness trial for CareSight service wrappers,
 - Added non-executing harness planning through `care_console.py agent-harness-plan`.
 - Added `send_imessage_draft` and `prepare_facetime_handoff` as staged action request types.
 - Added model-lane routing for Gemma reasoning and Holler TTS.
-- No OpenClaw or Hermes process is installed or invoked by CareSight.
+- Added Hermes as a pinned workspace vendor submodule at `apps/caresight-hub/vendor/hermes-agent`.
+- Added safe Hermes config templates under `apps/caresight-hub/config/hermes/` for a local OpenAI-compatible Gemma endpoint.
+- No OpenClaw or Hermes process is invoked by CareSight.
 - No Apple Notes, iMessage, FaceTime, OBS, or TTS action is executed.
+
+## Local Model Serving
+
+Hermes supports custom OpenAI-compatible endpoints. CareSight's default plan is:
+
+- serve Gemma MLX locally at `http://127.0.0.1:8080/v1`
+- configure Hermes with `provider: custom`
+- route validated drafts through staged `agent_action_requests`
+- keep OpenRouter unset unless a human explicitly approves cloud fallback testing
 
 ## Remaining Gate
 

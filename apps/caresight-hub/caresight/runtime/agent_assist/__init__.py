@@ -4,12 +4,13 @@ from .service import (
     stage_action_request,
     validate_draft_text,
 )
-from .harness import build_harness_plan
+from .harness import build_harness_plan, build_hermes_config_plan
 
 __all__ = [
     "FakeAgentProvider",
     "build_agent_draft",
     "build_harness_plan",
+    "build_hermes_config_plan",
     "stage_action_request",
     "validate_draft_text",
 ]

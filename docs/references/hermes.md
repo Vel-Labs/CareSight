@@ -15,6 +15,18 @@ Hermes can act as the first controlled service-wrapper trial for staged CareSigh
 
 Lean Hermes for the first harness trial because the public docs show a direct BlueBubbles iMessage route, broad integrations, and self-hosting support. Keep OpenClaw available as the stronger gateway/policy fallback because its docs expose explicit iMessage pairing, session isolation, and allowlist controls.
 
+## Workspace Setup
+
+Hermes is vendored at `apps/caresight-hub/vendor/hermes-agent` and pinned to `v2026.5.16`.
+
+CareSight config templates live under `apps/caresight-hub/config/hermes/`. They are safe repo templates only; they do not install Hermes globally, write `~/.hermes`, or configure live BlueBubbles credentials.
+
+## Model Routing
+
+The default route is Hermes `provider: custom` plus `base_url: http://127.0.0.1:8080/v1`, pointed at a local OpenAI-compatible server for the Gemma MLX reasoning lane.
+
+OpenRouter is not required for this path. Treat OpenRouter as an explicit cloud fallback only, because care context may leave the local machine.
+
 ## Security Cautions
 
 - Treat BlueBubbles credentials as local secrets.

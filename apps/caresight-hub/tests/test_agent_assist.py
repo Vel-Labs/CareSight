@@ -6,6 +6,7 @@ from caresight.events.floor_stay import FloorStayDetector
 from caresight.runtime.agent_assist import (
     build_agent_draft,
     build_harness_plan,
+    build_hermes_config_plan,
     stage_action_request,
     validate_draft_text,
 )
@@ -122,6 +123,17 @@ class AgentAssistTest(unittest.TestCase):
             self.assertEqual(plan["selected_harness"], "openclaw")
             self.assertEqual(plan["model_lane"]["provider"], "holler_mlx")
             self.assertEqual(plan["model_lane"]["default_model"], "holler-0.6b-6bit")
+
+    def test_hermes_config_plan_uses_local_endpoint_not_openrouter(self) -> None:
+        plan = build_hermes_config_plan()
+
+        self.assertEqual(plan["schema"], "hermes-config-plan")
+        self.assertEqual(plan["vendor"]["pinned_tag"], "v2026.5.16")
+        self.assertFalse(plan["vendor"]["global_install_performed"])
+        self.assertEqual(plan["local_model_serving"]["default"], "local_openai_compatible_endpoint")
+        self.assertEqual(plan["local_model_serving"]["base_url"], "http://127.0.0.1:8080/v1")
+        self.assertFalse(plan["local_model_serving"]["openrouter_required"])
+        self.assertIn("no_cloud_router_by_default", plan["safety_boundaries"])
 
 
 class Seed:

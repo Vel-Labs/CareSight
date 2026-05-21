@@ -73,6 +73,10 @@ def parse_args() -> argparse.Namespace:
     )
     harness_parser.add_argument("request_id")
     harness_parser.add_argument("--prefer", choices=["hermes", "openclaw", "auto"], default="auto")
+    subparsers.add_parser(
+        "hermes-config-plan",
+        help="Render the workspace-local Hermes and local model serving plan.",
+    )
     return parser.parse_args()
 
 
@@ -85,11 +89,21 @@ def main() -> None:
         render_blackbox_receipt_markdown,
         render_review_packet_markdown,
     )
-    from caresight.runtime.agent_assist import build_agent_draft, build_harness_plan, stage_action_request
+    from caresight.runtime.agent_assist import (
+        build_agent_draft,
+        build_harness_plan,
+        build_hermes_config_plan,
+        stage_action_request,
+    )
     from caresight.runtime.review import ReviewService
     from caresight.storage.sqlite_store import SQLiteStore
 
     args = parse_args()
+
+    if args.command == "hermes-config-plan":
+        print(json.dumps(build_hermes_config_plan(), indent=2, sort_keys=True))
+        return
+
     store = SQLiteStore(args.db)
     store.initialize()
     service = ReviewService(store)

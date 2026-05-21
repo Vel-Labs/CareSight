@@ -1,3 +1,6 @@
 [submodule "apps/caresight-hub/vendor/yolo-mlx"]
 	path = apps/caresight-hub/vendor/yolo-mlx
 	url = https://github.com/thewebAI/yolo-mlx.git
+[submodule "apps/caresight-hub/vendor/hermes-agent"]
+	path = apps/caresight-hub/vendor/hermes-agent
+	url = https://github.com/NousResearch/hermes-agent.git

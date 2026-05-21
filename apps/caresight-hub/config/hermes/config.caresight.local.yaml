@@ -1,0 +1,46 @@
+# CareSight Hermes template.
+# Copy or merge into ~/.hermes/config.yaml only for a human-approved harness trial.
+
+model:
+  default: gemma-4-e2b-it-4bit
+  provider: custom
+  base_url: http://127.0.0.1:8080/v1
+  api_key: caresight-local
+  context_length: 8192
+
+model_aliases:
+  caresight-gemma:
+    model: gemma-4-e2b-it-4bit
+    provider: custom
+    base_url: http://127.0.0.1:8080/v1
+  caresight-gemma-larger:
+    model: gemma-4-e4b-it-4bit
+    provider: custom
+    base_url: http://127.0.0.1:8080/v1
+
+auxiliary:
+  compression:
+    provider: custom
+    model: gemma-4-e2b-it-4bit
+    base_url: http://127.0.0.1:8080/v1
+    api_key: caresight-local
+
+delegation:
+  provider: custom
+  model: gemma-4-e2b-it-4bit
+  base_url: http://127.0.0.1:8080/v1
+  api_key: caresight-local
+  max_iterations: 1
+
+care_sight_policy:
+  canonical_source: sqlite
+  accepts_only: validated_agent_drafts
+  action_source: agent_action_requests
+  execution_enabled: false
+  human_approval_required: true
+  forbidden:
+    - autonomous_emergency_dispatch
+    - medical_device_claims
+    - hipaa_compliance_claims
+    - medication_administration_confirmation
+    - raw_video_decision_making

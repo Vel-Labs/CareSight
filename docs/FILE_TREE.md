@@ -67,6 +67,10 @@ apps/caresight-hub/caresight/storage/sqlite_store.py
 apps/caresight-hub/caresight/vision/__init__.py
 apps/caresight-hub/caresight/vision/coco.py
 apps/caresight-hub/caresight/vision/detections.py
+apps/caresight-hub/config/hermes/README.md
+apps/caresight-hub/config/hermes/config.caresight.local.yaml
+apps/caresight-hub/config/hermes/env.caresight.example
+apps/caresight-hub/config/hermes/model-routes.json
 apps/caresight-hub/config/v0.local.json
 apps/caresight-hub/pyproject.toml
 apps/caresight-hub/scripts/care_console.py

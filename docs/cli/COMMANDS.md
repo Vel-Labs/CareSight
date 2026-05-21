@@ -343,6 +343,24 @@ Validation: `test_agent_assist.py` and `test_care_console.py` verify iMessage de
 
 Agent safety: `agent-safe-read`. This command plans routing only; it does not send iMessage, append Apple Notes, open FaceTime, invoke TTS, or call OpenClaw/Hermes.
 
+## Care Console Hermes Config Plan
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py hermes-config-plan
+```
+
+Purpose: render the workspace-local Hermes vendor/config plan and the local model serving route.
+
+Inputs: optional `--db <path>` for CLI consistency. The command does not read event rows.
+
+Outputs: Hermes vendor submodule path and pinned tag, safe config template paths, local OpenAI-compatible `base_url`, Gemma/Holler model lanes, and the cloud-router boundary.
+
+Validation: `test_agent_assist.py` and `test_care_console.py` verify the plan uses a local endpoint, keeps OpenRouter optional, and reports that no global Hermes install or external execution was performed.
+
+Agent safety: `agent-safe-read`. This command does not install Hermes, write `~/.hermes`, start a model server, call OpenRouter, connect BlueBubbles, send iMessage, append Apple Notes, open FaceTime, or invoke TTS.
+
 ## Care Console List Action Requests
 
 Command:

@@ -1,0 +1,40 @@
+{
+  "schema": "caresight-hermes-model-routes",
+  "version": 1,
+  "defaultRoute": {
+    "harness": "hermes",
+    "provider": "custom",
+    "baseUrl": "http://127.0.0.1:8080/v1",
+    "model": "gemma-4-e2b-it-4bit",
+    "openRouterRequired": false
+  },
+  "lanes": {
+    "vision": {
+      "provider": "yolo26_mlx",
+      "purpose": "local person/object observation only",
+      "path": "apps/caresight-hub/models/vision/yolo26-mlx/converted/yolo26n.npz"
+    },
+    "reasoning": {
+      "provider": "gemma_mlx",
+      "purpose": "draft summaries and staged handoff text from SQLite provenance",
+      "defaultModel": "gemma-4-e2b-it-4bit",
+      "fallbackModel": "gemma-4-e4b-it-4bit",
+      "path": "apps/caresight-hub/models/reasoning/gemma"
+    },
+    "tts": {
+      "provider": "holler_mlx",
+      "purpose": "local TTS utterance generation after draft validation",
+      "defaultModel": "holler-0.6b-6bit",
+      "fallbackModel": "holler-0.6b",
+      "path": "apps/caresight-hub/models/tts/holler"
+    }
+  },
+  "policy": {
+    "canonicalSource": "sqlite",
+    "input": "validated_agent_drafts",
+    "action": "agent_action_requests",
+    "executionEnabled": false,
+    "humanApprovalRequired": true,
+    "cloudRouters": "explicit_fallback_only"
+  }
+}
