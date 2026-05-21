@@ -1,0 +1,749 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "CareSight Sprint 01/02 Production Validation"
+  slug: "caresight-sprint-01-02-production-validation"
+  kind: existing_plan
+  tranche: "Production-readiness validation for Sprint 01 demo surfaces and Sprint 02 local agent/Hermes escalation behavior using seeded-real A/B cases."
+  status: active
+  oracle:
+    signal: "The production validation checklist has ✅ status and linked proof artifacts for all required Sprint 01 and Sprint 02 gates, with passing verification and final audit full_outcome_complete: true."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md has completed statuses, linked proof artifacts under docs/audits/production-validation/, human validation receipts where required, npm run check passes, and final Judge/PM audit approves production readiness for the current local prototype scope."
+  intake:
+    original_request: "Use GoalBuddy goal-prep with the Sprint 01/02 production validation checklist to build a detailed board; no shortcuts; sprint completion means production-ready operation, not fixtures or templates."
+    interpreted_outcome: "Create an executable GoalBuddy board that drives Sprint 01 and Sprint 02 from implemented/staged surfaces to production-ready validation through seeded-real A/B evidence, real local integrations, human validation, and durable audit artifacts."
+    input_shape: existing_plan
+    audience: "CareSight operators, caregivers, future coding agents, and hackathon/product reviewers."
+    authority: approved
+    proof_type: "artifact + test + demo + review"
+    completion_proof: "Checklist statuses are updated to ✅ with proof links, all required artifacts exist, human validations are captured, real local Gemma/Hermes/TTS/visual-handoff gates are proven or explicitly blocked, and final audit maps proof to the original outcome."
+    likely_misfire: "Treating contracts, fake providers, templates, dry-run payloads, or existing historical proof as production-ready Sprint 01/02 completion."
+    blind_spots_considered:
+      - "Case B needs a real non-concerning seeded-real path or a defensible no-event proof."
+      - "Gemma endpoint setup may require MLX/VLM serving work rather than simple config."
+      - "Hermes may need workspace-local invocation plumbing rather than global install."
+      - "External messaging, FaceTime, OBS/screen capture, and TTS require human approval and privacy checks."
+      - "Execution-attempt logging must exist before real external action tests."
+      - "Secrets and contact data must not be committed."
+      - "Final production readiness cannot be claimed while any required live-human gate remains unvalidated."
+    existing_plan_facts:
+      - "Checklist source: docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md."
+      - "Case A seeded-real event: evt_d9aa38bdc636459c92ea4e25f665cd0d."
+      - "Case B should be a non-concerning desk/normal-presence seeded-real case."
+      - "Sprint 01 validation covers review packets, blackbox receipts, and human acceptance."
+      - "Sprint 02 requirements cover local Gemma endpoint, real Gemma draft, Hermes invocation, allowlisted contacts, execution-attempt logging, screen/OBS, FaceTime handoff, and TTS."
+      - "Sprint 02 validation covers Case A/Case B drafts, staging, Hermes dry-run, human-approved iMessage, visual handoff, TTS, and final acceptance."
+      - "Do not stage a new live test until seeded-real A/B validation passes."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/caresight-sprint-01-02-production-validation/"
+    command: "npx goalbuddy board /Users/steven/Workspace/40_Code/hackathons/CareSight/docs/goals/caresight-sprint-01-02-production-validation"
+
+active_task: T001
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: active
+    reasoning_hint: low
+    objective: "Map the current production-validation evidence surface, Case A proof, Case B options, artifact paths, and immediate blockers before any writes."
+    inputs:
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "docs/audits/2026-05-20-t041-final-live-proof.md"
+      - "docs/audits/2026-05-20-sprint-01-demo-surface.md"
+      - "docs/audits/2026-05-21-agent-harness-review.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "apps/caresight-hub/data/caresight-v0.sqlite3"
+      - "apps/caresight-hub/config/hermes/"
+    constraints:
+      - "Read-only."
+      - "Do not mark checklist items complete."
+      - "Do not run live camera, Hermes, Gemma, iMessage, FaceTime, OBS, or TTS."
+      - "Do not inspect or expose secrets."
+    expected_output:
+      - "Evidence map for Case A."
+      - "Recommended Case B path: capture normal no-event proof, seed a non-concerning event, or both."
+      - "List of artifact directories/files to create."
+      - "Immediate blockers and safe next Worker task."
+    receipt: null
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Validate the execution order and decide the largest safe first Worker package for Sprint 01/Sprint 02 production validation."
+    inputs:
+      - "T001 receipt"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "Goal oracle"
+    constraints:
+      - "Read-only."
+      - "Reject any plan that treats fake provider, templates, or dry-run-only payloads as production-ready."
+      - "Preserve human approval gates for messaging, visual handoff, and TTS."
+    expected_output:
+      - "Decision: approved | revise_before_worker | blocked"
+      - "Validated Worker order"
+      - "First Worker allowed_files, verify, and stop_if"
+      - "Any tasks that must become human-blocked gates"
+    receipt: null
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Create production-validation artifact directories and generate Sprint 01 Case A review packet and blackbox receipt artifacts from the accepted seeded-real event."
+    inputs:
+      - "T001 receipt"
+      - "T002 receipt"
+      - "Case A event_id evt_d9aa38bdc636459c92ea4e25f665cd0d"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+    constraints:
+      - "Use existing CLI commands rather than hand-writing packet/receipt JSON."
+      - "Do not mutate event lifecycle state."
+      - "Do not mark human acceptance complete."
+      - "No medical, HIPAA, emergency, or identity overclaims."
+    allowed_files:
+      - "docs/audits/production-validation/**"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "python3 apps/caresight-hub/scripts/care_console.py review-packet evt_d9aa38bdc636459c92ea4e25f665cd0d --format json"
+      - "python3 apps/caresight-hub/scripts/care_console.py blackbox-receipt evt_d9aa38bdc636459c92ea4e25f665cd0d --format json"
+      - "npm run check"
+    stop_if:
+      - "Case A event is missing from SQLite."
+      - "Snapshot path or audit chain is missing."
+      - "Generated artifacts contain forbidden claims."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T004
+    type: pm
+    assignee: PM
+    status: queued
+    reasoning_hint: medium
+    objective: "Request human validation for Sprint 01 Case A packet and receipt wording, then record the response or block the human gate."
+    inputs:
+      - "T003 receipt"
+      - "docs/audits/production-validation/sprint-01/case-a-review-packet.json"
+      - "docs/audits/production-validation/sprint-01/case-a-blackbox-receipt.json"
+    constraints:
+      - "Do not infer human acceptance."
+      - "Do not proceed as if accepted if the user has not approved wording."
+      - "If no human response is available, mark this task blocked and continue safe local work."
+    expected_output:
+      - "Human acceptance artifact or blocked receipt."
+      - "Checklist status updated only if human approves."
+    receipt: null
+
+  - id: T005
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Decide the safest Case B non-concerning seeded-real strategy: no-event desk proof, seeded normal event, or both."
+    inputs:
+      - "T001 receipt"
+      - "T004 receipt if available"
+      - "apps/caresight-hub/scripts/v0_floor_stay_live.py"
+      - "apps/caresight-hub/scripts/live_proof_audit.py"
+      - "apps/caresight-hub/config/v0.local.json"
+    constraints:
+      - "Read-only."
+      - "Do not run live camera."
+      - "Prefer proof that will distinguish non-concerning behavior from Case A."
+      - "Do not create fake proof that looks like live validation."
+    expected_output:
+      - "Decision: no_event_proof | seeded_normal_event | both | blocked"
+      - "Exact Worker objective and allowed_files for Case B"
+      - "Human prompt if operator action is needed"
+    receipt: null
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Create or capture Case B non-concerning seeded-real evidence according to the T005 decision and record the artifact."
+    inputs:
+      - "T005 receipt"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+    constraints:
+      - "Do not claim live proof unless a real command output or human-provided event ID supports it."
+      - "If camera/human action is required, block this task with an exact operator prompt instead of faking output."
+      - "Case B must not produce urgent escalation or emergency-contact routing."
+    allowed_files:
+      - "docs/audits/production-validation/**"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "apps/caresight-hub/tests/**"
+      - "apps/caresight-hub/caresight/**"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Human camera/desk action is required and not available."
+      - "Case B cannot be represented without misleading live-proof claims."
+      - "Need secrets or private contact info."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Generate Sprint 01 Case B review packet and blackbox receipt artifacts, then update the checklist with proof links."
+    inputs:
+      - "T006 receipt"
+      - "Case B event ID or no-event proof artifact"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+    constraints:
+      - "Use CLI-generated artifacts when a Case B event exists."
+      - "If Case B is a no-event proof, document why packet/receipt generation is not applicable and what proof substitutes."
+      - "Do not mark human acceptance complete."
+    allowed_files:
+      - "docs/audits/production-validation/**"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Case B proof is missing or ambiguous."
+      - "Generated Case B surfaces imply urgency without evidence."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T008
+    type: pm
+    assignee: PM
+    status: queued
+    reasoning_hint: medium
+    objective: "Request Sprint 01 A/B human acceptance and record approval, requested changes, or blocked status."
+    inputs:
+      - "T003 receipt"
+      - "T007 receipt"
+      - "docs/audits/production-validation/sprint-01/"
+    constraints:
+      - "Do not infer approval."
+      - "If changes are requested, create follow-up Worker tasks instead of marking accepted."
+    expected_output:
+      - "Human acceptance artifact or explicit blocker."
+      - "Updated checklist statuses for Sprint 01 only when approved."
+    receipt: null
+
+  - id: T009
+    type: scout
+    assignee: Scout
+    status: queued
+    reasoning_hint: low
+    objective: "Map current local model files, MLX serving options, Hermes config shape, and the smallest production path for local Gemma endpoint validation."
+    inputs:
+      - "apps/caresight-hub/models/reasoning/gemma/"
+      - "apps/caresight-hub/config/hermes/"
+      - "docs/audits/2026-05-21-sprint-02-agent-model-surface.md"
+      - "docs/references/gemma.md"
+      - "apps/caresight-hub/vendor/hermes-agent"
+    constraints:
+      - "Read-only."
+      - "Use primary/local docs or installed package help where possible."
+      - "Do not start a long-running model server."
+      - "Do not call hosted model routers."
+    expected_output:
+      - "Recommended local serving method."
+      - "Memory/latency risk notes for 16 GB Mac mini."
+      - "Exact Worker scope for endpoint implementation/proof."
+    receipt: null
+
+  - id: T010
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Implement and verify the local Gemma OpenAI-compatible endpoint production gate, producing a proof artifact."
+    inputs:
+      - "T009 receipt"
+      - "apps/caresight-hub/config/hermes/config.caresight.local.yaml"
+      - "apps/caresight-hub/config/hermes/model-routes.json"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+    constraints:
+      - "Prefer a local endpoint path over OpenRouter."
+      - "Do not commit model weights or generated caches."
+      - "If serving is impossible in current environment, record a concrete blocker and continue safe adjacent tasks."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/agent_assist/**"
+      - "apps/caresight-hub/scripts/**"
+      - "apps/caresight-hub/config/hermes/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/audits/production-validation/**"
+      - "docs/references/**"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "docs/cli/COMMANDS.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+      - "curl -s http://127.0.0.1:8080/v1/models || true"
+    stop_if:
+      - "Local model server requires unavailable dependencies or excessive memory."
+      - "Serving path would require sending care context to hosted router."
+      - "Need files outside allowed_files."
+      - "Verification fails twice."
+    receipt: null
+
+  - id: T011
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Implement a real local Gemma draft provider path from SQLite audit context, with fake-provider fallback and forbidden-claim validation."
+    inputs:
+      - "T010 receipt"
+      - "contracts/schemas/agent-draft.schema.json"
+      - "contracts/schemas/forbidden-claim-vocabulary.schema.json"
+      - "apps/caresight-hub/caresight/runtime/agent_assist/service.py"
+    constraints:
+      - "Gemma receives SQLite-derived audit context only, not raw video."
+      - "Persist validated and blocked drafts."
+      - "No external action execution."
+      - "Provider unavailable must fail closed or fall back explicitly."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/agent_assist/**"
+      - "apps/caresight-hub/scripts/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/audits/production-validation/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Gemma output cannot be constrained without prompt/validator changes outside allowed_files."
+      - "Provider path tries to inspect raw video or snapshots as decision-maker."
+      - "Need hosted model router."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T012
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Add SQLite execution-attempt logging before any real external action path is enabled."
+    inputs:
+      - "contracts/schemas/agent-action-request.schema.json"
+      - "apps/caresight-hub/caresight/storage/migrations/001_init.sql"
+      - "apps/caresight-hub/caresight/storage/sqlite_store.py"
+      - "docs/architecture/bounded_control_loop.md"
+    constraints:
+      - "Every dry-run or live external attempt must be inspectable."
+      - "Preserve existing SQLite rows with additive migrations."
+      - "No live external execution in this task."
+    allowed_files:
+      - "apps/caresight-hub/caresight/storage/**"
+      - "apps/caresight-hub/caresight/runtime/agent_assist/**"
+      - "apps/caresight-hub/scripts/**"
+      - "apps/caresight-hub/tests/**"
+      - "contracts/**"
+      - "docs/audits/production-validation/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run py:check"
+      - "npm run validate:contracts"
+      - "npm run check"
+    stop_if:
+      - "Migration would require destructive database rewrite."
+      - "Execution logging shape conflicts with current action-request contract."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T013
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Implement Hermes invocation in dry-run/no-send mode through the staged payload boundary and execution-attempt logging."
+    inputs:
+      - "T010 receipt"
+      - "T012 receipt"
+      - "apps/caresight-hub/vendor/hermes-agent"
+      - "apps/caresight-hub/config/hermes/"
+      - "docs/references/hermes.md"
+    constraints:
+      - "No live iMessage, FaceTime, Notes, OBS, or TTS execution."
+      - "Use allowlisted staged payloads only."
+      - "Record dry-run attempt/result in SQLite."
+      - "Do not write secrets."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/agent_assist/**"
+      - "apps/caresight-hub/scripts/**"
+      - "apps/caresight-hub/config/hermes/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/audits/production-validation/**"
+      - "docs/references/hermes.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Hermes requires global install or credentials for dry-run."
+      - "Hermes invocation cannot be isolated from live sends."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T014
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Configure redacted allowlisted caregiver/emergency-contact handling and prove unallowlisted iMessage/FaceTime requests are blocked."
+    inputs:
+      - "T012 receipt"
+      - "contracts/examples/invalid/agent-action-request-missing-allowlist.json"
+      - "apps/caresight-hub/config/hermes/env.caresight.example"
+    constraints:
+      - "Do not commit real phone numbers, addresses, tokens, passwords, or contact secrets."
+      - "Use redacted local config or documented env shape."
+      - "No live external sends."
+    allowed_files:
+      - "apps/caresight-hub/config/**"
+      - "apps/caresight-hub/caresight/runtime/agent_assist/**"
+      - "apps/caresight-hub/tests/**"
+      - "contracts/**"
+      - "docs/audits/production-validation/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run validate:contracts"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Real contact details are needed in a tracked file."
+      - "Allowlist cannot be verified without external credentials."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T015
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Run seeded-real Case A Sprint 02 path: real/local draft, urgent staged action, Hermes dry-run payload, execution-attempt log, and proof artifacts."
+    inputs:
+      - "T011 receipt"
+      - "T013 receipt"
+      - "T014 receipt"
+      - "Case A event_id evt_d9aa38bdc636459c92ea4e25f665cd0d"
+    constraints:
+      - "No live send/call/media/audio."
+      - "No raw video to Gemma or Hermes."
+      - "Urgent language must remain possible/observed and ask for direction."
+      - "Update checklist statuses only for proof-backed items."
+    allowed_files:
+      - "docs/audits/production-validation/**"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "apps/caresight-hub/tests/**"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Case A draft includes forbidden claims."
+      - "Hermes dry-run attempts live external execution."
+      - "Execution-attempt log is missing."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T016
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Run seeded-real Case B Sprint 02 path: non-urgent draft, non-urgent staging, Hermes dry-run if applicable, execution-attempt log, and proof artifacts."
+    inputs:
+      - "T006 receipt"
+      - "T011 receipt"
+      - "T013 receipt"
+      - "T014 receipt"
+    constraints:
+      - "Case B must not route to emergency contact unless human explicitly changes scope."
+      - "No live external execution."
+      - "If Case B is a no-event proof, document why agent drafting/staging is not applicable and what production behavior is expected."
+    allowed_files:
+      - "docs/audits/production-validation/**"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "apps/caresight-hub/tests/**"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Case B proof is missing."
+      - "Non-concerning path escalates as urgent without evidence."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T017
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit seeded-real A/B readiness before any live external iMessage, FaceTime, OBS/screen, or TTS action."
+    inputs:
+      - "T003 receipt"
+      - "T007 receipt"
+      - "T015 receipt"
+      - "T016 receipt"
+      - "Current checklist statuses"
+    constraints:
+      - "Read-only."
+      - "Reject live testing if A/B evidence is incomplete or ambiguous."
+      - "Name exact blockers and safe follow-up tasks."
+    expected_output:
+      - "Decision: approve_live_gates | not_ready"
+      - "Missing evidence if not ready"
+      - "Human approvals needed before live gates"
+    receipt: null
+
+  - id: T018
+    type: pm
+    assignee: PM
+    status: queued
+    reasoning_hint: medium
+    objective: "Request human approval for the first allowlisted live iMessage test, then record approval or block the live messaging gate."
+    inputs:
+      - "T017 receipt"
+      - "docs/audits/production-validation/sprint-02/case-a-hermes-dry-run.json"
+    constraints:
+      - "Do not send anything without explicit human approval."
+      - "Do not ask for secrets in chat or commit secrets."
+      - "If not approved, mark blocked and continue other safe local gates."
+    expected_output:
+      - "Approval receipt or blocked receipt."
+      - "Exact command/operator step for approved test."
+    receipt: null
+
+  - id: T019
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Execute one human-approved allowlisted iMessage test and record proof, or block with the exact missing credential/operator requirement."
+    inputs:
+      - "T018 receipt"
+      - "Hermes/BlueBubbles config from local untracked environment"
+    constraints:
+      - "Only run if T018 records explicit approval."
+      - "Target only allowlisted contact."
+      - "Record SQLite execution attempt and human receipt confirmation."
+      - "Do not expose real contact details in tracked artifacts."
+    allowed_files:
+      - "docs/audits/production-validation/**"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "apps/caresight-hub/tests/**"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Human approval is missing."
+      - "Credentials or BlueBubbles config are unavailable."
+      - "Target contact is not allowlisted."
+      - "Need to reveal secrets in tracked output."
+    receipt: null
+
+  - id: T020
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Configure and validate local screen-capture or OBS virtual camera handoff in non-live-send mode, with a privacy proof artifact."
+    inputs:
+      - "docs/architecture/obs_facetime_live_view.md"
+      - "docs/references/apple_shortcuts_facetime_notes.md"
+      - "T017 receipt"
+    constraints:
+      - "Do not expose unrelated private desktop content."
+      - "Do not start FaceTime or send raw video."
+      - "Prefer local screenshot/screen-capture proof before OBS/FaceTime live handoff."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/agent_assist/**"
+      - "apps/caresight-hub/scripts/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/audits/production-validation/**"
+      - "docs/references/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Human visual privacy confirmation is required and unavailable."
+      - "OBS/virtual camera is not installed or cannot be configured safely."
+      - "Need to capture private desktop content."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T021
+    type: pm
+    assignee: PM
+    status: queued
+    reasoning_hint: medium
+    objective: "Request human approval for FaceTime handoff testing and TTS playback validation, then record approvals or blockers."
+    inputs:
+      - "T017 receipt"
+      - "T020 receipt"
+      - "TTS model readiness artifacts"
+    constraints:
+      - "Do not start FaceTime without approval."
+      - "Do not play audio as validated without human audibility/wording confirmation."
+      - "If approval is unavailable, mark exact gates blocked and continue final local audit prep."
+    expected_output:
+      - "FaceTime approval or blocker."
+      - "TTS playback approval or blocker."
+      - "Exact commands/operator steps if approved."
+    receipt: null
+
+  - id: T022
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Execute approved FaceTime handoff preparation/test and local TTS playback validation, recording proof artifacts and checklist status."
+    inputs:
+      - "T021 receipt"
+      - "docs/references/apple_shortcuts_facetime_notes.md"
+      - "contracts/schemas/tts-utterance.schema.json"
+      - "apps/caresight-hub/models/tts/holler/"
+    constraints:
+      - "Only run approved actions."
+      - "Do not auto-call or auto-send raw video."
+      - "No voice cloning."
+      - "TTS text must be validated and bounded."
+      - "Record SQLite execution attempts where applicable."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/agent_assist/**"
+      - "apps/caresight-hub/scripts/**"
+      - "apps/caresight-hub/tests/**"
+      - "docs/audits/production-validation/**"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Human approval is missing."
+      - "TTS model cannot run locally."
+      - "FaceTime would place a call without explicit approval."
+      - "Need secrets or private contact info in tracked files."
+    receipt: null
+
+  - id: T023
+    type: worker
+    assignee: Worker
+    status: queued
+    reasoning_hint: medium
+    objective: "Update docs, changelog, decisions, checklist statuses, and current roadmap to reflect only proof-backed production validation results."
+    inputs:
+      - "All prior receipts"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "docs/audits/production-validation/"
+    constraints:
+      - "Do not mark blocked live gates complete."
+      - "Every ✅ must link to proof or human validation."
+      - "Do not overstate production readiness."
+    allowed_files:
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/audits/production-validation/**"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+      - "node /Users/steven/.codex/plugins/cache/goalbuddy/goalbuddy/0.3.7/skills/goalbuddy/scripts/check-goal-state.mjs docs/goals/caresight-sprint-01-02-production-validation/state.yaml"
+    stop_if:
+      - "Checklist status would require claiming unproven behavior."
+      - "Proof artifact is missing."
+      - "Need files outside allowed_files."
+    receipt: null
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Final audit: decide whether Sprint 01/02 production validation is complete for the current local prototype scope."
+    inputs:
+      - "All done and blocked receipts"
+      - "docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md"
+      - "docs/audits/production-validation/"
+      - "Latest npm run check output"
+      - "Current git status"
+    constraints:
+      - "Read-only."
+      - "Do not call the goal complete if any required Worker/live/human gate remains queued, active, or unproven."
+      - "If completion is not proven, create or name the next required task."
+    expected_output:
+      - "Decision: complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Mapping from oracle to proof artifacts"
+      - "Missing evidence and next task if not complete"
+    receipt: null
