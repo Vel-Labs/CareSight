@@ -32,6 +32,7 @@ apps/caresight-hub/caresight/journal/__init__.py
 apps/caresight-hub/caresight/obs/__init__.py
 apps/caresight-hub/caresight/runtime/__init__.py
 apps/caresight-hub/caresight/runtime/agent_assist/__init__.py
+apps/caresight-hub/caresight/runtime/agent_assist/harness.py
 apps/caresight-hub/caresight/runtime/agent_assist/service.py
 apps/caresight-hub/caresight/runtime/agents/__init__.py
 apps/caresight-hub/caresight/runtime/agents/policy.py
@@ -291,6 +292,7 @@ docs/audits/2026-05-20-t038-terminal-output.md
 docs/audits/2026-05-20-t039-live-event-captured.md
 docs/audits/2026-05-20-t040-human-review-required.md
 docs/audits/2026-05-20-t041-final-live-proof.md
+docs/audits/2026-05-21-agent-harness-review.md
 docs/audits/2026-05-21-sprint-02-agent-model-surface.md
 docs/audits/README.md
 docs/caresight_hub_docs_pack/01_product_roadmap.md
@@ -372,6 +374,7 @@ docs/project/PROJECT_BRIEF.md
 docs/project/TEMPLATE_USAGE.md
 docs/references/apple_shortcuts_facetime_notes.md
 docs/references/gemma.md
+docs/references/hermes.md
 docs/references/mlx.md
 docs/references/obs.md
 docs/references/openclaw.md

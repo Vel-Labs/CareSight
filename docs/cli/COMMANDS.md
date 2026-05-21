@@ -317,13 +317,31 @@ python apps/caresight-hub/scripts/care_console.py stage-action-request <event_id
 
 Purpose: stage a local action request from a validated agent draft without executing it.
 
-Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|create_apple_note|prepare_handoff_packet|play_tts_utterance`, optional `--destination caregiver_console|apple_notes|local_tts|handoff_packet`, and optional `--db <path>`.
+Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|send_imessage_draft|create_apple_note|prepare_handoff_packet|prepare_facetime_handoff|play_tts_utterance`, optional `--destination caregiver_console|imessage|apple_notes|facetime|local_tts|handoff_packet`, and optional `--db <path>`.
 
 Outputs: `agent-action-request` JSON with `stage: staged`, `execution_state: not_executed`, `requires_human_approval: true`, source draft, destination, safety boundaries, and provenance.
 
 Validation: `test_agent_assist.py` verifies staged requests stay local and blocked drafts cannot stage action requests. `test_care_console.py` verifies CLI staging persists only local SQLite rows.
 
 Agent safety: `agent-safe-read`. Agents may stage and list action requests, but Sprint 02 provides no command that executes the requested action.
+
+## Care Console Agent Harness Plan
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py agent-harness-plan <request_id> --prefer auto
+```
+
+Purpose: render a non-executing OpenClaw/Hermes harness plan for one staged action request.
+
+Inputs: `request_id`, optional `--db <path>`, and optional `--prefer auto|hermes|openclaw`.
+
+Outputs: selected harness, source draft, action request, model lane, routing metadata, and safety boundaries.
+
+Validation: `test_agent_assist.py` and `test_care_console.py` verify iMessage defaults to the Hermes harness plan, TTS routes to the Holler model lane, and the command never performs external execution.
+
+Agent safety: `agent-safe-read`. This command plans routing only; it does not send iMessage, append Apple Notes, open FaceTime, invoke TTS, or call OpenClaw/Hermes.
 
 ## Care Console List Action Requests
 

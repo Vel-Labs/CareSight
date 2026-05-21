@@ -119,3 +119,9 @@ Rationale: OpenClaw and Hermes are useful because they provide service integrati
 Gemma and Holler MLX model artifacts are local runtime dependencies under `apps/caresight-hub/models/` and are ignored by Git. The local model folder is organized by purpose lane: `vision/yolo26-mlx/`, `reasoning/gemma/`, and `tts/holler/`. Repo commits should track manifests, audit notes, config, and integration code, not multi-gigabyte model weights.
 
 Rationale: the hackathon appliance needs local model availability, but public Git history should stay portable and avoid committing large generated artifacts. Purpose lanes keep future provider code from treating every MLX artifact as interchangeable.
+
+## 2026-05-21: Trial Hermes Before OpenClaw for CareSight Service Wrappers
+
+CareSight will prefer Hermes for the first controlled harness trial because its current docs show a direct BlueBubbles iMessage route and broad self-hosting/integration posture. OpenClaw remains the gateway/policy fallback because its docs expose strong pairing, allowlist, session, and config-write controls.
+
+Rationale: the first harness should prove user-visible service routing without weakening CareSight's staging boundary. Hermes appears to be the simpler first route for iMessage/Notes/FaceTime-style workflows, while OpenClaw is valuable when gateway control and multi-agent routing become more important.

@@ -37,8 +37,10 @@
       "type": "string",
       "enum": [
         "send_caregiver_message",
+        "send_imessage_draft",
         "create_apple_note",
         "prepare_handoff_packet",
+        "prepare_facetime_handoff",
         "play_tts_utterance"
       ]
     },
@@ -57,7 +59,7 @@
     },
     "destination": {
       "type": ["string", "null"],
-      "enum": ["caregiver_console", "apple_notes", "local_tts", "handoff_packet", null]
+      "enum": ["caregiver_console", "imessage", "apple_notes", "facetime", "local_tts", "handoff_packet", null]
     },
     "safety_boundaries": {
       "type": "array",

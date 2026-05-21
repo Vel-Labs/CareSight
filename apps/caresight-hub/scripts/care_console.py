@@ -51,20 +51,28 @@ def parse_args() -> argparse.Namespace:
         required=True,
         choices=[
             "send_caregiver_message",
+            "send_imessage_draft",
             "create_apple_note",
             "prepare_handoff_packet",
+            "prepare_facetime_handoff",
             "play_tts_utterance",
         ],
     )
     stage_parser.add_argument(
         "--destination",
-        choices=["caregiver_console", "apple_notes", "local_tts", "handoff_packet"],
+        choices=["caregiver_console", "imessage", "apple_notes", "facetime", "local_tts", "handoff_packet"],
     )
     list_actions_parser = subparsers.add_parser(
         "list-action-requests",
         help="List staged local action requests for an event.",
     )
     list_actions_parser.add_argument("event_id")
+    harness_parser = subparsers.add_parser(
+        "agent-harness-plan",
+        help="Render a non-executing OpenClaw/Hermes harness plan for one staged action request.",
+    )
+    harness_parser.add_argument("request_id")
+    harness_parser.add_argument("--prefer", choices=["hermes", "openclaw", "auto"], default="auto")
     return parser.parse_args()
 
 
@@ -77,7 +85,7 @@ def main() -> None:
         render_blackbox_receipt_markdown,
         render_review_packet_markdown,
     )
-    from caresight.runtime.agent_assist import build_agent_draft, stage_action_request
+    from caresight.runtime.agent_assist import build_agent_draft, build_harness_plan, stage_action_request
     from caresight.runtime.review import ReviewService
     from caresight.storage.sqlite_store import SQLiteStore
 
@@ -125,6 +133,13 @@ def main() -> None:
 
     if args.command == "list-action-requests":
         print(json.dumps(store.list_agent_action_requests(args.event_id), indent=2, sort_keys=True))
+        return
+
+    if args.command == "agent-harness-plan":
+        request = store.get_agent_action_request(args.request_id)
+        draft = store.get_agent_draft(request["source_draft_id"])
+        plan = build_harness_plan(request, draft=draft, preferred_harness=args.prefer)
+        print(json.dumps(plan, indent=2, sort_keys=True))
         return
 
 

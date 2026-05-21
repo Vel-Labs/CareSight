@@ -1,0 +1,41 @@
+# Agent Harness Review
+
+Date: 2026-05-21
+
+## Decision
+
+Use Hermes as the first controlled harness trial for CareSight service wrappers, with OpenClaw retained as the gateway/policy fallback.
+
+## Evidence
+
+- Hermes documents iMessage through BlueBubbles, including webhook ingress, REST API egress, group chats, attachments, reactions, read receipts, and setup variables.
+- Hermes documents self-hosting for local control, model/provider flexibility, persistent memory, and automation.
+- OpenClaw documents a broad self-hosted gateway, multi-channel support, multi-agent routing, media support, a local dashboard, and iMessage pairing/allowlist/session controls.
+- OpenClaw iMessage docs expose useful safety controls such as allowlists, group mention patterns, pairing checks, attachment root allowlists, and config-write disabling.
+
+## CareSight Routing
+
+- `send_imessage_draft` defaults to Hermes.
+- `create_apple_note` defaults to Hermes as a staged local-adapter path.
+- `prepare_facetime_handoff` defaults to Hermes as a handoff plan, not call execution.
+- `play_tts_utterance` routes to the Holler TTS model lane.
+- OpenClaw can be forced with `--prefer openclaw` for gateway fallback review.
+
+## Current Implementation
+
+- Added non-executing harness planning through `care_console.py agent-harness-plan`.
+- Added `send_imessage_draft` and `prepare_facetime_handoff` as staged action request types.
+- Added model-lane routing for Gemma reasoning and Holler TTS.
+- No OpenClaw or Hermes process is installed or invoked by CareSight.
+- No Apple Notes, iMessage, FaceTime, OBS, or TTS action is executed.
+
+## Remaining Gate
+
+Before enabling a real harness:
+
+- create local secret handling for BlueBubbles/OpenClaw credentials
+- add allowlists for caregiver recipients and group chats
+- add SQLite execution-attempt logs
+- require human approval per staged action
+- prove the harness cannot bypass CareSight forbidden-claim validation
+- measure memory and latency with YOLO26, Gemma, and the selected harness running

@@ -302,6 +302,64 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(staged[0]["request_id"], request["request_id"])
             self.assertEqual(staged[0]["execution_state"], "not_executed")
 
+    def test_agent_harness_plan_cli_is_non_executing(self) -> None:
+        with seeded_review_service() as seed:
+            draft = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "agent-draft",
+                    seed.event_id,
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(draft.returncode, 0, draft.stderr)
+            draft_payload = json.loads(draft.stdout)
+            staged = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "stage-action-request",
+                    seed.event_id,
+                    "--draft-id",
+                    draft_payload["draft_id"],
+                    "--action",
+                    "send_imessage_draft",
+                    "--destination",
+                    "imessage",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(staged.returncode, 0, staged.stderr)
+            request = json.loads(staged.stdout)
+            planned = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "agent-harness-plan",
+                    request["request_id"],
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(planned.returncode, 0, planned.stderr)
+            plan = json.loads(planned.stdout)
+            self.assertEqual(plan["selected_harness"], "hermes")
+            self.assertEqual(plan["execution_state"], "plan_only")
+            self.assertEqual(plan["external_execution"], "not_allowed_by_this_command")
+
 
 class Seed:
     def __init__(self, tmpdir: tempfile.TemporaryDirectory[str]):

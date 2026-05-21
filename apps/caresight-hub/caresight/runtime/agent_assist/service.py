@@ -40,6 +40,8 @@ class AgentDraftStore(Protocol):
 
     def insert_agent_action_request(self, request: dict[str, Any]) -> None: ...
 
+    def get_agent_action_request(self, request_id: str) -> dict[str, Any]: ...
+
 
 @dataclass(frozen=True)
 class FakeAgentProvider:
@@ -143,8 +145,10 @@ def stage_action_request(
         raise ValueError("cannot stage an action request from a blocked draft")
     if requested_action not in {
         "send_caregiver_message",
+        "send_imessage_draft",
         "create_apple_note",
         "prepare_handoff_packet",
+        "prepare_facetime_handoff",
         "play_tts_utterance",
     }:
         raise ValueError(f"unsupported staged action: {requested_action}")

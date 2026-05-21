@@ -4,6 +4,8 @@
 
 OpenClaw can act as an optional local gateway for message channels, hooks, and agent workflows.
 
+Current review: keep OpenClaw as the policy-heavy gateway fallback until a live harness task proves configuration, allowlists, and channel behavior on the CareSight Mac.
+
 ## Possible CareSight uses
 
 - event-driven hooks
@@ -29,5 +31,5 @@ OpenClaw can act as an optional local gateway for message channels, hooks, and a
 ## Sources
 
 - [OpenClaw GitHub](https://github.com/openclaw/openclaw)
-- [OpenClaw Hooks Docs](https://docs.openclaw.ai/automation/hooks)
+- [OpenClaw Docs](https://docs.openclaw.ai/)
 - [OpenClaw iMessage Docs](https://docs.openclaw.ai/channels/imessage)

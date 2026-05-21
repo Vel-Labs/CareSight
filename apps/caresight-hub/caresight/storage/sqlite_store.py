@@ -428,6 +428,16 @@ class SQLiteStore:
             ).fetchall()
         return [agent_action_request_from_row(row) for row in rows]
 
+    def get_agent_action_request(self, request_id: str) -> dict[str, Any]:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM agent_action_requests WHERE request_id = ?",
+                (request_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(request_id)
+        return agent_action_request_from_row(row)
+
     def _insert_event_observation(self, conn: sqlite3.Connection, event: dict[str, Any]) -> None:
         evidence = event["evidence"]
         bbox = evidence.get("bbox_xyxy")

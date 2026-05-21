@@ -8,6 +8,7 @@
 - Downloaded the selected Gemma/Holler MLX model candidates into the ignored local runtime model directory and recorded an audit receipt.
 - Reorganized local model artifacts into purpose lanes for vision, reasoning, and TTS.
 - Clarified that OpenClaw/Hermes are not installed agent surfaces yet; they remain future wrappers behind CareSight action-request policy.
+- Added a non-executing Hermes/OpenClaw harness planning layer for staged action requests, including iMessage and FaceTime handoff planning.
 
 ## 2026-05-20
 

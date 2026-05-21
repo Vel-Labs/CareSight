@@ -3,7 +3,12 @@ import unittest
 from pathlib import Path
 
 from caresight.events.floor_stay import FloorStayDetector
-from caresight.runtime.agent_assist import build_agent_draft, stage_action_request, validate_draft_text
+from caresight.runtime.agent_assist import (
+    build_agent_draft,
+    build_harness_plan,
+    stage_action_request,
+    validate_draft_text,
+)
 from caresight.runtime.config import CareSightConfig
 from caresight.storage.sqlite_store import SQLiteStore
 from caresight.vision.detections import Detection
@@ -83,6 +88,40 @@ class AgentAssistTest(unittest.TestCase):
                     source_draft_id=draft["draft_id"],
                     requested_action="send_caregiver_message",
                 )
+
+    def test_harness_plan_routes_imessage_to_hermes_without_execution(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id)
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+            )
+            plan = build_harness_plan(request, draft=draft)
+
+            self.assertEqual(plan["selected_harness"], "hermes")
+            self.assertEqual(plan["execution_state"], "plan_only")
+            self.assertEqual(plan["external_execution"], "not_allowed_by_this_command")
+            self.assertEqual(plan["model_lane"]["provider"], "gemma_mlx")
+            self.assertIn("no_raw_video_to_agent", plan["safety_boundaries"])
+
+    def test_harness_plan_routes_tts_to_holler_lane(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id)
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="play_tts_utterance",
+                destination="local_tts",
+            )
+            plan = build_harness_plan(request, draft=draft, preferred_harness="openclaw")
+
+            self.assertEqual(plan["selected_harness"], "openclaw")
+            self.assertEqual(plan["model_lane"]["provider"], "holler_mlx")
+            self.assertEqual(plan["model_lane"]["default_model"], "holler-0.6b-6bit")
 
 
 class Seed:
