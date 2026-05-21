@@ -1,0 +1,13 @@
+{
+  "camera_id": "living_room",
+  "case": "B",
+  "elapsed_seconds": 60.0,
+  "event_id": null,
+  "frame_count": 1800,
+  "proof_type": "bounded_normal_desk_no_event",
+  "required_dwell_seconds": 8.0,
+  "result": "no_possible_floor_stay_event",
+  "source": "operator_rerun_terminal_output",
+  "status": "complete",
+  "zone_id": "floor_zone"
+}

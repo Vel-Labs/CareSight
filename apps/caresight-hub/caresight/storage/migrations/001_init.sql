@@ -54,6 +54,21 @@ CREATE TABLE IF NOT EXISTS event_observations (
   zone_id TEXT REFERENCES zones(zone_id)
 );
 
+CREATE TABLE IF NOT EXISTS observation_checks (
+  check_id TEXT PRIMARY KEY,
+  check_type TEXT NOT NULL,
+  started_at TEXT NOT NULL,
+  completed_at TEXT NOT NULL,
+  camera_id TEXT NOT NULL REFERENCES cameras(camera_id),
+  zone_id TEXT REFERENCES zones(zone_id),
+  status TEXT NOT NULL CHECK(status IN ('no_event_persisted', 'event_persisted', 'blocked')),
+  frame_count INTEGER NOT NULL,
+  elapsed_seconds REAL NOT NULL,
+  required_dwell_seconds REAL,
+  event_id TEXT REFERENCES events(event_id),
+  result_json TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS event_reviews (
   review_id TEXT PRIMARY KEY,
   event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
@@ -111,6 +126,22 @@ CREATE TABLE IF NOT EXISTS agent_action_requests (
   recipient_role TEXT,
   allowed_contact_ids_json TEXT NOT NULL DEFAULT '[]',
   response_options_json TEXT NOT NULL DEFAULT '[]',
+  safety_boundaries_json TEXT NOT NULL,
+  provenance_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS agent_execution_attempts (
+  attempt_id TEXT PRIMARY KEY,
+  request_id TEXT NOT NULL REFERENCES agent_action_requests(request_id) ON DELETE CASCADE,
+  event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL,
+  harness TEXT NOT NULL,
+  attempt_kind TEXT NOT NULL CHECK(attempt_kind IN ('dry_run', 'live')),
+  execution_state TEXT NOT NULL CHECK(execution_state IN ('dry_run', 'blocked', 'executed', 'failed')),
+  result TEXT NOT NULL,
+  error TEXT,
+  external_action_performed INTEGER NOT NULL,
+  payload_json TEXT NOT NULL,
   safety_boundaries_json TEXT NOT NULL,
   provenance_json TEXT NOT NULL
 );

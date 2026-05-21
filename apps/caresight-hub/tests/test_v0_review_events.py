@@ -281,7 +281,7 @@ def seed_event(store: SQLiteStore, now: float) -> str:
     detection = Detection(
         class_name="person",
         confidence=0.885,
-        bbox_xyxy=(360, 520, 640, 710),
+        bbox_xyxy=(200, 430, 1080, 715),
         frame_width=1280,
         frame_height=720,
     )

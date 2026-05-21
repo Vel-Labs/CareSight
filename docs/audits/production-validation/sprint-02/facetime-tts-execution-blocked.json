@@ -1,0 +1,32 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-facetime-tts-execution-blocked",
+  "created_at": "2026-05-21T00:00:00Z",
+  "sprint": "02",
+  "status": "blocked",
+  "requirement": "Execute approved FaceTime handoff preparation/test and local TTS playback validation.",
+  "execution_performed": false,
+  "blocked_by": [
+    "T021 approval_requested=false",
+    "OBS/visual handoff readiness blocked",
+    "TTS runtime/playback readiness blocked"
+  ],
+  "actions_not_performed": [
+    "facetime_call_start",
+    "obs_virtual_camera_start",
+    "screen_capture",
+    "tts_audio_playback",
+    "external_message_send"
+  ],
+  "safety_boundaries": [
+    "no_live_action_without_human_approval",
+    "no_private_desktop_capture_without_human_confirmation",
+    "no_audio_validation_without_playback_and_human_confirmation",
+    "no_external_execution"
+  ],
+  "next_operator_steps": [
+    "Clear visual handoff readiness and privacy proof first.",
+    "Clear TTS runtime dependencies and local playback proof first.",
+    "Then ask for explicit human approval before any FaceTime or audio validation."
+  ]
+}

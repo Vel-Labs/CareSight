@@ -81,10 +81,17 @@ class DemoSurfaceTest(unittest.TestCase):
             packet = build_human_review_packet(seed.service.get_audit_chain(seed.event_id))
             receipt = build_blackbox_receipt(seed.service.get_audit_chain(seed.event_id))
 
-            self.assertIn("SQLite is source of truth", render_review_packet_markdown(packet))
-            self.assertIn("No autonomous emergency dispatch", render_review_packet_markdown(packet))
-            self.assertIn("SQLite is source of truth", render_blackbox_receipt_markdown(receipt))
-            self.assertIn("No autonomous emergency dispatch", render_blackbox_receipt_markdown(receipt))
+            packet_markdown = render_review_packet_markdown(packet)
+            receipt_markdown = render_blackbox_receipt_markdown(receipt)
+
+            self.assertIn("At a Glance", packet_markdown)
+            self.assertIn("Suggested Next Step", packet_markdown)
+            self.assertIn("CareSight did not dispatch emergency services", packet_markdown)
+            self.assertIn("SQLite is source of truth", packet_markdown)
+            self.assertIn("Proof Chain", receipt_markdown)
+            self.assertIn("CareSight has a local record", receipt_markdown)
+            self.assertIn("CareSight did not dispatch emergency services", receipt_markdown)
+            self.assertIn("SQLite is source of truth", receipt_markdown)
 
 
 class Seed:
@@ -118,7 +125,7 @@ def build_floor_stay_event(config: CareSightConfig) -> dict:
     detection = Detection(
         class_name="person",
         confidence=0.91,
-        bbox_xyxy=(360, 520, 640, 710),
+        bbox_xyxy=(200, 430, 1080, 715),
         frame_width=1280,
         frame_height=720,
     )

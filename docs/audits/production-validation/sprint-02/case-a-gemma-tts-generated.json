@@ -1,0 +1,30 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-case-a-gemma-tts-generated",
+  "created_at": "2026-05-21T20:35:00Z",
+  "sprint": "02",
+  "case": "case-a",
+  "status": "generated_not_played",
+  "requirement": "Generate local TTS from the validated Gemma message without playing audio until human wording and playback approval.",
+  "source_artifacts": [
+    "docs/audits/production-validation/sprint-02/case-a-gemma-draft.json",
+    "docs/audits/production-validation/sprint-02/case-a-gemma-hermes-handoff-payload.json"
+  ],
+  "utterance_text": "CareSight noted a possible urgent event. Possible floor stay observed in the Living Room. Needs review.",
+  "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text 'CareSight noted a possible urgent event. Possible floor stay observed in the Living Room. Needs review.' --output-dir apps/caresight-hub/data/tts --file-prefix case_a_gemma_message --max-tokens 96",
+  "output": {
+    "path": "apps/caresight-hub/data/tts/case_a_gemma_message_000.wav",
+    "tracked_in_git": false,
+    "format": "RIFF WAVE audio, Microsoft PCM, 16 bit, mono 24000 Hz",
+    "size": "285K"
+  },
+  "audio_played": false,
+  "external_action_performed": false,
+  "next_human_gate": "Approve the Gemma wording, then approve local playback and confirm the voice is audible, calm, understandable, and does not imply medical or emergency certainty.",
+  "safety_boundaries": [
+    "local_audio_generation_only",
+    "no_tts_playback_without_human_approval",
+    "no_voice_cloning",
+    "no_external_execution"
+  ]
+}

@@ -37,6 +37,28 @@ OpenRouter is not required for this path. Treat OpenRouter as an explicit cloud 
 
 The payload remains `payload_only`; it does not send iMessage, attach screenshots, start FaceTime, run OBS, or expose raw video to Hermes.
 
+## Dry-Run Status
+
+`care_console.py hermes-dry-run <request_id>` invokes the vendored Hermes no-send `send_message(action='list')` preflight and records the result in SQLite as an execution-attempt receipt.
+
+Current local status: the no-send preflight works when run through the existing project-local YOLO MLX venv because that interpreter has `yaml` available. The persisted CareSight receipt redacts the raw Hermes target directory because that directory can include non-CareSight channels and is broader than the CareSight contact allowlist.
+
+## Local readiness script
+
+Use the CareSight wrapper to verify Hermes readiness without live execution:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_hermes_start.py --require-gemma
+```
+
+This is not a live send/call daemon. It verifies the vendored Hermes tool import, config template, local Gemma endpoint when requested, and no-send `send_message(action='list')` preflight. It writes an ignored local readiness marker at `apps/caresight-hub/data/runtime/hermes-ready.json`.
+
+Clear the marker:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_hermes_stop.py
+```
+
 ## Security Cautions
 
 - Treat BlueBubbles credentials as local secrets.

@@ -1,0 +1,29 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-case-b-agent-draft",
+  "created_at": "2026-05-21T00:00:00Z",
+  "sprint": "02",
+  "case": "case-b",
+  "status": "not_applicable_no_event",
+  "requirement": "Case B non-concerning path should not create a caregiver escalation draft when no possible floor-stay event is persisted.",
+  "source_artifacts": [
+    "docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.md",
+    "docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.json"
+  ],
+  "observed_behavior": {
+    "event_created": false,
+    "agent_draft_created": false,
+    "reason": "The bounded normal-desk run completed with no_possible_floor_stay_event and persisted an observation_checks row instead of a care event."
+  },
+  "expected_production_behavior": [
+    "Do not draft a caregiver alert for normal/no-event checks.",
+    "Use the observation check as continuity and non-escalation proof.",
+    "Escalation logic should require a persisted event or explicit human/operator input."
+  ],
+  "safety_boundaries": [
+    "no_unnecessary_escalation",
+    "no_emergency_contact_routing",
+    "no_external_execution",
+    "sqlite_canonical"
+  ]
+}

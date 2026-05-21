@@ -59,6 +59,7 @@ class FloorStayDetector:
             and self.config.floor_zone.contains_normalized_point(
                 *track.detection.bottom_center_normalized
             )
+            and _looks_like_low_posture(track.detection)
         ]
         if not people_in_zone:
             return None
@@ -93,3 +94,13 @@ class FloorStayDetector:
                 "room_name": self.config.room.name,
             },
         }
+
+
+def _looks_like_low_posture(detection: Detection) -> bool:
+    x1, y1, x2, y2 = detection.bbox_xyxy
+    width = max(x2 - x1, 1.0)
+    height = max(y2 - y1, 1.0)
+    aspect_ratio = width / height
+    center_y = ((y1 + y2) / 2.0) / detection.frame_height
+
+    return aspect_ratio >= 2.0 and center_y >= 0.60

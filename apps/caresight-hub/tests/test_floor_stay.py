@@ -12,7 +12,7 @@ class FloorStayDetectorTest(unittest.TestCase):
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )
@@ -39,7 +39,7 @@ class FloorStayDetectorTest(unittest.TestCase):
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )
@@ -57,7 +57,7 @@ class FloorStayDetectorTest(unittest.TestCase):
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )
@@ -76,7 +76,7 @@ class FloorStayDetectorTest(unittest.TestCase):
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )
@@ -91,7 +91,7 @@ class FloorStayDetectorTest(unittest.TestCase):
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )
@@ -108,6 +108,22 @@ class FloorStayDetectorTest(unittest.TestCase):
         assert second_event is not None
         self.assertEqual(first_event["evidence"]["track_id"], "track_1")
         self.assertEqual(second_event["evidence"]["track_id"], "track_2")
+
+    def test_seated_desk_posture_does_not_emit_floor_stay(self) -> None:
+        config = CareSightConfig.default()
+        detector = FloorStayDetector(config)
+        detection = Detection(
+            class_name="person",
+            confidence=0.95,
+            bbox_xyxy=(153, 225, 937, 719),
+            frame_width=1280,
+            frame_height=720,
+        )
+
+        detector.update([detection], now=100.0)
+        event = detector.update([detection], now=109.0)
+
+        self.assertIsNone(event)
 
 
 if __name__ == "__main__":

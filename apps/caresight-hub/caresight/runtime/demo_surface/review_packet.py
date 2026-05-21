@@ -61,27 +61,41 @@ def build_human_review_packet(
 def render_review_packet_markdown(packet: dict[str, Any]) -> str:
     review = packet["review_state"]
     evidence = packet["evidence"]
+    latest_decision = review.get("latest_decision") or "not reviewed yet"
+    latest_reviewer = review.get("latest_reviewer") or "none"
+    snapshot_path = evidence.get("snapshot_path") or "not recorded"
+    track_ids = ", ".join(evidence.get("track_ids") or ["none"])
     return "\n".join(
         [
-            f"# Human Review Packet: {packet['event_id']}",
+            f"# Human Review Packet",
             "",
-            f"- Source of truth: {packet['source_of_truth'].upper()}",
-            f"- Event type: {packet['event_type']}",
-            f"- Status: {packet['status']}",
-            f"- Headline: {packet['summary']['headline']}",
-            f"- Camera: {evidence['camera_id']}",
-            f"- Room: {evidence.get('room') or 'unknown'}",
-            f"- Zone: {evidence.get('zone_id') or 'unknown'}",
-            f"- Track IDs: {', '.join(evidence.get('track_ids') or ['none'])}",
-            f"- Snapshot path: {evidence.get('snapshot_path') or 'not recorded'}",
-            f"- Observation count: {evidence['observation_count']}",
-            f"- Review count: {review['review_count']}",
-            f"- Latest reviewer: {review.get('latest_reviewer') or 'none'}",
-            f"- Latest decision: {review.get('latest_decision') or 'none'}",
+            f"CareSight recorded a possible event in {evidence.get('room') or 'the configured room'}.",
+            "A human should use the local record and care plan before deciding what to do next.",
+            "",
+            "## At a Glance",
+            "",
+            f"- Event: {packet['summary']['headline']}",
+            f"- Current status: {packet['status']}",
+            f"- Latest human review: {latest_decision} by {latest_reviewer}",
+            f"- Evidence: {evidence['observation_count']} observation, track {track_ids}",
+            f"- Snapshot: {snapshot_path}",
+            "",
+            "## Suggested Next Step",
+            "",
+            _next_step(packet),
+            "",
+            "## Boundaries",
+            "",
+            "- CareSight did not dispatch emergency services.",
+            "- CareSight did not make a medical diagnosis.",
+            "- SQLite is source of truth; this message is a readable summary of the local audit record.",
+            "",
+            "## Audit Details",
+            "",
+            f"- Event ID: {packet['event_id']}",
+            f"- Source fields: {', '.join(packet['provenance']['source_fields'])}",
             f"- Available human actions: {', '.join(packet['available_human_actions'])}",
             f"- Blocked actions: {', '.join(packet['blocked_actions'])}",
-            "",
-            "SQLite is source of truth. No autonomous emergency dispatch.",
         ]
     )
 
@@ -98,6 +112,14 @@ def _room_label(event: dict[str, Any]) -> str | None:
 
 def _track_ids(observations: list[dict[str, Any]]) -> list[str]:
     return sorted({observation["track_id"] for observation in observations if observation.get("track_id")})
+
+
+def _next_step(packet: dict[str, Any]) -> str:
+    if packet["status"] == "human_confirmed":
+        return "This event has already been human-confirmed. Review the snapshot and journal if more context is needed."
+    if packet["status"] == "dismissed":
+        return "This event has been dismissed by a human reviewer. Keep it in the local audit trail."
+    return "Review the snapshot and local evidence, then choose confirm, dismiss, or needs follow-up."
 
 
 def _utc_now() -> str:

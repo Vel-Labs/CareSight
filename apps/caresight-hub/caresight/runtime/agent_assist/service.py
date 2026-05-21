@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 import re
 from typing import Any, Protocol
+import urllib.request
 
 from caresight.storage.sqlite_store import utc_now
 
@@ -66,12 +68,42 @@ class FakeAgentProvider:
         )
 
 
+@dataclass(frozen=True)
+class GemmaLocalProvider:
+    endpoint: str = "http://127.0.0.1:8080/v1"
+    model: str = "apps/caresight-hub/models/reasoning/gemma/gemma-4-e2b-it-4bit"
+    provider_name: str = "gemma_mlx"
+    timeout_seconds: float = 30.0
+
+    def draft_text(self, audit: dict[str, Any], purpose: str) -> str:
+        request = urllib.request.Request(
+            f"{self.endpoint.rstrip('/')}/chat/completions",
+            data=json.dumps(
+                {
+                    "model": self.model,
+                    "messages": _gemma_messages(audit, purpose),
+                    "max_tokens": 120,
+                    "temperature": 0,
+                }
+            ).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        try:
+            text = payload["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ValueError("Gemma response did not include assistant message content") from exc
+        return _normalize_provider_text(text)
+
+
 def build_agent_draft(
     store: AgentDraftStore,
     event_id: str,
     *,
     purpose: str = "caregiver_summary",
-    provider: FakeAgentProvider | None = None,
+    provider: FakeAgentProvider | GemmaLocalProvider | None = None,
     override_text: str | None = None,
 ) -> dict[str, Any]:
     audit = {
@@ -87,7 +119,7 @@ def build_agent_draft(
     validation_status = "blocked" if blocked_claims else "validated"
     draft = {
         "schema": "agent-draft",
-        "draft_id": _draft_id(event_id, purpose),
+        "draft_id": _draft_id(event_id, purpose, fake_provider.provider_name),
         "event_id": event_id,
         "created_at": utc_now(),
         "provider": fake_provider.provider_name,
@@ -141,6 +173,7 @@ def stage_action_request(
     recipient_role: str | None = None,
     allowed_contact_ids: list[str] | None = None,
     response_options: list[str] | None = None,
+    contact_allowlist: set[str] | None = None,
 ) -> dict[str, Any]:
     draft = store.get_agent_draft(source_draft_id)
     if draft["event_id"] != event_id:
@@ -161,6 +194,10 @@ def stage_action_request(
     allowed_contacts = allowed_contact_ids or []
     if destination in {"imessage", "facetime"} and not allowed_contacts:
         raise ValueError("imessage/facetime staging requires at least one allowlisted contact id")
+    if destination in {"imessage", "facetime"} and contact_allowlist is not None:
+        unknown_contacts = [contact_id for contact_id in allowed_contacts if contact_id not in contact_allowlist]
+        if unknown_contacts:
+            raise ValueError(f"contact id not allowlisted: {', '.join(unknown_contacts)}")
     if recipient_role not in {None, "caregiver", "emergency_contact"}:
         raise ValueError(f"unsupported recipient role: {recipient_role}")
     resolved_response_options = response_options or _default_response_options(requested_action)
@@ -224,12 +261,58 @@ def _safe_rewrite(audit: dict[str, Any]) -> str:
     )
 
 
-def _draft_id(event_id: str, purpose: str) -> str:
+def _draft_id(event_id: str, purpose: str, provider_name: str = "fake") -> str:
     safe_purpose = re.sub(r"[^a-z0-9_]+", "_", purpose.casefold()).strip("_")
-    return f"draft_{event_id}_{safe_purpose}"
+    if provider_name == "fake":
+        return f"draft_{event_id}_{safe_purpose}"
+    safe_provider = re.sub(r"[^a-z0-9_]+", "_", provider_name.casefold()).strip("_")
+    return f"draft_{event_id}_{safe_purpose}_{safe_provider}"
 
 
 def _action_request_id(event_id: str, requested_action: str, draft_id: str) -> str:
     safe_action = re.sub(r"[^a-z0-9_]+", "_", requested_action.casefold()).strip("_")
     draft_suffix = draft_id.removeprefix("draft_")
     return f"action_req_{event_id}_{safe_action}_{draft_suffix}"[:180]
+
+
+def _gemma_messages(audit: dict[str, Any], purpose: str) -> list[dict[str, str]]:
+    event = audit["event"]
+    evidence = event["evidence"]
+    context = {
+        "event_id": event["event_id"],
+        "event_type": event["event_type"],
+        "status": event["status"],
+        "severity": event["severity"],
+        "confidence": event["confidence"],
+        "camera_id": event["camera_id"],
+        "zone_id": event["zone_id"],
+        "room_name": evidence.get("room_name"),
+        "dwell_seconds": evidence.get("dwell_seconds"),
+        "snapshot_path_present": bool(evidence.get("snapshot_path")),
+        "reviews_count": len(audit["reviews"]),
+        "journal_entries_count": len(audit["journal_entries"]),
+        "purpose": purpose,
+    }
+    return [
+        {
+            "role": "system",
+            "content": (
+                "You draft short CareSight caregiver text from structured SQLite audit context only. "
+                "Do not claim a fall, injury, diagnosis, medical emergency, medication administration, "
+                "HIPAA compliance, or emergency dispatch. Use 'possible' or 'needs review' language. "
+                "Return only the caregiver-facing message text."
+            ),
+        },
+        {
+            "role": "user",
+            "content": json.dumps(context, sort_keys=True),
+        },
+    ]
+
+
+def _normalize_provider_text(text: str) -> str:
+    normalized = text.strip()
+    for prefix in ("Caregiver Alert:", "**Caregiver Alert:**", "Alert:"):
+        if normalized.startswith(prefix):
+            normalized = normalized.removeprefix(prefix).strip()
+    return normalized.strip()

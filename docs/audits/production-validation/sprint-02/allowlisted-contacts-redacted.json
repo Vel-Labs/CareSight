@@ -1,0 +1,41 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-allowlisted-contacts-redacted",
+  "created_at": "2026-05-21T00:00:00Z",
+  "sprint": "02",
+  "status": "implemented",
+  "requirement": "Configure redacted caregiver/emergency-contact allowlist handling and prove unallowlisted iMessage/FaceTime requests are blocked.",
+  "implemented_surface": {
+    "redacted_allowlist_example": "apps/caresight-hub/config/hermes/allowlisted-contacts.example.json",
+    "env_pointer": "CARESIGHT_CONTACT_ALLOWLIST_PATH",
+    "runtime_loader": "load_contact_allowlist",
+    "staging_validator": "stage_action_request(contact_allowlist=...)",
+    "cli_flag": "--allowlist-config"
+  },
+  "allowed_example_contact_ids": [
+    "contact_caregiver_primary",
+    "contact_emergency_primary"
+  ],
+  "blocked_example_contact_ids": [
+    "contact_not_allowlisted"
+  ],
+  "privacy_boundaries": [
+    "no_real_phone_numbers_in_git",
+    "no_real_addresses_in_git",
+    "no_tokens_or_passwords_in_git",
+    "redacted_channel_refs_only",
+    "no_live_external_send"
+  ],
+  "proof_commands": [
+    {
+      "cmd": "PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_agent_assist.py apps/caresight-hub/tests/test_care_console.py",
+      "status": "pass",
+      "result": "26 tests OK"
+    }
+  ],
+  "notes": [
+    "The CLI loads the redacted example allowlist by default or CARESIGHT_CONTACT_ALLOWLIST_PATH when set.",
+    "iMessage and FaceTime staging still require a contact ID and reject IDs missing from the configured allowlist.",
+    "Human operators must provide real channel credentials only in ignored local configuration outside Git."
+  ]
+}

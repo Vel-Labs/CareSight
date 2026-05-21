@@ -82,6 +82,10 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v
 
 Purpose: let an operator collect one `event_persisted` line without leaving the live loop unbounded.
 
+If no floor-stay event is created before the bounded run exits, the command persists an `observation_checks` row in SQLite and prints a `no_event_persisted` JSON line with `check_id`, `frame_count`, `elapsed_seconds`, `required_dwell_seconds`, `camera_id`, and `zone_id`. Use that row and line as the machine-readable receipt for normal/non-concerning no-event proof.
+
+The startup line reports `required_dwell_seconds`; this is the configured threshold, not an observed floor dwell.
+
 Omit `--no-window` when the operator needs the preview overlay to position the floor/low zone.
 
 Readiness check:
@@ -247,7 +251,7 @@ Purpose: render a read-only human review packet from the SQLite audit chain.
 
 Inputs: `event_id`, optional `--db <path>`, optional `--format json|markdown`, and optional `--output <path>`.
 
-Outputs: event status, bounded headline, evidence summary, track IDs, snapshot path, review state, available human actions, blocked actions, and provenance.
+Outputs: event status, bounded headline, evidence summary, track IDs, snapshot path, review state, available human actions, blocked actions, and provenance. Markdown output is the human-facing review surface: it leads with a short plain-language summary, at-a-glance status, suggested next step, safety boundaries, and compact audit details.
 
 Validation: `test_care_console.py` verifies JSON and Markdown review-packet output from SQLite without mutating event lifecycle state.
 
@@ -265,7 +269,7 @@ Purpose: render a read-only blackbox receipt for a selected event's observation,
 
 Inputs: `event_id`, optional `--db <path>`, optional `--format json|markdown`, and optional `--output <path>`.
 
-Outputs: completion status, blockers for incomplete chains, counts for observations/reviews/journal/handoffs, track IDs, human review summary, derived-output checks, blocked actions, and safety boundaries.
+Outputs: completion status, blockers for incomplete chains, counts for observations/reviews/journal/handoffs, track IDs, human review summary, derived-output checks, blocked actions, and safety boundaries. Markdown output is the human-facing proof surface: it summarizes whether the local audit trail is complete, then lists the proof chain, event details, and boundaries without requiring a caregiver to read JSON.
 
 Validation: `test_care_console.py` verifies complete receipt output after human review and the demo-surface tests verify incomplete receipts report blockers.
 
@@ -297,15 +301,15 @@ Command:
 python apps/caresight-hub/scripts/care_console.py agent-draft <event_id> --purpose caregiver_summary
 ```
 
-Purpose: create and persist a fake-provider agent draft from the SQLite audit chain.
+Purpose: create and persist a fake-provider or local Gemma agent draft from the SQLite audit chain.
 
-Inputs: `event_id`, optional `--db <path>`, and optional `--purpose caregiver_summary|alert_draft|apple_notes_entry|handoff_packet|audit_summary`.
+Inputs: `event_id`, optional `--db <path>`, optional `--purpose caregiver_summary|alert_draft|apple_notes_entry|handoff_packet|audit_summary`, optional `--provider fake|gemma`, optional `--gemma-base-url <url>`, and optional `--gemma-model <model-or-local-path>`.
 
-Outputs: `agent-draft` JSON with provider `fake`, source-of-truth marker, validation status, draft text, safety boundaries, provenance, and any blocked claim reasons.
+Outputs: `agent-draft` JSON with provider `fake` or `gemma_mlx`, source-of-truth marker, validation status, draft text, safety boundaries, provenance, and any blocked claim reasons.
 
-Validation: `test_agent_assist.py` and `test_care_console.py` verify validated drafts and blocked drafts are persisted in SQLite without real Gemma, OpenClaw, TTS, or external service calls.
+Validation: `test_agent_assist.py` and `test_care_console.py` verify validated drafts and blocked drafts are persisted in SQLite. The Gemma provider sends compact SQLite-derived context only; it does not send raw video or image bytes.
 
-Agent safety: `agent-safe-read`.
+Agent safety: `agent-safe-read`. The Gemma provider calls the local endpoint only and does not execute external actions.
 
 ## Care Console Stage Action Request
 
@@ -317,13 +321,13 @@ python apps/caresight-hub/scripts/care_console.py stage-action-request <event_id
 
 Purpose: stage a local action request from a validated agent draft without executing it.
 
-Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|send_imessage_draft|create_apple_note|prepare_handoff_packet|prepare_facetime_handoff|play_tts_utterance`, optional `--destination caregiver_console|imessage|apple_notes|facetime|local_tts|handoff_packet`, optional `--escalation-level routine|attention|urgent_handoff`, optional `--recipient-role caregiver|emergency_contact`, repeatable `--allowed-contact-id contact_<id>`, repeatable `--response-option acknowledge_text_update|request_local_screen_capture|request_facetime_handoff|dismiss_after_review`, and optional `--db <path>`.
+Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|send_imessage_draft|create_apple_note|prepare_handoff_packet|prepare_facetime_handoff|play_tts_utterance`, optional `--destination caregiver_console|imessage|apple_notes|facetime|local_tts|handoff_packet`, optional `--escalation-level routine|attention|urgent_handoff`, optional `--recipient-role caregiver|emergency_contact`, repeatable `--allowed-contact-id contact_<id>`, optional `--allowlist-config <path>` for redacted contact IDs, repeatable `--response-option acknowledge_text_update|request_local_screen_capture|request_facetime_handoff|dismiss_after_review`, and optional `--db <path>`.
 
 Outputs: `agent-action-request` JSON with `stage: staged`, `execution_state: not_executed`, `requires_human_approval: true`, source draft, destination, escalation level, recipient role, allowlisted contact IDs, response options, safety boundaries, and provenance.
 
-Validation: `test_agent_assist.py` verifies staged requests stay local and blocked drafts cannot stage action requests. `test_care_console.py` verifies CLI staging persists only local SQLite rows.
+Validation: `test_agent_assist.py` verifies staged requests stay local, blocked drafts cannot stage action requests, and unknown iMessage/FaceTime contact IDs are rejected when a contact allowlist is configured. `test_care_console.py` verifies CLI staging persists only local SQLite rows and blocks unconfigured contact IDs.
 
-Agent safety: `agent-safe-read`. Agents may stage and list action requests, but Sprint 02 provides no command that executes the requested action. iMessage and FaceTime destinations require allowlisted contact IDs.
+Agent safety: `agent-safe-read`. Agents may stage and list action requests, but Sprint 02 provides no command that executes the requested action. iMessage and FaceTime destinations require contact IDs from the configured redacted allowlist.
 
 ## Care Console Agent Harness Plan
 
@@ -361,6 +365,60 @@ Validation: `test_agent_assist.py` and `test_care_console.py` verify urgent iMes
 
 Agent safety: `agent-safe-read`. This command does not send iMessage, append Apple Notes, open FaceTime, invoke TTS, attach screenshots, expose raw video, or call Hermes.
 
+## Care Console Record Execution Attempt
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py record-execution-attempt <request_id> --harness hermes --kind dry_run
+```
+
+Purpose: persist a local dry-run execution-attempt row for a staged action request and its Hermes handoff payload.
+
+Inputs: `request_id`, optional `--db <path>`, optional `--harness hermes`, and optional `--kind dry_run`.
+
+Outputs: `agent-execution-attempt` JSON with request ID, event ID, harness, execution state, result, payload snapshot, safety boundaries, and provenance.
+
+Validation: `test_agent_assist.py`, `test_sqlite_store.py`, and `test_care_console.py` verify dry-run attempts are persisted in SQLite, keep `external_action_performed: false`, and leave the source action request in `not_executed`.
+
+Agent safety: `agent-safe-read`. This command records a no-send attempt receipt only; it does not send iMessage, append Apple Notes, open FaceTime, invoke TTS, attach screenshots, expose raw video, or call Hermes.
+
+## Care Console Hermes Dry Run
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py hermes-dry-run <request_id>
+```
+
+Purpose: invoke the vendored Hermes no-send message-directory preflight for one staged request, then persist the attempt as a local execution-attempt receipt.
+
+Inputs: `request_id`, optional `--db <path>`, and optional `--vendor-path <path>`.
+
+Outputs: `agent-execution-attempt` JSON with `harness: hermes`, `attempt_kind: dry_run`, `external_action_performed: false`, the original handoff payload, and `hermes_preflight` status. If Hermes dependencies or gateway config are unavailable, the attempt is still logged with `execution_state: blocked`.
+
+Validation: `test_agent_assist.py` and `test_care_console.py` verify the command records a no-send attempt and does not mutate the staged action request into an executed state.
+
+Agent safety: `agent-safe-read`. This command only calls Hermes `send_message(action='list')`; it does not send iMessage, append Apple Notes, open FaceTime, invoke TTS, attach screenshots, expose raw video, or execute Hermes delivery.
+
+## Care Console List Execution Attempts
+
+Command:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py list-execution-attempts <request_id>
+```
+
+Purpose: list local execution-attempt rows for one staged action request.
+
+Inputs: `request_id` and optional `--db <path>`.
+
+Outputs: JSON array of `agent-execution-attempt` records.
+
+Validation: `test_care_console.py` verifies list output after recording a dry-run attempt.
+
+Agent safety: `agent-safe-read`.
+
 ## Care Console Hermes Config Plan
 
 Command:
@@ -378,6 +436,204 @@ Outputs: Hermes vendor submodule path and pinned tag, safe config template paths
 Validation: `test_agent_assist.py` and `test_care_console.py` verify the plan uses a local endpoint, keeps OpenRouter optional, and reports that no global Hermes install or external execution was performed.
 
 Agent safety: `agent-safe-read`. This command does not install Hermes, write `~/.hermes`, start a model server, call OpenRouter, connect BlueBubbles, send iMessage, append Apple Notes, open FaceTime, or invoke TTS.
+
+## CareSight Gemma Start
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_gemma_start.py
+```
+
+Purpose: start the local Gemma 4 E2B MLX endpoint through `mlx-vlm.server` with an OpenAI-compatible `/v1/chat/completions` route.
+
+Inputs: ignored local runtime venv at `apps/caresight-hub/.venv`, local Gemma model files under `apps/caresight-hub/models/reasoning/gemma/`, and optional host/port/model arguments.
+
+Outputs: local server process, PID file, log file, and terminal readiness line with `base_url`.
+
+Validation: the script performs a bounded local chat-completions readiness request before reporting `gemma_started`.
+
+Agent safety: `manual-operator`. This starts a local model server only; it does not send messages, call FaceTime, invoke Hermes delivery, inspect raw video, or use cloud fallback.
+
+## CareSight Install All
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_install_all.py
+```
+
+Purpose: install local CareSight prerequisites: runtime venv, default local models, and OBS.
+
+Inputs: network access for package/model/app download and local disk space for ignored model assets.
+
+Outputs: ignored local runtime and model files under `apps/caresight-hub/.venv` and `apps/caresight-hub/models/`.
+
+Validation: rerun `npm run check`, then `python3 apps/caresight-hub/scripts/caresight_stack_start.py`.
+
+Agent safety: `manual-operator`. This downloads/install local dependencies; it does not execute live caregiver actions.
+
+## CareSight Install Model
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_install_model.py gemma-e2b
+```
+
+Purpose: install one ignored local model from Hugging Face.
+
+Inputs: model key `gemma-e2b|gemma-e4b|holler-6bit|holler`, Hugging Face CLI, network access, and local disk space.
+
+Outputs: ignored local model folder under `apps/caresight-hub/models/`.
+
+Validation: for Gemma, start the stack; for TTS, run `caresight_tts.py` without `--play`.
+
+Agent safety: `manual-operator`.
+
+## CareSight Install OBS
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_install_obs.py
+```
+
+Purpose: install or verify OBS for local visual handoff.
+
+Inputs: `/Applications/OBS.app` or Homebrew cask install capability.
+
+Outputs: OBS app installed locally or a manual install prompt.
+
+Validation: `python3 apps/caresight-hub/scripts/caresight_install_obs.py --check-only`.
+
+Agent safety: `manual-operator`.
+
+## CareSight Setup Fixtures
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_setup_fixtures.py
+```
+
+Purpose: build local fixture/readiness outputs after install.
+
+Inputs: local runtime/model prerequisites.
+
+Outputs: validation pass, stack start/stop readiness, and local TTS generation.
+
+Validation: script exits successfully.
+
+Agent safety: `manual-operator`. It performs no live external caregiver actions.
+
+## CareSight Gemma Stop
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_gemma_stop.py
+```
+
+Purpose: stop the local Gemma server started by `caresight_gemma_start.py`.
+
+Inputs: PID file at `apps/caresight-hub/data/runtime/gemma-server.pid` unless overridden.
+
+Outputs: terminal stop status and removed stale/current PID file.
+
+Validation: covered by operator use and the PID-file boundary; no external action is performed.
+
+Agent safety: `manual-operator`.
+
+## CareSight TTS
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_tts.py --text "CareSight noted a possible floor stay in the living room. Please review when available."
+```
+
+Purpose: generate local Holler TTS audio from approved bounded text.
+
+Inputs: ignored local runtime venv, Holler model files under `apps/caresight-hub/models/tts/holler/`, utterance text, optional voice, and optional output directory.
+
+Outputs: local audio file under `apps/caresight-hub/data/tts/` by default.
+
+Validation: local generation succeeds with the `kit` voice. Playback is not part of default validation.
+
+Agent safety: `manual-operator`. The default command generates audio only. `--play` requires explicit human approval because it plays local audio.
+
+## CareSight Hermes Start
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_hermes_start.py --require-gemma
+```
+
+Purpose: verify the vendored Hermes harness is ready for CareSight no-send dry-run use.
+
+Inputs: vendored Hermes path, local config template, optional running Gemma endpoint, and ignored local runtime data directory.
+
+Outputs: `apps/caresight-hub/data/runtime/hermes-ready.json` readiness marker and terminal status.
+
+Validation: imports the vendored `send_message` tool and runs only `send_message(action="list")`; with `--require-gemma`, also verifies the local Gemma endpoint responds.
+
+Agent safety: `manual-operator`. This does not send iMessage, write Apple Notes, start FaceTime, invoke TTS playback, attach screenshots, expose raw video, or execute Hermes delivery.
+
+## CareSight Hermes Stop
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_hermes_stop.py
+```
+
+Purpose: clear the local Hermes readiness marker.
+
+Inputs: readiness marker path.
+
+Outputs: terminal stop status.
+
+Validation: local marker removal only.
+
+Agent safety: `manual-operator`.
+
+## CareSight Stack Start
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_stack_start.py
+```
+
+Purpose: bring the local CareSight test stack online in dependency order.
+
+Inputs: local Gemma model/runtime and vendored Hermes harness.
+
+Outputs: running Gemma endpoint plus Hermes readiness marker.
+
+Validation: starts Gemma with a chat-completions pulse check, then verifies Hermes with `--require-gemma`.
+
+Agent safety: `manual-operator`. This starts/verifies local services only; it does not execute live caregiver actions.
+
+## CareSight Stack Stop
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_stack_stop.py
+```
+
+Purpose: stop the local CareSight test stack.
+
+Inputs: local runtime PID/marker files.
+
+Outputs: cleared Hermes readiness marker and stopped Gemma process if running.
+
+Validation: local stop commands only.
+
+Agent safety: `manual-operator`.
 
 ## Care Console List Action Requests
 

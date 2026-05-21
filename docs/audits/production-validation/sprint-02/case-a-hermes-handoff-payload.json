@@ -1,0 +1,47 @@
+{
+  "allowed_contact_ids": [
+    "contact_emergency_primary"
+  ],
+  "destination": "imessage",
+  "escalation_level": "urgent_handoff",
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "execution_state": "payload_only",
+  "harness": "hermes",
+  "media_options": {
+    "facetime_handoff": "available_by_human_request_only",
+    "obs_virtual_camera": "operator_configured_only",
+    "screen_capture": "available_by_human_request_only"
+  },
+  "message_text": "CareSight noted a possible urgent event. CareSight recorded a possible event (possible_floor_stay) in Living Room. Status is human confirmed. Snapshot path: apps/caresight-hub/data/snapshots/evt_d9aa38bdc636459c92ea4e25f665cd0d.jpg. Please review the local CareSight record before taking action. I can provide a local screen capture from the configured video feed if you want it or I can prepare a FaceTime handoff so you can view the feed.",
+  "payload_source": {
+    "draft_id": "draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft",
+    "draft_validation_status": "validated",
+    "provenance": {
+      "source": "sqlite_audit_chain",
+      "source_fields": [
+        "events",
+        "event_observations",
+        "event_reviews",
+        "journal_entries",
+        "agent_handoffs"
+      ]
+    },
+    "source_of_truth": "sqlite"
+  },
+  "recipient_role": "emergency_contact",
+  "request_id": "action_req_evt_d9aa38bdc636459c92ea4e25f665cd0d_send_imessage_draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft",
+  "response_options": [
+    "request_local_screen_capture",
+    "request_facetime_handoff"
+  ],
+  "safety_boundaries": [
+    "payload_only",
+    "human_review_required",
+    "allowlisted_recipient_only",
+    "no_external_execution",
+    "no_raw_video_to_agent",
+    "no_autonomous_dispatch",
+    "sqlite_canonical"
+  ],
+  "schema": "hermes-handoff-payload"
+}

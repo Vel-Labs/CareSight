@@ -186,7 +186,7 @@ def build_floor_stay_event(config: CareSightConfig, occurred_at: datetime) -> di
     detection = Detection(
         class_name="person",
         confidence=0.91,
-        bbox_xyxy=(360, 520, 640, 710),
+        bbox_xyxy=(200, 430, 1080, 715),
         frame_width=1280,
         frame_height=720,
     )

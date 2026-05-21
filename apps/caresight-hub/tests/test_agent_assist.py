@@ -1,13 +1,19 @@
 import tempfile
+import threading
 import unittest
+import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from caresight.events.floor_stay import FloorStayDetector
 from caresight.runtime.agent_assist import (
     build_agent_draft,
+    build_execution_attempt,
     build_harness_plan,
     build_hermes_config_plan,
     build_hermes_handoff_payload,
+    GemmaLocalProvider,
+    run_hermes_dry_run,
     stage_action_request,
     validate_draft_text,
 )
@@ -114,6 +120,36 @@ class AgentAssistTest(unittest.TestCase):
             self.assertIn("no_raw_video_to_agent", plan["safety_boundaries"])
             self.assertIn("allowlisted_recipient_only", request["safety_boundaries"])
 
+    def test_contact_allowlist_blocks_unknown_live_contact_destinations(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id)
+
+            with self.assertRaises(ValueError):
+                stage_action_request(
+                    seed.store,
+                    event_id=seed.event_id,
+                    source_draft_id=draft["draft_id"],
+                    requested_action="send_imessage_draft",
+                    destination="imessage",
+                    recipient_role="emergency_contact",
+                    allowed_contact_ids=["contact_not_allowlisted"],
+                    contact_allowlist={"contact_emergency_primary"},
+                )
+
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="prepare_facetime_handoff",
+                destination="facetime",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+                contact_allowlist={"contact_emergency_primary"},
+            )
+
+            self.assertEqual(request["allowed_contact_ids"], ["contact_emergency_primary"])
+            self.assertIn("allowlisted_recipient_only", request["safety_boundaries"])
+
     def test_imessage_staging_requires_allowlisted_contact(self) -> None:
         with seeded_store() as seed:
             draft = build_agent_draft(seed.store, seed.event_id)
@@ -151,6 +187,58 @@ class AgentAssistTest(unittest.TestCase):
             self.assertEqual(payload["media_options"]["obs_virtual_camera"], "operator_configured_only")
             self.assertIn("no_raw_video_to_agent", payload["safety_boundaries"])
 
+    def test_execution_attempt_logs_dry_run_without_external_execution(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+            )
+            payload = build_hermes_handoff_payload(request, draft=draft)
+            attempt = build_execution_attempt(
+                seed.store,
+                request=request,
+                payload=payload,
+                harness="hermes",
+                attempt_kind="dry_run",
+                result="payload_logged_no_send",
+            )
+            stored = seed.store.list_agent_execution_attempts(request["request_id"])
+
+            self.assertEqual(attempt["schema"], "agent-execution-attempt")
+            self.assertEqual(attempt["execution_state"], "dry_run")
+            self.assertEqual(attempt["result"], "payload_logged_no_send")
+            self.assertFalse(attempt["external_action_performed"])
+            self.assertIn("no_external_execution", attempt["safety_boundaries"])
+            self.assertEqual(stored[0]["attempt_id"], attempt["attempt_id"])
+            self.assertEqual(stored[0]["payload"]["schema"], "hermes-handoff-payload")
+
+    def test_hermes_dry_run_records_no_send_preflight_attempt(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+            )
+            attempt = run_hermes_dry_run(seed.store, request=request, draft=draft)
+
+            self.assertEqual(attempt["schema"], "agent-execution-attempt")
+            self.assertIn(attempt["execution_state"], {"dry_run", "blocked"})
+            self.assertFalse(attempt["external_action_performed"])
+            self.assertIn("hermes_preflight", attempt["payload"])
+            self.assertNotIn("targets", attempt["payload"]["hermes_preflight"])
+            self.assertEqual(seed.store.list_agent_execution_attempts(request["request_id"])[0]["attempt_id"], attempt["attempt_id"])
+
     def test_harness_plan_routes_tts_to_holler_lane(self) -> None:
         with seeded_store() as seed:
             draft = build_agent_draft(seed.store, seed.event_id)
@@ -178,6 +266,24 @@ class AgentAssistTest(unittest.TestCase):
         self.assertFalse(plan["local_model_serving"]["openrouter_required"])
         self.assertIn("no_cloud_router_by_default", plan["safety_boundaries"])
 
+    def test_gemma_provider_persists_validated_draft_without_raw_media(self) -> None:
+        server = LocalGemmaServer("Please review a possible floor stay in the Living Room. Human review is in progress.")
+        with server, seeded_store() as seed:
+            draft = build_agent_draft(
+                seed.store,
+                seed.event_id,
+                purpose="alert_draft",
+                provider=GemmaLocalProvider(endpoint=server.base_url, model="local-test-model"),
+            )
+
+            self.assertEqual(draft["provider"], "gemma_mlx")
+            self.assertTrue(draft["draft_id"].endswith("_gemma_mlx"))
+            self.assertEqual(draft["validation_status"], "validated")
+            self.assertEqual(draft["blocked_claims"], [])
+            self.assertIn("possible floor stay", draft["draft_text"])
+            self.assertNotIn("data/snapshots", server.last_request_text)
+            self.assertIn("snapshot_path_present", server.last_request_text)
+
 
 class Seed:
     def __init__(self, tmpdir: tempfile.TemporaryDirectory[str]):
@@ -191,7 +297,7 @@ class Seed:
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )
@@ -210,6 +316,43 @@ class Seed:
 
 def seeded_store() -> Seed:
     return Seed(tempfile.TemporaryDirectory())
+
+
+class LocalGemmaServer:
+    def __init__(self, response_text: str):
+        self.response_text = response_text
+        self.last_request_text = ""
+        self._server = ThreadingHTTPServer(("127.0.0.1", 0), self._handler())
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self.base_url = f"http://127.0.0.1:{self._server.server_port}/v1"
+
+    def __enter__(self) -> "LocalGemmaServer":
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        self._server.shutdown()
+        self._server.server_close()
+        self._thread.join(timeout=2)
+
+    def _handler(self):
+        parent = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self) -> None:
+                length = int(self.headers.get("Content-Length", "0"))
+                parent.last_request_text = self.rfile.read(length).decode("utf-8")
+                body = json.dumps({"choices": [{"message": {"content": parent.response_text}}]}).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, _format: str, *_args: object) -> None:
+                return
+
+        return Handler
 
 
 if __name__ == "__main__":

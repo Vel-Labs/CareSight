@@ -303,6 +303,51 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(staged[0]["request_id"], request["request_id"])
             self.assertEqual(staged[0]["execution_state"], "not_executed")
 
+    def test_action_request_cli_blocks_unconfigured_contact_id(self) -> None:
+        with seeded_review_service() as seed:
+            draft_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "agent-draft",
+                    seed.event_id,
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(draft_result.returncode, 0, draft_result.stderr)
+            draft = json.loads(draft_result.stdout)
+
+            stage_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "stage-action-request",
+                    seed.event_id,
+                    "--draft-id",
+                    draft["draft_id"],
+                    "--action",
+                    "send_imessage_draft",
+                    "--destination",
+                    "imessage",
+                    "--recipient-role",
+                    "emergency_contact",
+                    "--allowed-contact-id",
+                    "contact_not_allowlisted",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertNotEqual(stage_result.returncode, 0)
+            self.assertIn("not allowlisted", stage_result.stderr)
+
     def test_agent_harness_plan_cli_is_non_executing(self) -> None:
         with seeded_review_service() as seed:
             draft = subprocess.run(
@@ -392,6 +437,70 @@ class CareConsoleTest(unittest.TestCase):
             self.assertIn("screen capture", payload["message_text"])
             self.assertIn("FaceTime handoff", payload["message_text"])
 
+            attempt_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "record-execution-attempt",
+                    request["request_id"],
+                    "--harness",
+                    "hermes",
+                    "--kind",
+                    "dry_run",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(attempt_result.returncode, 0, attempt_result.stderr)
+            attempt = json.loads(attempt_result.stdout)
+            self.assertEqual(attempt["schema"], "agent-execution-attempt")
+            self.assertEqual(attempt["execution_state"], "dry_run")
+            self.assertEqual(attempt["result"], "payload_logged_no_send")
+            self.assertFalse(attempt["external_action_performed"])
+
+            hermes_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "hermes-dry-run",
+                    request["request_id"],
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(hermes_result.returncode, 0, hermes_result.stderr)
+            hermes_attempt = json.loads(hermes_result.stdout)
+            self.assertIn(hermes_attempt["execution_state"], {"dry_run", "blocked"})
+            self.assertFalse(hermes_attempt["external_action_performed"])
+            self.assertIn("hermes_preflight", hermes_attempt["payload"])
+            self.assertNotIn("targets", hermes_attempt["payload"]["hermes_preflight"])
+
+            listed_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "list-execution-attempts",
+                    request["request_id"],
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(listed_result.returncode, 0, listed_result.stderr)
+            attempts = json.loads(listed_result.stdout)
+            self.assertEqual(attempts[0]["attempt_id"], attempt["attempt_id"])
+
     def test_hermes_config_plan_cli_reports_local_model_route(self) -> None:
         with seeded_review_service() as seed:
             result = subprocess.run(
@@ -427,7 +536,7 @@ class Seed:
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )
@@ -449,7 +558,7 @@ class Seed:
         detection = Detection(
             class_name="person",
             confidence=0.91,
-            bbox_xyxy=(360, 520, 640, 710),
+            bbox_xyxy=(200, 430, 1080, 715),
             frame_width=1280,
             frame_height=720,
         )

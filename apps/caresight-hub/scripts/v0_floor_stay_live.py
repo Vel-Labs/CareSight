@@ -4,9 +4,12 @@ import re
 import sys
 import time
 from collections import deque
+from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT_DIR.parents[1]
 YOLO_DIR = ROOT_DIR / "vendor" / "yolo-mlx"
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(YOLO_DIR))
@@ -144,6 +147,76 @@ def should_stop_loop(
     return False
 
 
+def resolve_runtime_path(path_value: str | Path) -> Path:
+    path = Path(path_value)
+    if path.is_absolute():
+        return path
+    return REPO_ROOT / path
+
+
+def format_started_line(config, database_path: Path) -> str:
+    return (
+        "v0_started "
+        f"camera={config.camera.camera_id} room={config.room.name} "
+        f"source_type={config.camera.source_type} zone={config.floor_zone.zone_id} "
+        f"required_dwell_seconds={config.floor_stay.dwell_seconds} db={database_path}"
+    )
+
+
+def build_no_event_check(
+    *,
+    started_at: str,
+    completed_at: str,
+    elapsed_seconds: float,
+    frame_count: int,
+    config,
+) -> dict:
+    check_id = f"check_{uuid4().hex}"
+    result = {
+        "camera_id": config.camera.camera_id,
+        "elapsed_seconds": round(elapsed_seconds, 2),
+        "frame_count": frame_count,
+        "required_dwell_seconds": config.floor_stay.dwell_seconds,
+        "status": "no_possible_floor_stay_event",
+        "zone_id": config.floor_zone.zone_id,
+    }
+    return {
+        "schema": "observation-check",
+        "check_id": check_id,
+        "check_type": "normal_presence_no_event",
+        "started_at": started_at,
+        "completed_at": completed_at,
+        "camera_id": config.camera.camera_id,
+        "zone_id": config.floor_zone.zone_id,
+        "status": "no_event_persisted",
+        "frame_count": frame_count,
+        "elapsed_seconds": round(elapsed_seconds, 2),
+        "required_dwell_seconds": config.floor_stay.dwell_seconds,
+        "event_id": None,
+        "result": result,
+    }
+
+
+def format_no_event_line(check: dict) -> str:
+    payload = {
+        "camera_id": check["camera_id"],
+        "check_id": check["check_id"],
+        "elapsed_seconds": check["elapsed_seconds"],
+        "frame_count": check["frame_count"],
+        "required_dwell_seconds": check["required_dwell_seconds"],
+        "status": "no_possible_floor_stay_event",
+        "zone_id": check["zone_id"],
+    }
+    return "no_event_persisted " + json.dumps(
+        payload,
+        sort_keys=True,
+    )
+
+
+def utc_now() -> str:
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
 def main() -> None:
     args = parse_args()
 
@@ -165,7 +238,8 @@ def main() -> None:
     if not model_path.exists():
         raise SystemExit(f"Missing model: {model_path}")
 
-    store = SQLiteStore(config.storage.database_path)
+    database_path = resolve_runtime_path(config.storage.database_path)
+    store = SQLiteStore(database_path)
     store.initialize()
     store.upsert_config(config)
 
@@ -183,23 +257,22 @@ def main() -> None:
 
     detector = FloorStayDetector(config)
     fps_values: deque[float] = deque(maxlen=30)
-    print(
-        "v0_started "
-        f"camera={config.camera.camera_id} room={config.room.name} "
-        f"source_type={config.camera.source_type} zone={config.floor_zone.zone_id} "
-        f"dwell_seconds={config.floor_stay.dwell_seconds} db={config.storage.database_path}"
-    )
+    print(format_started_line(config, database_path))
 
     if not args.no_window:
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(WINDOW_NAME, config.camera.width, config.camera.height)
 
     loop_started_at = time.monotonic()
+    check_started_at = utc_now()
+    frame_count = 0
+    persisted_event_count = 0
     while True:
         started_at = time.perf_counter()
         ok, frame = cap.read()
         if not ok:
             break
+        frame_count += 1
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = model.predict(rgb_frame, conf=args.conf)[0]
@@ -207,7 +280,7 @@ def main() -> None:
         event = detector.update(result_to_detections(result, width, height))
         event_persisted = False
         if event is not None:
-            snapshot_dir = Path(config.storage.database_path).parent / "snapshots"
+            snapshot_dir = database_path.parent / "snapshots"
             event = attach_local_snapshot(
                 event=event,
                 snapshot_dir=snapshot_dir,
@@ -216,6 +289,7 @@ def main() -> None:
             store.insert_event(event)
             print("event_persisted " + json.dumps(event, sort_keys=True))
             event_persisted = True
+            persisted_event_count += 1
 
         elapsed = max(time.perf_counter() - started_at, 0.0001)
         fps_values.append(1.0 / elapsed)
@@ -233,6 +307,18 @@ def main() -> None:
             cv2.imshow(WINDOW_NAME, draw_frame(cv2, frame, result, config, fps_values))
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
+
+    elapsed_seconds = time.monotonic() - loop_started_at
+    if frame_count > 0 and persisted_event_count == 0:
+        check = build_no_event_check(
+            started_at=check_started_at,
+            completed_at=utc_now(),
+            elapsed_seconds=elapsed_seconds,
+            frame_count=frame_count,
+            config=config,
+        )
+        store.insert_observation_check(check)
+        print(format_no_event_line(check))
 
     cap.release()
     cv2.destroyAllWindows()

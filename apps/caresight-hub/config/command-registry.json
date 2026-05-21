@@ -1,0 +1,68 @@
+{
+  "schema": "caresight-command-registry",
+  "version": 1,
+  "default_policy": {
+    "canonical_source": "sqlite",
+    "raw_video_to_agents": false,
+    "cloud_fallback_default": false,
+    "human_approval_required_for_live_actions": true
+  },
+  "commands": [
+    {
+      "id": "install_all",
+      "command": "python3 apps/caresight-hub/scripts/caresight_install_all.py",
+      "safety_class": "manual-operator",
+      "description": "Install local runtime, default models, and OBS.",
+      "external_network": true,
+      "live_action": false
+    },
+    {
+      "id": "stack_start",
+      "command": "python3 apps/caresight-hub/scripts/caresight_stack_start.py",
+      "safety_class": "manual-operator",
+      "description": "Start Gemma and verify Hermes no-send readiness.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "stack_stop",
+      "command": "python3 apps/caresight-hub/scripts/caresight_stack_stop.py",
+      "safety_class": "manual-operator",
+      "description": "Stop/clear local stack runtime markers.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "gemma_draft",
+      "command": "python3 apps/caresight-hub/scripts/care_console.py agent-draft <event_id> --provider gemma --purpose alert_draft",
+      "safety_class": "agent-safe-read",
+      "description": "Create a local Gemma draft from SQLite audit context.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "hermes_dry_run",
+      "command": "python3 apps/caresight-hub/scripts/care_console.py hermes-dry-run <request_id>",
+      "safety_class": "agent-safe-read",
+      "description": "Record a no-send Hermes preflight execution attempt.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "tts_generate",
+      "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text <approved_text>",
+      "safety_class": "manual-operator",
+      "description": "Generate local TTS audio without playback.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "tts_play",
+      "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text <approved_text> --play",
+      "safety_class": "human-review-required",
+      "description": "Play approved local TTS audio for human validation.",
+      "external_network": false,
+      "live_action": true
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "schema": "care-contact-allowlist",
+  "updated_at": "2026-05-21T00:00:00Z",
+  "notes": [
+    "Example IDs only. Do not store real phone numbers, addresses, tokens, passwords, or BlueBubbles credentials in this file.",
+    "Local operators can copy this shape to an ignored private file and set CARESIGHT_CONTACT_ALLOWLIST_PATH."
+  ],
+  "contacts": [
+    {
+      "contact_id": "contact_caregiver_primary",
+      "role": "caregiver",
+      "display_label": "Primary caregiver",
+      "channel_refs": {
+        "imessage": "redacted-local-channel-ref",
+        "facetime": "redacted-local-channel-ref"
+      }
+    },
+    {
+      "contact_id": "contact_emergency_primary",
+      "role": "emergency_contact",
+      "display_label": "Primary emergency contact",
+      "channel_refs": {
+        "imessage": "redacted-local-channel-ref",
+        "facetime": "redacted-local-channel-ref"
+      }
+    }
+  ]
+}

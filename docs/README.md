@@ -13,6 +13,7 @@ docs/
   repo-truth/
   governance/
   hackathon/
+  operations/
   roadmaps/
   templates/
   audits/
@@ -62,7 +63,9 @@ npm run typecheck
 ### Hackathon project
 
 1. `project/PROJECT_BRIEF.md`
-2. `hackathon/README.md`
-3. `hackathon/rules.md`
-4. `hackathon/vendor-tracks.md`
-5. `hackathon/submission-checklist.md`
+2. `getting_started.md`
+3. `operations/local_model_operations.md`
+4. `hackathon/README.md`
+5. `hackathon/rules.md`
+6. `hackathon/vendor-tracks.md`
+7. `hackathon/submission-checklist.md`

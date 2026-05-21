@@ -1,0 +1,62 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-hermes-invocation-dry-run",
+  "created_at": "2026-05-21T19:20:18.895441Z",
+  "sprint": "02",
+  "status": "dry_run_ready",
+  "requirement": "Invoke Hermes through the staged payload boundary in dry-run/no-send mode and persist the execution attempt.",
+  "case": "case-a",
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "draft_id": "draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft",
+  "request_id": "action_req_evt_d9aa38bdc636459c92ea4e25f665cd0d_send_imessage_draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft",
+  "attempt_id": "attempt_bf72a0fe7f294770b986a8508a8b1212",
+  "commands": [
+    {
+      "cmd": "python3 apps/caresight-hub/scripts/care_console.py agent-draft evt_d9aa38bdc636459c92ea4e25f665cd0d --purpose alert_draft",
+      "status": "pass"
+    },
+    {
+      "cmd": "python3 apps/caresight-hub/scripts/care_console.py stage-action-request evt_d9aa38bdc636459c92ea4e25f665cd0d --draft-id draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft --action send_imessage_draft --destination imessage --escalation-level urgent_handoff --recipient-role emergency_contact --allowed-contact-id contact_emergency_primary --response-option request_local_screen_capture --response-option request_facetime_handoff",
+      "status": "pass"
+    },
+    {
+      "cmd": "python3 apps/caresight-hub/scripts/care_console.py hermes-dry-run action_req_evt_d9aa38bdc636459c92ea4e25f665cd0d_send_imessage_draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft",
+      "status": "pass",
+      "result": "Hermes no-send preflight returned ready through the project-local YOLO MLX venv; target names were redacted from persisted output."
+    }
+  ],
+  "dry_run_attempt": {
+    "harness": "hermes",
+    "attempt_kind": "dry_run",
+    "execution_state": "dry_run",
+    "result": "hermes_no_send_preflight_ready",
+    "external_action_performed": false,
+    "preflight": {
+      "tool": "send_message",
+      "action": "list",
+      "status": "ready",
+      "result_redacted": true,
+      "result_summary": {
+        "available": true,
+        "target_count": 33,
+        "target_names_redacted": true
+      },
+      "external_action_performed": false
+    }
+  },
+  "safety_boundaries": [
+    "dry_run_only",
+    "human_review_required",
+    "allowlisted_recipient_only",
+    "no_external_execution",
+    "no_raw_video_to_agent",
+    "no_autonomous_dispatch",
+    "sqlite_canonical"
+  ],
+  "notes": [
+    "This proves the CareSight handoff boundary, vendored Hermes no-send preflight, and execution-attempt logging path.",
+    "No iMessage, FaceTime, Notes, TTS, screenshot attachment, raw video access, or live Hermes delivery occurred.",
+    "The preflight used the existing project-local YOLO MLX venv because it has yaml available.",
+    "Hermes target names were intentionally redacted from the persisted receipt because the channel directory is broader than CareSight's contact allowlist."
+  ]
+}

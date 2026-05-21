@@ -1,11 +1,14 @@
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
 DEFAULT_DB_PATH = ROOT_DIR / "data" / "caresight-v0.sqlite3"
+DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.example.json"
+DEFAULT_RUNTIME_PYTHON = ROOT_DIR / ".venv" / "bin" / "python"
 
 
 def parse_args() -> argparse.Namespace:
@@ -40,6 +43,12 @@ def parse_args() -> argparse.Namespace:
         choices=["caregiver_summary", "alert_draft", "apple_notes_entry", "handoff_packet", "audit_summary"],
         default="caregiver_summary",
     )
+    agent_draft_parser.add_argument("--provider", choices=["fake", "gemma"], default="fake")
+    agent_draft_parser.add_argument("--gemma-base-url", default="http://127.0.0.1:8080/v1")
+    agent_draft_parser.add_argument(
+        "--gemma-model",
+        default="apps/caresight-hub/models/reasoning/gemma/gemma-4-e2b-it-4bit",
+    )
     stage_parser = subparsers.add_parser(
         "stage-action-request",
         help="Stage a local agent action request without executing it.",
@@ -66,6 +75,11 @@ def parse_args() -> argparse.Namespace:
     stage_parser.add_argument("--recipient-role", choices=["caregiver", "emergency_contact"])
     stage_parser.add_argument("--allowed-contact-id", action="append", default=[])
     stage_parser.add_argument(
+        "--allowlist-config",
+        default=os.environ.get("CARESIGHT_CONTACT_ALLOWLIST_PATH", str(DEFAULT_ALLOWLIST_PATH)),
+        help="Redacted local contact allowlist JSON for iMessage/FaceTime staging.",
+    )
+    stage_parser.add_argument(
         "--response-option",
         action="append",
         choices=[
@@ -91,6 +105,28 @@ def parse_args() -> argparse.Namespace:
         help="Render the non-executing Hermes handoff payload for one staged action request.",
     )
     payload_parser.add_argument("request_id")
+    attempt_parser = subparsers.add_parser(
+        "record-execution-attempt",
+        help="Record a local dry-run execution attempt for one staged action request.",
+    )
+    attempt_parser.add_argument("request_id")
+    attempt_parser.add_argument("--harness", choices=["hermes"], default="hermes")
+    attempt_parser.add_argument("--kind", choices=["dry_run"], default="dry_run")
+    hermes_dry_run_parser = subparsers.add_parser(
+        "hermes-dry-run",
+        help="Invoke Hermes no-send preflight and record a local execution-attempt receipt.",
+    )
+    hermes_dry_run_parser.add_argument("request_id")
+    hermes_dry_run_parser.add_argument(
+        "--vendor-path",
+        default=str(ROOT_DIR / "vendor" / "hermes-agent"),
+        help="Vendored Hermes path.",
+    )
+    list_attempts_parser = subparsers.add_parser(
+        "list-execution-attempts",
+        help="List local execution attempts for one staged action request.",
+    )
+    list_attempts_parser.add_argument("request_id")
     subparsers.add_parser(
         "hermes-config-plan",
         help="Render the workspace-local Hermes and local model serving plan.",
@@ -99,6 +135,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    if (
+        "hermes-dry-run" in sys.argv
+        and DEFAULT_RUNTIME_PYTHON.exists()
+        and os.environ.get("CARESIGHT_CONSOLE_REEXEC") != "1"
+    ):
+        env = {**os.environ, "CARESIGHT_CONSOLE_REEXEC": "1"}
+        os.execve(str(DEFAULT_RUNTIME_PYTHON), [str(DEFAULT_RUNTIME_PYTHON), str(Path(__file__).resolve()), *sys.argv[1:]], env)
+
     from caresight.runtime.alerts import draft_caregiver_alert
     from caresight.runtime.dashboard import build_dashboard_state
     from caresight.runtime.demo_surface import (
@@ -109,9 +153,14 @@ def main() -> None:
     )
     from caresight.runtime.agent_assist import (
         build_agent_draft,
+        build_execution_attempt,
         build_harness_plan,
         build_hermes_config_plan,
         build_hermes_handoff_payload,
+        contact_ids,
+        GemmaLocalProvider,
+        load_contact_allowlist,
+        run_hermes_dry_run,
         stage_action_request,
     )
     from caresight.runtime.review import ReviewService
@@ -149,11 +198,15 @@ def main() -> None:
         return
 
     if args.command == "agent-draft":
-        draft = build_agent_draft(store, args.event_id, purpose=args.purpose)
+        provider = None
+        if args.provider == "gemma":
+            provider = GemmaLocalProvider(endpoint=args.gemma_base_url, model=args.gemma_model)
+        draft = build_agent_draft(store, args.event_id, purpose=args.purpose, provider=provider)
         print(json.dumps(draft, indent=2, sort_keys=True))
         return
 
     if args.command == "stage-action-request":
+        allowlist = load_contact_allowlist(args.allowlist_config)
         request = stage_action_request(
             store,
             event_id=args.event_id,
@@ -164,6 +217,7 @@ def main() -> None:
             recipient_role=args.recipient_role,
             allowed_contact_ids=args.allowed_contact_id,
             response_options=args.response_option,
+            contact_allowlist=contact_ids(allowlist),
         )
         print(json.dumps(request, indent=2, sort_keys=True))
         return
@@ -183,6 +237,32 @@ def main() -> None:
         request = store.get_agent_action_request(args.request_id)
         draft = store.get_agent_draft(request["source_draft_id"])
         print(json.dumps(build_hermes_handoff_payload(request, draft=draft), indent=2, sort_keys=True))
+        return
+
+    if args.command == "record-execution-attempt":
+        request = store.get_agent_action_request(args.request_id)
+        draft = store.get_agent_draft(request["source_draft_id"])
+        payload = build_hermes_handoff_payload(request, draft=draft)
+        attempt = build_execution_attempt(
+            store,
+            request=request,
+            payload=payload,
+            harness=args.harness,
+            attempt_kind=args.kind,
+            result="payload_logged_no_send",
+        )
+        print(json.dumps(attempt, indent=2, sort_keys=True))
+        return
+
+    if args.command == "hermes-dry-run":
+        request = store.get_agent_action_request(args.request_id)
+        draft = store.get_agent_draft(request["source_draft_id"])
+        attempt = run_hermes_dry_run(store, request=request, draft=draft, vendor_path=args.vendor_path)
+        print(json.dumps(attempt, indent=2, sort_keys=True))
+        return
+
+    if args.command == "list-execution-attempts":
+        print(json.dumps(store.list_agent_execution_attempts(args.request_id), indent=2, sort_keys=True))
         return
 
 

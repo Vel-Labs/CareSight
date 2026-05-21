@@ -24,7 +24,7 @@ class SQLiteStoreTest(unittest.TestCase):
             detection = Detection(
                 class_name="person",
                 confidence=0.91,
-                bbox_xyxy=(360, 520, 640, 710),
+                bbox_xyxy=(200, 430, 1080, 715),
                 frame_width=1280,
                 frame_height=720,
             )
@@ -95,6 +95,112 @@ class SQLiteStoreTest(unittest.TestCase):
             self.assertIn("track_id", columns)
             self.assertEqual(row, ("evt_legacy", "person", None))
 
+    def test_stores_observation_check_without_event_review_lifecycle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            config = CareSightConfig.default()
+            store = SQLiteStore(db_path)
+            store.initialize()
+            store.upsert_config(config)
+            check = {
+                "check_id": "check_normal_desk",
+                "check_type": "normal_presence_no_event",
+                "started_at": "2026-05-21T18:00:00Z",
+                "completed_at": "2026-05-21T18:01:00Z",
+                "camera_id": "living_room",
+                "zone_id": "floor_zone",
+                "status": "no_event_persisted",
+                "frame_count": 1800,
+                "elapsed_seconds": 60.0,
+                "required_dwell_seconds": 8.0,
+                "event_id": None,
+                "result": {
+                    "status": "no_possible_floor_stay_event",
+                    "camera_id": "living_room",
+                    "zone_id": "floor_zone",
+                },
+            }
+
+            store.insert_observation_check(check)
+            stored = store.get_observation_check("check_normal_desk")
+
+            self.assertEqual(stored["schema"], "observation-check")
+            self.assertEqual(stored["status"], "no_event_persisted")
+            self.assertIsNone(stored["event_id"])
+            self.assertEqual(stored["frame_count"], 1800)
+            self.assertEqual(stored["result"]["status"], "no_possible_floor_stay_event")
+            self.assertEqual(store.list_events(), [])
+            self.assertEqual(store.list_observation_checks()[0]["check_id"], "check_normal_desk")
+
+    def test_stores_agent_execution_attempt_without_changing_action_request_state(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            config = CareSightConfig.default()
+            store = SQLiteStore(db_path)
+            store.initialize()
+            store.upsert_config(config)
+            event = _floor_stay_event(config)
+            store.insert_event(event)
+            draft = {
+                "draft_id": "draft_exec_attempt",
+                "event_id": event["event_id"],
+                "created_at": "2026-05-21T19:00:00Z",
+                "provider": "fake",
+                "purpose": "alert_draft",
+                "validation_status": "validated",
+                "draft_text": "CareSight recorded a possible event.",
+                "safe_rewrite": None,
+                "blocked_claims": [],
+                "safety_boundaries": ["draft_only"],
+                "provenance": {"source": "test"},
+            }
+            request = {
+                "request_id": "action_req_exec_attempt",
+                "event_id": event["event_id"],
+                "created_at": "2026-05-21T19:00:01Z",
+                "requested_action": "send_imessage_draft",
+                "stage": "staged",
+                "execution_state": "not_executed",
+                "requires_human_approval": True,
+                "source_draft_id": draft["draft_id"],
+                "destination": "imessage",
+                "escalation_level": "urgent_handoff",
+                "recipient_role": "emergency_contact",
+                "allowed_contact_ids": ["contact_emergency_primary"],
+                "response_options": ["acknowledge_text_update"],
+                "safety_boundaries": ["stage_only", "no_external_execution"],
+                "provenance": {"source": "test"},
+            }
+            attempt = {
+                "attempt_id": "attempt_exec_attempt",
+                "request_id": request["request_id"],
+                "event_id": event["event_id"],
+                "created_at": "2026-05-21T19:00:02Z",
+                "harness": "hermes",
+                "attempt_kind": "dry_run",
+                "execution_state": "dry_run",
+                "result": "payload_logged_no_send",
+                "external_action_performed": False,
+                "payload": {"schema": "hermes-handoff-payload"},
+                "safety_boundaries": ["no_external_execution"],
+                "provenance": {"source": "test"},
+            }
+
+            store.insert_agent_draft(draft)
+            store.insert_agent_action_request(request)
+            store.insert_agent_execution_attempt(attempt)
+            stored = store.list_agent_execution_attempts(request["request_id"])[0]
+
+            self.assertEqual(stored["schema"], "agent-execution-attempt")
+            self.assertEqual(stored["attempt_id"], "attempt_exec_attempt")
+            self.assertEqual(stored["execution_state"], "dry_run")
+            self.assertFalse(stored["external_action_performed"])
+            self.assertEqual(stored["payload"]["schema"], "hermes-handoff-payload")
+            self.assertEqual(
+                store.get_agent_action_request(request["request_id"])["execution_state"],
+                "not_executed",
+            )
+
     def test_store_operations_do_not_leave_unclosed_sqlite_connections(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "caresight.sqlite3"
@@ -115,6 +221,21 @@ class SQLiteStoreTest(unittest.TestCase):
                 and "unclosed" in str(warning.message).lower()
             ]
             self.assertEqual(sqlite_warnings, [])
+
+
+def _floor_stay_event(config: CareSightConfig) -> dict:
+    detector = FloorStayDetector(config)
+    detection = Detection(
+        class_name="person",
+        confidence=0.91,
+        bbox_xyxy=(200, 430, 1080, 715),
+        frame_width=1280,
+        frame_height=720,
+    )
+    detector.update([detection], now=100.0)
+    event = detector.update([detection], now=109.0)
+    assert event is not None
+    return event
 
 
 if __name__ == "__main__":

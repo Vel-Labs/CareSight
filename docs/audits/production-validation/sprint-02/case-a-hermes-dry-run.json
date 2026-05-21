@@ -1,0 +1,54 @@
+{
+  "schema": "agent-execution-attempt",
+  "attempt_id": "attempt_bf72a0fe7f294770b986a8508a8b1212",
+  "request_id": "action_req_evt_d9aa38bdc636459c92ea4e25f665cd0d_send_imessage_draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft",
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "created_at": "2026-05-21T19:20:18.895441Z",
+  "harness": "hermes",
+  "attempt_kind": "dry_run",
+  "execution_state": "dry_run",
+  "result": "hermes_no_send_preflight_ready",
+  "error": null,
+  "external_action_performed": false,
+  "payload_summary": {
+    "schema": "hermes-handoff-payload",
+    "destination": "imessage",
+    "recipient_role": "emergency_contact",
+    "allowed_contact_ids": [
+      "contact_emergency_primary"
+    ],
+    "escalation_level": "urgent_handoff",
+    "media_options": {
+      "screen_capture": "available_by_human_request_only",
+      "facetime_handoff": "available_by_human_request_only",
+      "obs_virtual_camera": "operator_configured_only"
+    },
+    "hermes_preflight": {
+      "tool": "send_message",
+      "action": "list",
+      "status": "ready",
+      "result_redacted": true,
+      "result_summary": {
+        "available": true,
+        "target_count": 33,
+        "target_names_redacted": true
+      },
+      "external_action_performed": false
+    }
+  },
+  "safety_boundaries": [
+    "dry_run_only",
+    "human_review_required",
+    "no_external_execution",
+    "sqlite_canonical",
+    "no_autonomous_dispatch"
+  ],
+  "provenance": {
+    "source": "sqlite_action_request_and_payload",
+    "source_fields": [
+      "agent_action_requests",
+      "agent_drafts",
+      "agent_execution_attempts"
+    ]
+  }
+}

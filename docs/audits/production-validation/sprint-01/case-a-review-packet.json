@@ -1,0 +1,48 @@
+{
+  "available_human_actions": [
+    "confirm",
+    "dismiss",
+    "needs_followup"
+  ],
+  "blocked_actions": [
+    "autonomous_emergency_dispatch",
+    "medical_diagnosis"
+  ],
+  "created_at": "2026-05-21T17:41:12.562325Z",
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "event_type": "possible_floor_stay",
+  "evidence": {
+    "camera_id": "living_room",
+    "observation_count": 1,
+    "room": "Living Room",
+    "snapshot_path": "apps/caresight-hub/data/snapshots/evt_d9aa38bdc636459c92ea4e25f665cd0d.jpg",
+    "track_ids": [
+      "track_5"
+    ],
+    "zone_id": "floor_zone"
+  },
+  "packet_id": "review_packet_evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "provenance": {
+    "source": "sqlite_audit_chain",
+    "source_fields": [
+      "events",
+      "event_observations",
+      "event_reviews",
+      "journal_entries",
+      "agent_handoffs"
+    ]
+  },
+  "review_state": {
+    "latest_decision": "human_confirmed",
+    "latest_reviewer": "Steven",
+    "review_count": 1
+  },
+  "schema": "human-review-packet",
+  "source_of_truth": "sqlite",
+  "status": "human_confirmed",
+  "summary": {
+    "bounded_language": true,
+    "headline": "Possible Floor Stay in Living Room",
+    "requires_human_confirmation": true
+  }
+}

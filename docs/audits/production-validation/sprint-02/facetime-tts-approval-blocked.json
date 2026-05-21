@@ -1,0 +1,54 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-facetime-tts-approval-blocked",
+  "created_at": "2026-05-21T00:00:00Z",
+  "updated_at": "2026-05-21T19:51:05Z",
+  "sprint": "02",
+  "status": "approved_runtime_ready_playback_pending",
+  "requirement": "Request human approval for FaceTime handoff testing and TTS playback validation only after local readiness gates are safe.",
+  "approval_requested": true,
+  "approval_result": "User approved FaceTime handoff preparation, TTS runtime installation, Gemma-based no-send message generation after local Gemma is connected, and later live text/FaceTime only after message wording, TTS read, and allowed contact list approval.",
+  "reason": "Runtime install is approved and local TTS generation is proven; external calls, sends, and playback validation remain gated.",
+  "blocked_gates": [
+    {
+      "gate": "facetime_visual_handoff",
+      "reason": "OBS and obsws_python are present, but no privacy-safe scene/capture proof or allowed Apple contact mapping has been confirmed."
+    },
+    {
+      "gate": "tts_playback",
+      "reason": "TTS WAV generation succeeded locally, but playback has not yet been human-validated for audibility, calmness, and wording."
+    }
+  ],
+  "checks": [
+    {
+      "check": "TTS model files present",
+      "status": "pass",
+      "path": "apps/caresight-hub/models/tts/holler/holler-0.6b-6bit"
+    },
+    {
+      "check": "soundfile import",
+      "status": "pass",
+      "result": "soundfile 0.13.1 importable in apps/caresight-hub/.venv"
+    },
+    {
+      "check": "numpy import",
+      "status": "pass",
+      "result": "numpy 2.4.6 importable in apps/caresight-hub/.venv"
+    },
+    {
+      "check": "TTS smoke generation",
+      "status": "pass",
+      "command": "apps/caresight-hub/.venv/bin/python -m mlx_audio.tts.generate --model apps/caresight-hub/models/tts/holler/holler-0.6b-6bit --text 'CareSight noted a possible floor stay in the living room. Please review when available.' --voice kit --max_tokens 64 --output_path /tmp/caresight-tts-smoke --file_prefix caresight_tts_smoke --audio_format wav",
+      "result": "Generated /tmp/caresight-tts-smoke/caresight_tts_smoke_000.wav as 16-bit mono 24000 Hz WAV; not tracked in Git."
+    }
+  ],
+  "external_action_performed": false,
+  "facetime_started": false,
+  "audio_generated": true,
+  "audio_played": false,
+  "next_operator_steps": [
+    "Confirm a privacy-safe OBS scene before any capture or FaceTime proof.",
+    "Confirm the allowed caregiver Apple contact mapping without storing real contact details in Git.",
+    "After local Gemma generates the Case A message draft and the wording is approved, play the local TTS read for human audibility/tone approval."
+  ]
+}

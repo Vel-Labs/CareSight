@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import json
+import sys
+from pathlib import Path
 from typing import Any
+from uuid import uuid4
+
+from caresight.storage.sqlite_store import utc_now
 
 
 MODEL_LANES = {
@@ -152,6 +158,146 @@ def build_hermes_handoff_payload(request: dict[str, Any], *, draft: dict[str, An
             "no_autonomous_dispatch",
             "sqlite_canonical",
         ],
+    }
+
+
+def build_execution_attempt(
+    store: Any,
+    *,
+    request: dict[str, Any],
+    payload: dict[str, Any],
+    harness: str,
+    attempt_kind: str,
+    result: str,
+    error: str | None = None,
+    execution_state: str = "dry_run",
+) -> dict[str, Any]:
+    if harness not in HARNESS_CANDIDATES:
+        raise ValueError(f"unsupported harness: {harness}")
+    if attempt_kind != "dry_run":
+        raise ValueError("this local prototype only records dry_run attempts without live execution")
+    if execution_state not in {"dry_run", "blocked"}:
+        raise ValueError(f"unsupported dry-run execution state: {execution_state}")
+    if request["stage"] != "staged" or request["execution_state"] != "not_executed":
+        raise ValueError("execution attempts require a staged, not_executed action request")
+    if payload.get("request_id") != request["request_id"]:
+        raise ValueError("payload request_id does not match action request")
+
+    attempt = {
+        "schema": "agent-execution-attempt",
+        "attempt_id": f"attempt_{uuid4().hex}",
+        "request_id": request["request_id"],
+        "event_id": request["event_id"],
+        "created_at": utc_now(),
+        "harness": harness,
+        "attempt_kind": attempt_kind,
+        "execution_state": execution_state,
+        "result": result,
+        "error": error,
+        "external_action_performed": False,
+        "payload": payload,
+        "safety_boundaries": [
+            "dry_run_only",
+            "human_review_required",
+            "no_external_execution",
+            "sqlite_canonical",
+            "no_autonomous_dispatch",
+        ],
+        "provenance": {
+            "source": "sqlite_action_request_and_payload",
+            "source_fields": [
+                "agent_action_requests",
+                "agent_drafts",
+                "agent_execution_attempts",
+            ],
+        },
+    }
+    store.insert_agent_execution_attempt(attempt)
+    return attempt
+
+
+def run_hermes_dry_run(
+    store: Any,
+    *,
+    request: dict[str, Any],
+    draft: dict[str, Any],
+    vendor_path: str | Path = HERMES_CONFIG["vendor_path"],
+) -> dict[str, Any]:
+    payload = build_hermes_handoff_payload(request, draft=draft)
+    preflight = invoke_hermes_no_send_preflight(vendor_path)
+    execution_state = "dry_run" if preflight["status"] == "ready" else "blocked"
+    result = "hermes_no_send_preflight_ready" if execution_state == "dry_run" else "blocked_hermes_preflight"
+    payload_with_preflight = {**payload, "hermes_preflight": preflight}
+    return build_execution_attempt(
+        store,
+        request=request,
+        payload=payload_with_preflight,
+        harness="hermes",
+        attempt_kind="dry_run",
+        execution_state=execution_state,
+        result=result,
+        error=preflight.get("error"),
+    )
+
+
+def invoke_hermes_no_send_preflight(vendor_path: str | Path) -> dict[str, Any]:
+    resolved_vendor = Path(vendor_path)
+    if not resolved_vendor.exists():
+        return {
+            "status": "blocked",
+            "reason": "vendor_path_missing",
+            "vendor_path": str(resolved_vendor),
+            "external_action_performed": False,
+        }
+
+    inserted_path = str(resolved_vendor)
+    sys.path.insert(0, inserted_path)
+    try:
+        from tools.send_message_tool import SEND_MESSAGE_SCHEMA, send_message_tool
+
+        result_text = send_message_tool({"action": "list"})
+        try:
+            result = json.loads(result_text)
+        except json.JSONDecodeError:
+            result = {"raw_result": result_text}
+        if isinstance(result, dict) and result.get("error"):
+            return {
+                "status": "blocked",
+                "reason": "hermes_message_directory_unavailable",
+                "tool": SEND_MESSAGE_SCHEMA["name"],
+                "action": "list",
+                "error": result["error"],
+                "external_action_performed": False,
+            }
+        return {
+            "status": "ready",
+            "tool": SEND_MESSAGE_SCHEMA["name"],
+            "action": "list",
+            "result_summary": _summarize_hermes_directory_result(result),
+            "result_redacted": True,
+            "external_action_performed": False,
+        }
+    except Exception as exc:
+        return {
+            "status": "blocked",
+            "reason": "hermes_import_failed",
+            "error": str(exc),
+            "external_action_performed": False,
+        }
+    finally:
+        if sys.path and sys.path[0] == inserted_path:
+            sys.path.pop(0)
+
+
+def _summarize_hermes_directory_result(result: Any) -> dict[str, Any]:
+    targets = result.get("targets") if isinstance(result, dict) else None
+    if not isinstance(targets, str):
+        return {"available": bool(result)}
+    target_lines = [line for line in targets.splitlines() if line.startswith("  ")]
+    return {
+        "available": bool(target_lines),
+        "target_count": len(target_lines),
+        "target_names_redacted": True,
     }
 
 

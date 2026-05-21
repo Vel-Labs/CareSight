@@ -465,6 +465,122 @@ class SQLiteStore:
             raise KeyError(request_id)
         return agent_action_request_from_row(row)
 
+    def insert_agent_execution_attempt(self, attempt: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            request_row = conn.execute(
+                "SELECT event_id FROM agent_action_requests WHERE request_id = ?",
+                (attempt["request_id"],),
+            ).fetchone()
+            if request_row is None:
+                raise KeyError(attempt["request_id"])
+            if request_row["event_id"] != attempt["event_id"]:
+                raise ValueError("execution attempt event_id does not match action request")
+            conn.execute(
+                """
+                INSERT INTO agent_execution_attempts (
+                  attempt_id,
+                  request_id,
+                  event_id,
+                  created_at,
+                  harness,
+                  attempt_kind,
+                  execution_state,
+                  result,
+                  error,
+                  external_action_performed,
+                  payload_json,
+                  safety_boundaries_json,
+                  provenance_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    attempt["attempt_id"],
+                    attempt["request_id"],
+                    attempt["event_id"],
+                    attempt["created_at"],
+                    attempt["harness"],
+                    attempt["attempt_kind"],
+                    attempt["execution_state"],
+                    attempt["result"],
+                    attempt.get("error"),
+                    int(attempt["external_action_performed"]),
+                    json.dumps(attempt["payload"], sort_keys=True),
+                    json.dumps(attempt["safety_boundaries"], sort_keys=True),
+                    json.dumps(attempt["provenance"], sort_keys=True),
+                ),
+            )
+
+    def list_agent_execution_attempts(self, request_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM agent_execution_attempts
+                WHERE request_id = ?
+                ORDER BY created_at, attempt_id
+                """,
+                (request_id,),
+            ).fetchall()
+        return [agent_execution_attempt_from_row(row) for row in rows]
+
+    def insert_observation_check(self, check: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO observation_checks (
+                  check_id,
+                  check_type,
+                  started_at,
+                  completed_at,
+                  camera_id,
+                  zone_id,
+                  status,
+                  frame_count,
+                  elapsed_seconds,
+                  required_dwell_seconds,
+                  event_id,
+                  result_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    check["check_id"],
+                    check["check_type"],
+                    check["started_at"],
+                    check["completed_at"],
+                    check["camera_id"],
+                    check.get("zone_id"),
+                    check["status"],
+                    check["frame_count"],
+                    check["elapsed_seconds"],
+                    check.get("required_dwell_seconds"),
+                    check.get("event_id"),
+                    json.dumps(check["result"], sort_keys=True),
+                ),
+            )
+
+    def get_observation_check(self, check_id: str) -> dict[str, Any]:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM observation_checks WHERE check_id = ?",
+                (check_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(check_id)
+        return observation_check_from_row(row)
+
+    def list_observation_checks(self, limit: int = 20) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM observation_checks
+                ORDER BY completed_at DESC, check_id
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        return [observation_check_from_row(row) for row in rows]
+
     def _insert_event_observation(self, conn: sqlite3.Connection, event: dict[str, Any]) -> None:
         evidence = event["evidence"]
         bbox = evidence.get("bbox_xyxy")
@@ -639,6 +755,43 @@ def agent_action_request_from_row(row: sqlite3.Row) -> dict[str, Any]:
         "recipient_role": row["recipient_role"],
         "allowed_contact_ids": json.loads(row["allowed_contact_ids_json"]),
         "response_options": json.loads(row["response_options_json"]),
+        "safety_boundaries": json.loads(row["safety_boundaries_json"]),
+        "provenance": json.loads(row["provenance_json"]),
+    }
+
+
+def observation_check_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "schema": "observation-check",
+        "check_id": row["check_id"],
+        "check_type": row["check_type"],
+        "started_at": row["started_at"],
+        "completed_at": row["completed_at"],
+        "camera_id": row["camera_id"],
+        "zone_id": row["zone_id"],
+        "status": row["status"],
+        "frame_count": row["frame_count"],
+        "elapsed_seconds": row["elapsed_seconds"],
+        "required_dwell_seconds": row["required_dwell_seconds"],
+        "event_id": row["event_id"],
+        "result": json.loads(row["result_json"]),
+    }
+
+
+def agent_execution_attempt_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "schema": "agent-execution-attempt",
+        "attempt_id": row["attempt_id"],
+        "request_id": row["request_id"],
+        "event_id": row["event_id"],
+        "created_at": row["created_at"],
+        "harness": row["harness"],
+        "attempt_kind": row["attempt_kind"],
+        "execution_state": row["execution_state"],
+        "result": row["result"],
+        "error": row["error"],
+        "external_action_performed": bool(row["external_action_performed"]),
+        "payload": json.loads(row["payload_json"]),
         "safety_boundaries": json.loads(row["safety_boundaries_json"]),
         "provenance": json.loads(row["provenance_json"]),
     }

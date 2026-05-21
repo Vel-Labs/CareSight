@@ -22,9 +22,9 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - Deterministic v1 routine policies: `medication_routine_likely_observed` and `hydration_routine_likely_observed`.
 - Live proof event `evt_d9aa38bdc636459c92ea4e25f665cd0d` completed the v0 blackbox loop: live floor-zone observation, SQLite event and observation with `track_id`, authorized human confirmation, journal row, report-only handoff row, focused dashboard view, caregiver alert draft, and complete live-proof bundle.
 - YOLO26 image smoke now reports human-readable COCO labels plus machine-readable `class_id` in normalized observations.
-- Sprint 01 contract-backed demo surfaces are implemented but not yet production-validated: `human-review-packet` and `blackbox-receipt` contracts exist, read-only demo-surface builders derive from SQLite audit chains, and `care_console.py` exposes `review-packet` and `blackbox-receipt` as agent-safe read commands. Human validation still needs to confirm that the generated packet/receipt are demo-ready and operationally useful.
+- Sprint 01 contract-backed demo surfaces are production-validated for the current seeded-real A/B scope: Case A has JSON plus skimmable Markdown review-packet and blackbox-receipt artifacts, and Case B has a normal/no-event proof showing non-escalation. Human feedback accepted the Markdown audit-receipt direction while keeping evidence-label translation and concise Gemma alerts as follow-up work.
 - Sprint 01 demo surface audit receipt: `docs/audits/2026-05-20-sprint-01-demo-surface.md`.
-- Sprint 02 agent-assist infrastructure is implemented but not production-ready: `agent-draft`, `agent-action-request`, `tts-utterance`, and `forbidden-claim-vocabulary` schemas/examples validate through the contract corpus, but real Gemma serving, Hermes invocation, live iMessage, FaceTime, OBS, and TTS are not operational.
+- Sprint 02 agent-assist infrastructure is implemented but not production-ready: `agent-draft`, `agent-action-request`, `tts-utterance`, and `forbidden-claim-vocabulary` schemas/examples validate through the contract corpus, and production-validation receipts exist for staging, no-event non-escalation, execution-attempt logging, and blocked live gates.
 - The Sprint 02 fake provider is a safety proof, not the finished provider: validated and blocked agent drafts are stored in SQLite through `agent_drafts`, with forbidden-claim reasons and safe rewrites for blocked drafts.
 - Sprint 02 action-request staging is implemented as a pre-execution gate: `care_console.py agent-draft`, `stage-action-request`, and `list-action-requests` write and inspect local SQLite rows only. Staged requests remain `not_executed` and require human approval.
 - Local model candidates have been downloaded under ignored purpose lanes for follow-up provider benchmarking: `models/vision/yolo26-mlx/`, `models/reasoning/gemma/`, and `models/tts/holler/`.
@@ -32,6 +32,7 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - Hermes is now the preferred first harness trial for staged iMessage/Notes/FaceTime-style actions. `care_console.py agent-harness-plan` renders non-executing routing plans only.
 - `apps/caresight-hub/config/hermes/` contains safe repo-local Hermes templates for a local OpenAI-compatible Gemma MLX endpoint; OpenRouter is not required by default and remains an explicit cloud fallback only.
 - Staged Hermes handoff payloads now support `routine`, `attention`, and `urgent_handoff` levels, allowlisted emergency-contact routing, and bounded response options for journal text updates, local screen capture by request, or FaceTime handoff by request.
+- Production-validation receipts live under `docs/audits/production-validation/`. Current blockers are explicit: local Gemma E2B serves through `mlx-vlm.server`; Case A now has a validated `provider: gemma_mlx` draft, staged urgent handoff, and Hermes no-send receipt; Case B correctly produces no Gemma alert or urgent handoff because it is a normal/no-event check; live iMessage/BlueBubbles delivery is not approved/proven; OBS and `obsws_python` are present but need scene/privacy confirmation; TTS generation works locally from the Gemma message but playback needs human wording/tone validation.
 
 ## Production Readiness Correction
 
@@ -39,28 +40,33 @@ The sprint status language must distinguish implementation scaffolding from prod
 
 Sprint 01 remaining production gates:
 
-1. Human review of generated `review-packet` and `blackbox-receipt` output for the accepted live proof event.
-2. Confirmation that packet/receipt language is caregiver-ready and does not overclaim medical, emergency, or identity facts.
-3. A fresh run against a new event, not only the historical proof event.
+1. Translate low-level evidence labels into cleaner human-facing labels.
+2. Add a concise Gemma-generated outbound alert once local Gemma serving is available.
+3. Capture more seeded-real household normal cases over time for confidence beyond the initial desk/no-event proof.
 
 Sprint 02 remaining production gates:
 
-1. Serve Gemma locally through an OpenAI-compatible endpoint and prove a real draft path can use it.
-2. Invoke Hermes from CareSight through the staged payload boundary.
-3. Configure a real allowlisted caregiver/emergency-contact record without committing secrets.
-4. Prove one dry-run iMessage payload and one human-approved live send path.
-5. Configure and validate OBS virtual camera or a documented local screen-capture path before offering visual handoff.
-6. Configure and validate FaceTime handoff as a human-approved action, not an autonomous call.
-7. Configure and validate local TTS output from a validated utterance.
-8. Record SQLite execution-attempt rows for every attempted external action.
+1. Human-review the generated Gemma Case A wording and approve whether it is caregiver-ready.
+2. Configure the live Hermes/BlueBubbles route behind CareSight's redacted contact allowlist, then request explicit human approval for one send only after readiness passes.
+3. Configure a real allowlisted caregiver/emergency-contact record in ignored local config, without committing secrets.
+4. Prove one dry-run iMessage payload and one human-approved live send path after readiness gates pass.
+5. Configure an OBS scene or documented local screen-capture path, then capture a privacy-safe proof.
+6. Configure and validate FaceTime handoff as a human-approved action, not an autonomous call, using an approved Apple contact mapping outside Git.
+7. Play and human-validate local TTS output from an approved Gemma message draft.
+8. Keep SQLite execution-attempt rows for every attempted external action.
 
 ## Immediate Next Action
 
-Consolidate the validated demo surface and prepare the next sprint lane from the CareSight sprint pack.
+Clear the Sprint 02 runtime blockers before asking for live-action approval:
+
+1. Human-review the generated Gemma Case A wording before live messaging or playback.
+2. Configure the live Hermes/BlueBubbles route without committing secrets, then rerun `care_console.py hermes-dry-run <request_id>` before asking for approval.
+3. Create the OBS `CareSight Demo` scene or a simpler local screen-capture proof path and confirm it only shows intended content.
+4. After Gemma message wording is approved, play the generated local TTS audio and record human audibility/tone approval.
 
 Primary sprint entrypoint: [`docs/roadmaps/caresight_sprint_pack/00-master-codex-prompt.md`](caresight_sprint_pack/00-master-codex-prompt.md).
 
-Recommended first implementation lane: [`docs/roadmaps/caresight_sprint_pack/01-sprint-demo-surface-consolidation.md`](caresight_sprint_pack/01-sprint-demo-surface-consolidation.md).
+Current production-validation gate: [`docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md`](caresight_sprint_pack/09-sprint-01-02-production-validation.md).
 
 The v0 review and acknowledgement loop is now proven for the confirmed live proof event:
 

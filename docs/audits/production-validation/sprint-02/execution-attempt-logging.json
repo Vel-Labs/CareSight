@@ -1,0 +1,54 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-execution-attempt-logging",
+  "created_at": "2026-05-21T00:00:00Z",
+  "sprint": "02",
+  "status": "implemented",
+  "requirement": "Every dry-run or live external action attempt must be inspectable in local SQLite before any real external action path is enabled.",
+  "implemented_surface": {
+    "sqlite_table": "agent_execution_attempts",
+    "storage_methods": [
+      "SQLiteStore.insert_agent_execution_attempt",
+      "SQLiteStore.list_agent_execution_attempts"
+    ],
+    "runtime_helper": "build_execution_attempt",
+    "cli_commands": [
+      "care_console.py record-execution-attempt <request_id> --harness hermes --kind dry_run",
+      "care_console.py list-execution-attempts <request_id>"
+    ]
+  },
+  "recorded_fields": [
+    "attempt_id",
+    "request_id",
+    "event_id",
+    "created_at",
+    "harness",
+    "attempt_kind",
+    "execution_state",
+    "result",
+    "error",
+    "external_action_performed",
+    "payload",
+    "safety_boundaries",
+    "provenance"
+  ],
+  "safety_boundaries": [
+    "dry_run_only",
+    "human_review_required",
+    "no_external_execution",
+    "sqlite_canonical",
+    "no_autonomous_dispatch"
+  ],
+  "proof_commands": [
+    {
+      "cmd": "PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_agent_assist.py apps/caresight-hub/tests/test_sqlite_store.py apps/caresight-hub/tests/test_care_console.py",
+      "status": "pass",
+      "result": "29 tests OK"
+    }
+  ],
+  "notes": [
+    "The current CLI records dry-run attempts only and reports external_action_performed false.",
+    "The source agent-action-request remains staged and not_executed after an attempt receipt is written.",
+    "Live external execution remains unavailable until a later human-approved task explicitly implements and validates it."
+  ]
+}

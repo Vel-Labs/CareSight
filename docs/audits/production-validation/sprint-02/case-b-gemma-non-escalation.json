@@ -1,0 +1,32 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-case-b-gemma-non-escalation",
+  "created_at": "2026-05-21T20:34:37Z",
+  "sprint": "02",
+  "case": "case-b",
+  "status": "pass",
+  "requirement": "The non-concerning A/B case must not trigger a real Gemma caregiver alert or urgent Hermes handoff when no possible floor-stay event is persisted.",
+  "source_artifacts": [
+    "docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.md",
+    "docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.json"
+  ],
+  "observed_behavior": {
+    "event_created": false,
+    "gemma_draft_created": false,
+    "urgent_action_request_created": false,
+    "hermes_invoked": false,
+    "reason": "Case B is a persisted normal/no-event observation check, not a reviewable care event. Real Gemma drafting remains downstream of persisted care events or explicit human/operator input."
+  },
+  "comparison_to_case_a": {
+    "case_a_gemma_draft": "docs/audits/production-validation/sprint-02/case-a-gemma-draft.json",
+    "case_a_urgent_action_request": "docs/audits/production-validation/sprint-02/case-a-gemma-urgent-action-request.json",
+    "case_a_hermes_dry_run": "docs/audits/production-validation/sprint-02/case-a-gemma-hermes-dry-run.json",
+    "difference": "Case A has a persisted possible_floor_stay event, so it can produce a bounded Gemma draft and no-send Hermes handoff. Case B has no event, so it remains continuity evidence only."
+  },
+  "safety_boundaries": [
+    "no_unnecessary_escalation",
+    "no_emergency_contact_routing",
+    "no_external_execution",
+    "sqlite_canonical"
+  ]
+}

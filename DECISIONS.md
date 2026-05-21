@@ -149,3 +149,21 @@ Rationale: escalation should help caregivers act quickly without making CareSigh
 CareSight sprint status must not call a sprint complete when only contracts, fixtures, templates, fake providers, staged payloads, or dry-run surfaces exist. Those are implementation milestones. A sprint is production-ready only when the real local runtime path is configured, exercised end to end, human-validated where required, and backed by an audit receipt.
 
 Rationale: the project is safety-sensitive and local-first. Overstating scaffolded or staged behavior as complete weakens trust and makes it harder to see which human and runtime gates remain.
+
+## 2026-05-21: Persist Normal No-Event Checks Separately From Events
+
+Bounded normal/no-event runs are local continuity evidence and should be persisted as `observation_checks` rows in SQLite. They prove the system was online for a configured window and did not create a concerning event. They must not become reviewable care events, human-review packets, emergency escalations, or blackbox receipts for event chains unless a real event is created.
+
+Rationale: normal presence is useful for operational confidence and non-escalation testing, but treating no-event checks as care events would blur the bounded control loop and create misleading review surfaces.
+
+## 2026-05-21: Log External-Action Attempts Before Live Execution
+
+CareSight stores dry-run external-action attempts in `agent_execution_attempts` before any live Hermes, iMessage, FaceTime, Apple Notes, or TTS path is enabled. A dry-run attempt records the staged request ID, event ID, harness, payload snapshot, execution state, result, safety boundaries, and `external_action_performed: false` while leaving the source action request in `not_executed`.
+
+Rationale: Sprint 02 needs inspectable service-wrapper receipts without letting a payload render become an implicit send/call/write. Persisting attempts separately preserves the bounded control loop and creates a durable audit layer for later human-approved live actions.
+
+## 2026-05-21: Use Redacted Contact IDs for Live-Contact Staging
+
+CareSight iMessage and FaceTime staging validates requested contact IDs against a redacted local allowlist. Git-tracked examples may include stable IDs, roles, display labels, and redacted channel references, but not phone numbers, addresses, passwords, tokens, or BlueBubbles credentials.
+
+Rationale: service-capable handoff paths need deterministic allowlist checks before dry-run or live harness work, but caregiver contact details are private operational data and must stay out of committed repo files.

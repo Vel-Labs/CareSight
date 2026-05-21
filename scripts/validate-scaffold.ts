@@ -56,6 +56,7 @@ async function assertRootIsClean(allowedRootEntries: string[]): Promise<void> {
   const ignored = new Set([
     ".git",
     ".venv",
+    ".goalbuddy-board",
     "__pycache__",
     ".pytest_cache",
     "node_modules",
@@ -158,6 +159,7 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
   const ignored = new Set([
     ".git",
     ".venv",
+    ".goalbuddy-board",
     "__pycache__",
     ".pytest_cache",
     "node_modules",

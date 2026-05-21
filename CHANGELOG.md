@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+- Added production-validation Sprint 01 Case A artifacts for the accepted seeded-real event: generated review packet and blackbox receipt JSON plus skimmable Markdown companions under `docs/audits/production-validation/sprint-01/`.
+- Reworked Sprint 01 review-packet and blackbox-receipt Markdown output into clear human-facing summaries while keeping JSON as the machine/audit receipt format.
+- Recorded human acceptance of the Case A Markdown direction as an actionable audit receipt surface, with evidence-label translation and future concise Gemma alerts kept as follow-up boundaries.
+- Captured the normal-desk Case B attempt as a false-positive/over-trigger finding, clarified live-loop terminal output for no-event proof receipts, fixed repo-root resolution for relative runtime DB paths, and added a low-posture regression guard.
+- Recorded the passing Case B normal-desk no-event proof and marked Case B packet/receipt generation as not applicable because no event was created.
+- Added SQLite persistence for bounded normal/no-event observation checks so periodic safe-state runs can prove continuity without creating reviewable care events.
+- Recorded the Sprint 02 local Gemma endpoint gate and kept it blocked until a local OpenAI-compatible endpoint can actually serve a compatible model.
+- Installed a repo-local ignored runtime environment for Sprint 02 model/handoff checks, proved the Holler TTS model can generate a local WAV with the `kit` voice, and updated the OBS/FaceTime/TTS receipts to reflect tooling readiness versus remaining human validation gates.
+- Re-tested both local Gemma 4 MLX candidates through `mlx_lm.server`; the runtime dependencies are present, but both model packages fail to load with weight/config mismatch errors, so real Gemma drafting remains blocked.
+- Identified `mlx-vlm.server` as the local runner for the already-present Gemma 4 E2B MLX model and proved an OpenAI-compatible `/v1/chat/completions` smoke response locally with no cloud fallback.
+- Added repeatable local operations scripts for starting/stopping the Gemma endpoint and generating Holler TTS audio, plus getting-started and local model operations docs.
+- Added Hermes readiness and stack start/stop scripts so the local test stack can bring Gemma online, pulse-check chat completions, verify Hermes no-send readiness, and stop cleanly.
+- Added a local `gemma_mlx` agent-draft provider path for SQLite-derived audit context, generated the Case A Gemma draft/no-send Hermes receipts, and recorded Case B Gemma non-escalation.
+- Added install/setup wrappers for the local runtime, Gemma/Holler models, OBS, full prerequisite install, fixture setup, and a machine-readable command registry.
+- Added SQLite execution-attempt logging for dry-run external-action receipts before any Hermes/iMessage/FaceTime/TTS live path is enabled.
+- Added redacted contact allowlist handling for iMessage/FaceTime staging and blocked unconfigured contact IDs without committing real contact details.
+- Added a Hermes no-send dry-run preflight command that records a local execution-attempt receipt, works through the existing YOLO MLX venv, and redacts raw Hermes target names from persisted output.
+- Recorded the seeded-real Case A Sprint 02 path: fake-provider alert draft, urgent allowlisted action request, Hermes handoff payload, and blocked no-send Hermes dry-run receipt.
+- Recorded the seeded-real Case B Sprint 02 non-escalation path as not applicable for drafts, action requests, and Hermes dry-runs because the normal-desk run persisted no care event.
+- Updated screen-capture/OBS readiness from missing tooling to scene/privacy-confirmation pending after OBS and `obsws_python` were verified locally.
+- Updated FaceTime/TTS approval receipts after operator approval: FaceTime remains setup/contact-mapping pending, while TTS generation is proven and playback validation remains pending.
+- Recorded FaceTime/TTS execution as not yet performed because live call, visual handoff, and audio playback still require the remaining human validation gates.
 - Added Sprint 02 agent-assist contract schemas and corpus examples for forbidden claims, agent drafts, staged action requests, and TTS utterances.
 - Added a fake agent provider boundary that stores validated and blocked drafts in local SQLite without calling Gemma, OpenClaw, TTS, or external services.
 - Added Care Console commands for fake-provider agent drafts and staged-only action requests, including list/readback coverage and documentation.

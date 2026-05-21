@@ -1,0 +1,32 @@
+{
+  "blocked_claims": [],
+  "created_at": "2026-05-21T20:34:14.975118Z",
+  "draft_id": "draft_evt_d9aa38bdc636459c92ea4e25f665cd0d_alert_draft_gemma_mlx",
+  "draft_text": "Possible floor stay observed in the Living Room. Needs review.",
+  "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+  "provenance": {
+    "source": "sqlite_audit_chain",
+    "source_fields": [
+      "events",
+      "event_observations",
+      "event_reviews",
+      "journal_entries",
+      "agent_handoffs"
+    ]
+  },
+  "provider": "gemma_mlx",
+  "purpose": "alert_draft",
+  "safe_rewrite": null,
+  "safety_boundaries": [
+    "draft_only",
+    "human_review_required",
+    "sqlite_canonical",
+    "no_autonomous_dispatch",
+    "no_medical_diagnosis",
+    "no_medication_confirmation",
+    "no_hipaa_claim"
+  ],
+  "schema": "agent-draft",
+  "source_of_truth": "sqlite",
+  "validation_status": "validated"
+}

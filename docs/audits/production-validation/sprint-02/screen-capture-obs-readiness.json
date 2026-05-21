@@ -1,0 +1,43 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-screen-capture-obs-readiness",
+  "created_at": "2026-05-21T00:00:00Z",
+  "updated_at": "2026-05-21T19:51:05Z",
+  "sprint": "02",
+  "status": "tooling_ready_scene_privacy_pending",
+  "requirement": "Configure and validate local screen-capture or OBS virtual camera handoff in non-live-send mode with privacy proof.",
+  "checks": [
+    {
+      "check": "OBS app installed",
+      "command": "test -d /Applications/OBS.app",
+      "status": "pass",
+      "result": "OBS_INSTALLED"
+    },
+    {
+      "check": "OBS websocket Python client importable",
+      "command": "apps/caresight-hub/.venv/bin/python -c 'import obsws_python'",
+      "status": "pass",
+      "result": "obsws_python 1.8.0 importable in apps/caresight-hub/.venv"
+    },
+    {
+      "check": "Human visual privacy confirmation",
+      "status": "pending",
+      "result": "needs operator-created OBS scene containing only the intended CareSight feed/dashboard"
+    }
+  ],
+  "external_action_performed": false,
+  "screen_capture_taken": false,
+  "obs_virtual_camera_started": false,
+  "facetime_started": false,
+  "safety_boundaries": [
+    "no_private_desktop_capture_without_human_confirmation",
+    "no_raw_video_to_agent",
+    "no_facetime_call_started",
+    "no_external_execution"
+  ],
+  "next_operator_steps": [
+    "Create a local OBS scene named CareSight Demo with only the intended CareSight feed/dashboard visible.",
+    "Enable or confirm OBS websocket local access if scripted scene checks are needed.",
+    "Have the operator confirm the scene is privacy-safe before any screenshot, virtual camera, or FaceTime handoff proof is captured."
+  ]
+}

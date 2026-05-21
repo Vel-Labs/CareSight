@@ -26,6 +26,22 @@ Gemma is the local language engine for summaries and approved action routing. It
 CareSight event JSON → local Gemma endpoint → structured JSON summary → policy guard → action adapter
 ```
 
+## Current local runner
+
+Use `mlx-vlm.server` for the existing local Gemma 4 E2B MLX model:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_gemma_start.py
+```
+
+The endpoint is OpenAI-compatible enough for local `/v1/chat/completions` use at:
+
+```text
+http://127.0.0.1:8080/v1
+```
+
+`mlx_lm.server` is not the selected runner for the current local Gemma 4 packages because it failed the model-load check. Ollama and llama.cpp remain good local options for GGUF models, but the current CareSight Gemma files are MLX/safetensors artifacts.
+
 ## Example prompt
 
 ```text

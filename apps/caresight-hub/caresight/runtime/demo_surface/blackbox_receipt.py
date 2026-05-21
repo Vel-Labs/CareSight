@@ -73,13 +73,25 @@ def build_blackbox_receipt(
 def render_blackbox_receipt_markdown(receipt: dict[str, Any]) -> str:
     event = receipt["event"]
     counts = receipt["counts"]
+    human_review = receipt.get("human_review") or {}
     lines = [
-        f"# Blackbox Receipt: {receipt['event_id']}",
+        "# Blackbox Receipt",
         "",
-        f"- Source of truth: {receipt['source_of_truth'].upper()}",
-        f"- Completion status: {receipt['completion_status']}",
-        f"- Event type: {event['event_type']}",
+        _receipt_summary(receipt),
+        "",
+        "## Proof Chain",
+        "",
         f"- Event status: {event['status']}",
+        f"- Human review: {human_review.get('decision', 'none')} by {human_review.get('reviewer', 'none')}",
+        f"- Journal entries: {counts['journal_entries']}",
+        f"- Report-only handoffs: {counts['agent_handoffs']}",
+        f"- Dashboard includes event: {_yes_no(receipt['derived_outputs']['dashboard_includes_event'])}",
+        f"- Alert draft has provenance: {_yes_no(receipt['derived_outputs']['alert_draft_has_provenance'])}",
+        "",
+        "## Event Details",
+        "",
+        f"- Event ID: {receipt['event_id']}",
+        f"- Event type: {event['event_type']}",
         f"- Occurred at: {event['occurred_at']}",
         f"- Camera: {event['camera_id']}",
         f"- Zone: {event.get('zone_id') or 'unknown'}",
@@ -87,14 +99,20 @@ def render_blackbox_receipt_markdown(receipt: dict[str, Any]) -> str:
         f"- Confidence: {event['confidence']}",
         f"- Track IDs: {', '.join(receipt.get('track_ids') or ['none'])}",
         f"- Observations: {counts['observations']}",
-        f"- Reviews: {counts['reviews']}",
-        f"- Journal entries: {counts['journal_entries']}",
-        f"- Agent handoffs: {counts['agent_handoffs']}",
-        f"- Blocked actions: {', '.join(receipt['blocked_actions'])}",
     ]
     if receipt.get("blockers"):
-        lines.append(f"- Blockers: {', '.join(receipt['blockers'])}")
-    lines.extend(["", "SQLite is source of truth. No autonomous emergency dispatch."])
+        lines.extend(["", "## Missing Proof", "", f"- Blockers: {', '.join(receipt['blockers'])}"])
+    lines.extend(
+        [
+            "",
+            "## Boundaries",
+            "",
+            "- SQLite is source of truth; dashboard and alert text are derived outputs.",
+            "- CareSight did not dispatch emergency services.",
+            "- CareSight did not make a medical diagnosis.",
+            f"- Blocked actions: {', '.join(receipt['blocked_actions'])}",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -138,6 +156,24 @@ def _human_review(review: dict[str, Any] | None) -> dict[str, Any] | None:
         "decision": review["decision"],
         "reviewed_at": review["reviewed_at"],
     }
+
+
+def _receipt_summary(receipt: dict[str, Any]) -> str:
+    event = receipt["event"]
+    if receipt["completion_status"] == "complete":
+        return (
+            "CareSight has a complete local audit trail for this possible event: "
+            f"observation, human review, journal entry, and report-only handoff are recorded. "
+            f"The current event status is {event['status']}."
+        )
+    return (
+        "CareSight has a local record for this possible event, but the audit trail is not complete yet. "
+        "Review the missing proof before relying on it for handoff."
+    )
+
+
+def _yes_no(value: bool) -> str:
+    return "yes" if value else "no"
 
 
 def _dashboard_includes_event(dashboard_state: dict[str, Any] | None, event_id: str) -> bool:

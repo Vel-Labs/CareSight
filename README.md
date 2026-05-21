@@ -74,10 +74,11 @@ cd CareSight
 ```
 
 2. Read `AGENTS.md`.
-3. Read `docs/project/PROJECT_BRIEF.md`.
-4. Read `docs/architecture/REPO_BOUNDARIES.md`.
-5. Read `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`.
-6. Run the quality gate:
+3. Read `docs/getting_started.md`.
+4. Read `docs/project/PROJECT_BRIEF.md`.
+5. Read `docs/architecture/REPO_BOUNDARIES.md`.
+6. Read `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`.
+7. Run the quality gate:
 
 ```bash
 npm run install:local
@@ -86,11 +87,24 @@ npm run check
 
 The npm gate validates scaffold structure, contract schemas/examples, TypeScript tests, and the current Python runtime skeleton.
 
+For a local model demo machine, install the ignored runtime/model prerequisites:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_install_all.py
+```
+
+Then start the local no-send operator stack:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_stack_start.py
+```
+
 ## Roadmaps
 
 - Hackathon plan: `docs/hackathon/hackathon_roadmap.md`
 - Future product plan: `docs/roadmaps/future_roadmap.md`
 - Operational next steps: `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`
+- Local model operations: `docs/operations/local_model_operations.md`
 - Imported docs pack: `docs/caresight_hub_docs_pack/`
 
 ## Safety Posture

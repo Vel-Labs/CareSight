@@ -1,0 +1,62 @@
+{
+  "base_url": "http://127.0.0.1:8080/v1",
+  "blocked_reason": [],
+  "cloud_fallback_used": false,
+  "curl_models_result": "http_200_empty_model_list",
+  "default_model": "gemma-4-e2b-it-4bit",
+  "updated_at": "2026-05-21T20:12:35Z",
+  "local_runtime_env": {
+    "path": "apps/caresight-hub/.venv",
+    "tracked_in_git": false,
+    "imports_verified": [
+      "mlx",
+      "mlx_lm",
+      "fastapi",
+      "uvicorn",
+      "mlx_audio",
+      "soundfile",
+      "numpy",
+      "transformers",
+      "obsws_python"
+    ],
+    "openai_compatible_server_command": "apps/caresight-hub/.venv/bin/python -m mlx_vlm.server --model apps/caresight-hub/models/reasoning/gemma/gemma-4-e2b-it-4bit --host 127.0.0.1 --port 8080 --max-tokens 96 --max-kv-size 1024 --kv-bits 4 --kv-quant-scheme uniform"
+  },
+  "local_model_files": {
+    "gemma-4-e2b-it-4bit": {
+      "status": "present",
+      "model_type": "gemma4",
+      "text_layers": 35,
+      "load_result": "passed_with_mlx_vlm",
+      "size_on_disk": "3.4G"
+    },
+    "gemma-4-e4b-it-4bit": {
+      "status": "present",
+      "model_type": "gemma4",
+      "text_layers": 42,
+      "load_result": "not_needed_for_16gb_target_after_e2b_passed",
+      "size_on_disk": "4.9G",
+      "previous_mlx_lm_failure": "mlx_lm raised ValueError: Received 126 parameters not in model, including late-layer self_attn k/v weights."
+    }
+  },
+  "openrouter_required": false,
+  "result": "passed",
+  "schema": "caresight.production_validation.gemma_local_endpoint.v1",
+  "status": "local_endpoint_ready",
+  "runner_selected": "mlx-vlm",
+  "why_not_mlx_lm": "mlx_lm.server includes Gemma 4 modules but failed to load these local packages with extra late-layer self_attn k/v weights; mlx-vlm loaded the same E2B package successfully.",
+  "why_not_ollama_or_llama_cpp_for_existing_files": "Ollama and llama.cpp are good local/offline options for GGUF models, but the already-present CareSight model folders are MLX/safetensors packages.",
+  "chat_completion_smoke": {
+    "command": "curl -sS http://127.0.0.1:8080/v1/chat/completions -H 'Content-Type: application/json' -d '{...}'",
+    "status": "pass",
+    "response_text": "**Caregiver Alert:** Please note a possible floor stay in the living room. Human review is in progress.",
+    "peak_memory_gb": 3.768134296,
+    "external_network_used_for_inference": false
+  },
+  "operational_scripts": {
+    "start": "apps/caresight-hub/scripts/caresight_gemma_start.py",
+    "stop": "apps/caresight-hub/scripts/caresight_gemma_stop.py",
+    "tts": "apps/caresight-hub/scripts/caresight_tts.py",
+    "guide": "docs/operations/local_model_operations.md"
+  },
+  "next_operator_step": "Wire CareSight/Hermes config to the mlx-vlm local endpoint, then run the approved no-send Case A/B Gemma draft validation."
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "production-validation-receipt",
+  "receipt_id": "sprint-02-case-b-nonurgent-action-request",
+  "created_at": "2026-05-21T00:00:00Z",
+  "sprint": "02",
+  "case": "case-b",
+  "status": "not_applicable_no_event",
+  "requirement": "Case B non-concerning path should avoid urgent or emergency-contact staging.",
+  "source_artifacts": [
+    "docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.md",
+    "docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.json"
+  ],
+  "observed_behavior": {
+    "event_created": false,
+    "action_request_created": false,
+    "emergency_contact_targeted": false,
+    "facetime_offered": false,
+    "reason": "No care event was created, so there is no event-backed action request to stage."
+  },
+  "expected_production_behavior": [
+    "Do not route normal/no-event checks to emergency contacts.",
+    "Do not offer FaceTime or screen handoff for normal/no-event checks unless a human explicitly requests it.",
+    "Retain the observation check as continuity proof and as a non-escalation regression fixture."
+  ],
+  "safety_boundaries": [
+    "no_unnecessary_escalation",
+    "no_emergency_contact_routing",
+    "no_external_execution",
+    "human_review_required_for_scope_change"
+  ]
+}
