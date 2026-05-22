@@ -49,6 +49,7 @@ apps/caresight-hub/caresight/runtime/dashboard/__init__.py
 apps/caresight-hub/caresight/runtime/dashboard/service.py
 apps/caresight-hub/caresight/runtime/demo_surface/__init__.py
 apps/caresight-hub/caresight/runtime/demo_surface/blackbox_receipt.py
+apps/caresight-hub/caresight/runtime/demo_surface/escalation_receipt.py
 apps/caresight-hub/caresight/runtime/demo_surface/review_packet.py
 apps/caresight-hub/caresight/runtime/healthcheck.py
 apps/caresight-hub/caresight/runtime/inference/__init__.py
@@ -79,6 +80,8 @@ apps/caresight-hub/config/v0.local.json
 apps/caresight-hub/pyproject.toml
 apps/caresight-hub/scripts/care_console.py
 apps/caresight-hub/scripts/caresight_audio_route.py
+apps/caresight-hub/scripts/caresight_contacts_config.py
+apps/caresight-hub/scripts/caresight_demo_preflight.py
 apps/caresight-hub/scripts/caresight_gemma_start.py
 apps/caresight-hub/scripts/caresight_gemma_stop.py
 apps/caresight-hub/scripts/caresight_hermes_start.py

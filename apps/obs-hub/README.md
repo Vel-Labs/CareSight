@@ -105,6 +105,8 @@ apps/obs-hub/config/live_preview.jpg
 
 That file is written by `v0_floor_stay_live.py --obs-live-preview` and includes the detector boxes/zone overlay. This is the preferred demo feed because OBS does not need to open the webcam separately while the Python detector owns the camera.
 
+The desktop escalation and FaceTime Mobile browser overlays refresh this local preview image every 250ms. Treat this as the demo's local browser video feed: the detector writes annotated frames locally, OBS renders them locally, and no raw video is sent to Gemma or Hermes.
+
 ## Camera Sources
 
 The default `apps/obs-hub/config/cameras.json` uses a Living Room image path and placeholder sources for the other camera scenes. To use a local image for the Living Room feed without editing tracked config:

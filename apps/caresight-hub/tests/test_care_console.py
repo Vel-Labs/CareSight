@@ -15,6 +15,7 @@ from caresight.vision.detections import Detection
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT_DIR / "scripts" / "care_console.py"
+CONTACTS_SCRIPT = ROOT_DIR / "scripts" / "caresight_contacts_config.py"
 
 
 class CareConsoleTest(unittest.TestCase):
@@ -522,6 +523,112 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(payload["harness"], "hermes")
             self.assertFalse(payload["local_model_serving"]["openrouter_required"])
             self.assertEqual(payload["local_model_serving"]["base_url"], "http://127.0.0.1:8080/v1")
+
+    def test_escalation_receipt_links_event_requests_and_attempts(self) -> None:
+        with seeded_review_service() as seed:
+            draft_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "agent-draft",
+                    seed.event_id,
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(draft_result.returncode, 0, draft_result.stderr)
+            draft = json.loads(draft_result.stdout)
+            staged_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "stage-action-request",
+                    seed.event_id,
+                    "--draft-id",
+                    draft["draft_id"],
+                    "--action",
+                    "send_imessage_draft",
+                    "--destination",
+                    "imessage",
+                    "--recipient-role",
+                    "emergency_contact",
+                    "--allowed-contact-id",
+                    "contact_emergency_primary",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(staged_result.returncode, 0, staged_result.stderr)
+            request = json.loads(staged_result.stdout)
+            attempt_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "record-execution-attempt",
+                    request["request_id"],
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(attempt_result.returncode, 0, attempt_result.stderr)
+
+            receipt_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "escalation-receipt",
+                    seed.event_id,
+                    "--format",
+                    "json",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(receipt_result.returncode, 0, receipt_result.stderr)
+            receipt = json.loads(receipt_result.stdout)
+            self.assertEqual(receipt["schema"], "care-escalation-receipt")
+            self.assertEqual(receipt["event_id"], seed.event_id)
+            self.assertEqual(receipt["escalation_counts"]["action_requests"], 1)
+            self.assertEqual(receipt["escalation_counts"]["execution_attempts"], 1)
+            self.assertEqual(receipt["execution_attempts"][0]["result"], "payload_logged_no_send")
+
+    def test_contacts_config_writes_ignored_local_allowlist_shape(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "allowlisted-contacts.local.json"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(CONTACTS_SCRIPT),
+                    "--output",
+                    str(output),
+                    "--imessage",
+                    "+15555550123",
+                    "--display-label",
+                    "Demo contact",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(payload["schema"], "care-contact-allowlist")
+            self.assertEqual(payload["contacts"][0]["contact_id"], "contact_emergency_primary")
+            self.assertEqual(payload["contacts"][0]["channel_refs"]["facetime"], "+15555550123")
 
 
 class Seed:

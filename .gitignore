@@ -4,6 +4,7 @@ coverage/
 .DS_Store
 .env
 .env.*
+apps/caresight-hub/config/hermes/*.local.json
 .venv/
 .venv-obs/
 __pycache__/

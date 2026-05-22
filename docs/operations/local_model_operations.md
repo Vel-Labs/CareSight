@@ -267,9 +267,15 @@ CareSight alert. Possible floor stay observed in the Living Room. Needs review. 
 Set private contact targets in the shell or in an ignored private allowlist. Do not commit real phone numbers, emails, BlueBubbles credentials, or contact handles.
 
 ```bash
-export CARESIGHT_LIVE_IMESSAGE_TARGET="<private-imessage-handle>"
-export CARESIGHT_LIVE_FACETIME_TARGET="<private-facetime-handle>"
+python3 apps/caresight-hub/scripts/caresight_contacts_config.py \
+  --display-label "Primary emergency contact" \
+  --imessage "<private-imessage-handle>" \
+  --facetime "<private-facetime-handle>"
+
+export CARESIGHT_CONTACT_ALLOWLIST_PATH=apps/caresight-hub/config/hermes/allowlisted-contacts.local.json
 ```
+
+The generated `allowlisted-contacts.local.json` file is ignored by git. Shell env targets still work for one-off tests, but the local allowlist is the preferred demo setup because it keeps repeated commands smaller and gives Hermes/local tools a stable contact source.
 
 Live detector command:
 
@@ -319,6 +325,8 @@ This prefers `imsg` for a yes-like reply after the alert send, then falls back t
 The handoff switches OBS to `CareSight Hub - FaceTime Mobile` before opening FaceTime. This scene keeps the live detector feed and current event inside a portrait-safe center column so phone recipients do not see the landscape dashboard cropped off-screen.
 
 The mobile scene uses `CareSight FaceTime Live Detector Preview`, an OBS image source pointed at `apps/obs-hub/config/live_preview.jpg`. The live detector updates that file when run with `--obs-live-preview`, so the caregiver sees the detector-owned annotated feed without OBS competing for the webcam.
+
+The escalation and FaceTime browser overlays also refresh that same local `live_preview.jpg` path about four times per second. This is the current local browser-feed approach: Python owns the camera and writes annotated frames, while OBS renders a local file-backed browser source. Do not add the webcam directly to OBS for this demo unless the detector camera source is changed too, because two processes can compete for the camera and the raw OBS feed will not include CareSight boxes.
 
 If no reply is observed before the no-response escalation window, the command sends one follow-up iMessage with the local event snapshot attached:
 
@@ -370,6 +378,24 @@ python3 apps/caresight-hub/scripts/caresight_audio_route.py check
 ```
 
 The temporary BlackHole route is intended for the TTS moment only; it is not a permanent microphone change.
+
+Before live testing, run:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_demo_preflight.py
+```
+
+This checks the local contact allowlist, YOLO runtime/model, OBS scene tooling, Gemma endpoint, BlackHole switcher, live preview file, and whether the current shell has `OBS_WEBSOCKET_PASSWORD`.
+
+After any event escalation, generate a local receipt:
+
+```bash
+python3 apps/caresight-hub/scripts/care_console.py \
+  escalation-receipt <event_id> \
+  --format markdown
+```
+
+The receipt links the event ID to drafts, staged action requests, live/dry-run execution attempts, snapshot evidence, OBS overlay state, and local live preview evidence.
 
 ## Command Registry
 

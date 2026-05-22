@@ -33,6 +33,22 @@
       "live_action": false
     },
     {
+      "id": "demo_preflight",
+      "command": "python3 apps/caresight-hub/scripts/caresight_demo_preflight.py",
+      "safety_class": "manual-operator",
+      "description": "Check local demo readiness for contacts, YOLO runtime, OBS scene tooling, Gemma, and audio routing.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "contacts_config_init",
+      "command": "python3 apps/caresight-hub/scripts/caresight_contacts_config.py --imessage <private-handle>",
+      "safety_class": "manual-operator",
+      "description": "Create ignored local caregiver contact allowlist config for iMessage and FaceTime targets.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
       "id": "gemma_draft",
       "command": "python3 apps/caresight-hub/scripts/care_console.py agent-draft <event_id> --provider gemma --purpose alert_draft",
       "safety_class": "agent-safe-read",
@@ -45,6 +61,14 @@
       "command": "python3 apps/caresight-hub/scripts/care_console.py hermes-dry-run <request_id>",
       "safety_class": "agent-safe-read",
       "description": "Record a no-send Hermes preflight execution attempt.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "escalation_receipt",
+      "command": "python3 apps/caresight-hub/scripts/care_console.py escalation-receipt <event_id> --format markdown",
+      "safety_class": "agent-safe-read",
+      "description": "Render a read-only local receipt linking one event ID to drafts, action requests, execution attempts, OBS state, and live preview evidence.",
       "external_network": false,
       "live_action": false
     },

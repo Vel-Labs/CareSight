@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -18,6 +19,7 @@ DEFAULT_CONFIG_PATH = ROOT_DIR / "config" / "v0.local.json"
 DEFAULT_MODEL_PATH = ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz"
 WINDOW_NAME = "CareSight v0 Floor Stay"
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
+DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.example.json"
 
 
 def parse_args():
@@ -156,7 +158,7 @@ def parse_args():
     parser.add_argument("--allowed-contact-id", default="contact_emergency_primary")
     parser.add_argument(
         "--allowlist-config",
-        default=str(ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.example.json"),
+        default=os.environ.get("CARESIGHT_CONTACT_ALLOWLIST_PATH", str(DEFAULT_ALLOWLIST_PATH)),
     )
     parser.add_argument(
         "--auto-agent-fail-closed",

@@ -110,7 +110,11 @@ Agent safety: `manual-operator`. This performs local no-send automation only. It
 Live iMessage test:
 
 ```bash
-export CARESIGHT_LIVE_IMESSAGE_TARGET="<private-imessage-handle>"
+python3 apps/caresight-hub/scripts/caresight_contacts_config.py \
+  --display-label "Primary emergency contact" \
+  --imessage "<private-imessage-handle>"
+
+export CARESIGHT_CONTACT_ALLOWLIST_PATH=apps/caresight-hub/config/hermes/allowlisted-contacts.local.json
 
 apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   apps/caresight-hub/scripts/v0_floor_stay_live.py \
@@ -130,6 +134,21 @@ CareSight alert. Possible floor stay observed in the Living Room. Needs review. 
 Outputs: normal `event_persisted` line, a Hermes dry-run attempt receipt in SQLite, and `post_event_agent_live_run` with the staged `request_id`, live `attempt_id`, and `external_action_performed: true`.
 
 Agent safety: `human-review-required`. This sends one live iMessage only after `--live-approved` and a private target are provided. It does not automatically start FaceTime because reply monitoring is not enabled by default.
+
+Private contact config:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_contacts_config.py \
+  --display-label "Primary emergency contact" \
+  --imessage "<private-imessage-handle>" \
+  --facetime "<private-facetime-handle>"
+```
+
+Purpose: create ignored `apps/caresight-hub/config/hermes/allowlisted-contacts.local.json` so live demo commands can resolve the allowlisted iMessage and FaceTime targets without putting private handles in every command line.
+
+Validation: `test_care_console.py` verifies the generated allowlist shape.
+
+Agent safety: `manual-operator`. The file is local and ignored by git. It stores private contact handles for explicit live tests only.
 
 Reply-gated FaceTime handoff:
 
@@ -195,7 +214,37 @@ This is an automated CareSight message. A possible floor stay was observed in th
 
 `--obs-live-preview` writes annotated detector frames to `apps/obs-hub/config/live_preview.jpg`. The OBS escalation browser overlay displays that local image behind the event panels so the caregiver can see the live detector view with boxes/zone overlay without OBS opening the webcam separately.
 
+The OBS browser overlays refresh `live_preview.jpg` locally every 250ms. This is intentionally a file-backed local browser feed: the Python detector owns the webcam and writes the annotated frame; OBS renders that local image feed. Adding the webcam directly to OBS can conflict with the detector and will not include the CareSight box/zone overlay.
+
 Agent safety: `human-review-required`. This prefers `imsg` when installed, otherwise reads only the local Messages database for the configured contact target after the alert is sent. If macOS blocks database access, it fails closed with setup instructions; it does not bypass Full Disk Access, dispatch help, diagnose, or send raw video to an agent.
+
+Demo preflight:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_demo_preflight.py
+```
+
+Purpose: check the local demo runway before an operator gets on the floor: SQLite path, ignored contact allowlist, YOLO runtime/model, OBS scene tooling, `live_preview.jpg`, Gemma endpoint, BlackHole switcher, and whether `OBS_WEBSOCKET_PASSWORD` is present in the current shell.
+
+Outputs: a skimmable readiness report and the recommended live command. Use `--json` for a machine-readable receipt.
+
+Agent safety: `manual-operator`. The command checks local readiness only and does not send messages, place calls, play TTS, or write event state.
+
+Escalation receipt:
+
+```bash
+python3 apps/caresight-hub/scripts/care_console.py \
+  escalation-receipt <event_id> \
+  --format markdown
+```
+
+Purpose: link one `event_id` to its escalation evidence: local event details, snapshot path, agent drafts, staged action requests, Hermes/live execution attempts, OBS overlay state, and local live preview evidence.
+
+Outputs: JSON or Markdown. The receipt is read-only and local.
+
+Validation: `test_care_console.py` verifies the receipt includes action requests and execution attempts for the event.
+
+Agent safety: `agent-safe-read`. The command reads SQLite and local OBS evidence paths only.
 
 Floor-stay detector diagnostics:
 

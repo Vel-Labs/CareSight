@@ -9,6 +9,8 @@ sys.path.insert(0, str(ROOT_DIR))
 DEFAULT_DB_PATH = ROOT_DIR / "data" / "caresight-v0.sqlite3"
 DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.example.json"
 DEFAULT_RUNTIME_PYTHON = ROOT_DIR / ".venv" / "bin" / "python"
+DEFAULT_OBS_STATE_PATH = ROOT_DIR.parents[1] / "apps" / "obs-hub" / "config" / "current_event.json"
+DEFAULT_OBS_PREVIEW_PATH = ROOT_DIR.parents[1] / "apps" / "obs-hub" / "config" / "live_preview.jpg"
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,6 +35,15 @@ def parse_args() -> argparse.Namespace:
     receipt_parser.add_argument("event_id")
     receipt_parser.add_argument("--format", choices=["json", "markdown"], default="json")
     receipt_parser.add_argument("--output", help="Optional local output path.")
+    escalation_receipt_parser = subparsers.add_parser(
+        "escalation-receipt",
+        help="Render read-only escalation evidence for one event as JSON or Markdown.",
+    )
+    escalation_receipt_parser.add_argument("event_id")
+    escalation_receipt_parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    escalation_receipt_parser.add_argument("--output", help="Optional local output path.")
+    escalation_receipt_parser.add_argument("--obs-state", default=str(DEFAULT_OBS_STATE_PATH))
+    escalation_receipt_parser.add_argument("--live-preview", default=str(DEFAULT_OBS_PREVIEW_PATH))
     agent_draft_parser = subparsers.add_parser(
         "agent-draft",
         help="Create and persist a fake-provider agent draft as JSON.",
@@ -147,8 +158,10 @@ def main() -> None:
     from caresight.runtime.dashboard import build_dashboard_state
     from caresight.runtime.demo_surface import (
         build_blackbox_receipt,
+        build_escalation_receipt,
         build_human_review_packet,
         render_blackbox_receipt_markdown,
+        render_escalation_receipt_markdown,
         render_review_packet_markdown,
     )
     from caresight.runtime.agent_assist import (
@@ -195,6 +208,16 @@ def main() -> None:
         alert = draft_caregiver_alert(audit)
         receipt = build_blackbox_receipt(audit, dashboard_state=dashboard, alert_draft=alert)
         _print_or_write(_render_payload(receipt, args.format, render_blackbox_receipt_markdown), args.output)
+        return
+
+    if args.command == "escalation-receipt":
+        receipt = build_escalation_receipt(
+            store,
+            args.event_id,
+            overlay_state_path=args.obs_state,
+            live_preview_path=args.live_preview,
+        )
+        _print_or_write(_render_payload(receipt, args.format, render_escalation_receipt_markdown), args.output)
         return
 
     if args.command == "agent-draft":

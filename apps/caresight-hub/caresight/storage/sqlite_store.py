@@ -523,6 +523,18 @@ class SQLiteStore:
             ).fetchall()
         return [agent_execution_attempt_from_row(row) for row in rows]
 
+    def list_agent_execution_attempts_for_event(self, event_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM agent_execution_attempts
+                WHERE event_id = ?
+                ORDER BY created_at, attempt_id
+                """,
+                (event_id,),
+            ).fetchall()
+        return [agent_execution_attempt_from_row(row) for row in rows]
+
     def insert_observation_check(self, check: dict[str, Any]) -> None:
         with self._connect() as conn:
             conn.execute(

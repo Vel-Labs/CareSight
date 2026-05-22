@@ -217,3 +217,11 @@ Rationale: OBS Virtual Camera only solves the visual handoff. Audio needs a sepa
 For the live FaceTime demo, the detector may write an annotated preview frame to `apps/obs-hub/config/live_preview.jpg`, and the OBS browser overlay may display that image as the active feed. OBS should not open the same webcam as the detector for this path.
 
 Rationale: macOS camera ownership can make OpenCV and OBS fight over the same camera. A local preview image keeps raw video local, lets OpenCV remain the camera owner, and gives caregivers the same boxed detector view through OBS Virtual Camera.
+
+The browser overlays should refresh the local preview image directly for live handoff scenes. This keeps the desktop console and portrait FaceTime view dynamic without adding a raw camera source to OBS.
+
+## 2026-05-22: Keep Escalation Evidence Event-Scoped
+
+Each live or dry-run escalation attempt should be readable back through the originating `event_id`. The event-scoped escalation receipt links local event evidence, agent drafts, staged action requests, execution attempts, OBS overlay state, and the detector preview path without creating a new care event or exposing private contact targets.
+
+Rationale: caregivers and demo operators need a clean audit trail for what happened after an event. Keeping the receipt read-only and event-scoped preserves SQLite as source of truth while making iMessage, FaceTime, TTS, and OBS evidence inspectable.

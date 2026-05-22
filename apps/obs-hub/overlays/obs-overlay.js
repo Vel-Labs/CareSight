@@ -140,7 +140,8 @@ function renderEventPanel(data) {
   setText("overlaySource", `Data: ${data.overlay_source || "unknown"}`);
   setText("overlayGeneratedAt", data.generated_at ? `Updated: ${formatObservedAt(data.generated_at)}` : "Updated: fixture");
   setText("mainFeedLabel", `Active feed: ${event.zone || "Living Room"}`);
-  renderLivePreview(data.live_preview);
+  window.CareSightLivePreviewState = resolveLivePreview(data.live_preview);
+  refreshLivePreviewOnly();
 }
 
 async function refreshOverlayData() {
@@ -175,11 +176,23 @@ function shortEventId(eventId) {
 }
 
 function renderLivePreview(preview) {
+  window.CareSightLivePreviewState = resolveLivePreview(preview);
+  refreshLivePreviewOnly();
+}
+
+function resolveLivePreview(preview) {
+  const fallbackUrl = "../config/live_preview.jpg";
+  return {
+    available: Boolean(preview?.available) || true,
+    url: preview?.url && preview.available ? preview.url : fallbackUrl
+  };
+}
+
+function refreshLivePreviewOnly() {
   const image = document.getElementById("livePreviewImage");
   if (!image) {
     return;
   }
-  const fallbackUrl = "../config/live_preview.jpg";
-  const url = preview?.url && preview.available ? preview.url : fallbackUrl;
-  image.src = `${url}?t=${Date.now()}`;
+  const preview = window.CareSightLivePreviewState || resolveLivePreview(null);
+  image.src = `${preview.url}?t=${Date.now()}`;
 }
