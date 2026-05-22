@@ -59,7 +59,9 @@ Check plugin status:
 apps/obs-hub/tools/aitum_vertical.py status
 ```
 
-Operator setup still needs one manual step in OBS: create a vertical scene named `CareSight Hub - FaceTime Mobile` in the Aitum Vertical dock and add the CareSight mobile browser source/overlay there. The automation can switch and start the vertical virtual camera once that scene exists.
+Operator setup still needs one manual step in OBS: create or rename a vertical scene named `CareSight Hub - FaceTime Mobile` in the Aitum Vertical dock and add the CareSight mobile browser source/overlay there. The Aitum websocket API currently exposes scene switching/status/virtual-camera controls, but not reliable scene/source creation for the vertical canvas. The automation can switch and start the vertical virtual camera once that scene exists.
+
+If `apps/obs-hub/tools/aitum_vertical.py status` reports `No vendor was found by that name`, restart OBS after installing the plugin. The plugin can appear in the UI before its websocket vendor API is registered for the current OBS process.
 
 Local env options:
 

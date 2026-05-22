@@ -3,9 +3,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
+import sys
 from pathlib import Path
 from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[3]
+VENV_PYTHON = ROOT / ".venv-obs" / "bin" / "python"
+if VENV_PYTHON.exists() and Path(sys.executable) != VENV_PYTHON:
+    os.execv(str(VENV_PYTHON), [str(VENV_PYTHON), str(Path(__file__).resolve()), *sys.argv[1:]])
 
 try:
     from obsws_python import ReqClient
@@ -17,6 +25,22 @@ VENDOR_NAME = "aitum-vertical-canvas"
 DEFAULT_SCENE = "CareSight Hub - FaceTime Mobile"
 DEFAULT_WIDTH = 1080
 DEFAULT_HEIGHT = 1920
+LOCAL_DEMO_ENV = ROOT / "apps" / "caresight-hub" / "config" / "live-demo.local"
+
+
+def load_local_env() -> None:
+    if not LOCAL_DEMO_ENV.exists():
+        return
+    for raw_line in LOCAL_DEMO_ENV.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line.removeprefix("export ").strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
 def parse_args() -> argparse.Namespace:
@@ -80,6 +104,29 @@ def vertical_state(client: Any, width: int, height: int) -> dict[str, Any]:
     }
 
 
+def scene_config_state(width: int, height: int) -> dict[str, Any]:
+    config_path = Path.home() / "Library" / "Application Support" / "obs-studio" / "plugin_config" / "vertical-canvas" / "config.json"
+    if not config_path.exists():
+        return {"config_path": str(config_path), "configured": False}
+    try:
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"config_path": str(config_path), "configured": False, "error": str(exc)}
+    canvases = payload.get("canvas", []) if isinstance(payload, dict) else []
+    for canvas in canvases:
+        if not isinstance(canvas, dict):
+            continue
+        if int(canvas.get("width", 0)) == width and int(canvas.get("height", 0)) == height:
+            return {
+                "config_path": str(config_path),
+                "configured": True,
+                "current_scene": canvas.get("current_scene"),
+                "width": width,
+                "height": height,
+            }
+    return {"config_path": str(config_path), "configured": False, "width": width, "height": height}
+
+
 def print_human(payload: dict[str, Any]) -> None:
     print("CareSight Aitum Vertical Canvas")
     print(f"available={str(payload.get('available', False)).lower()}")
@@ -95,9 +142,14 @@ def print_human(payload: dict[str, Any]) -> None:
             print(f"- {scene}")
     else:
         print("scenes=(none found for this canvas)")
+    local_config = payload.get("local_config", {})
+    if isinstance(local_config, dict) and local_config.get("configured"):
+        print(f"local_config_scene={local_config.get('current_scene')}")
 
 
 def main() -> int:
+    logging.disable(logging.CRITICAL)
+    load_local_env()
     args = parse_args()
     try:
         client = connect(args)
@@ -118,6 +170,7 @@ def main() -> int:
     try:
         if args.command == "status":
             payload = vertical_state(client, args.width, args.height)
+            payload["local_config"] = scene_config_state(args.width, args.height)
         elif args.command == "switch":
             scenes = vertical_state(client, args.width, args.height).get("scenes", [])
             if scenes and args.scene not in scenes:

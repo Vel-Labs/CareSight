@@ -235,6 +235,8 @@ apps/obs-hub/tools/aitum_vertical.py status
 
 The Aitum path lets CareSight keep the desktop OBS canvas at `1920x1080` while FaceTime can use a purpose-built `1080x1920` vertical canvas. Create a vertical scene named `CareSight Hub - FaceTime Mobile` in the Aitum Vertical dock and set `CARESIGHT_AITUM_VERTICAL_MODE=auto` in `apps/caresight-hub/config/live-demo.local`.
 
+If status reports `No vendor was found by that name`, restart OBS after installing the plugin. Current Aitum websocket support covers switching/status/virtual-camera control, but vertical scene/source creation still requires the Aitum dock UI.
+
 Refresh dynamic overlay state:
 
 ```bash

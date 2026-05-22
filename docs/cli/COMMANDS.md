@@ -804,6 +804,8 @@ Validation: install the package, restart OBS, confirm the Vertical dock appears,
 apps/obs-hub/tools/aitum_vertical.py status
 ```
 
+If status reports `No vendor was found by that name`, restart OBS. The plugin can be installed and visible before its websocket vendor API is registered in the current OBS process.
+
 Switch the vertical canvas and start the Aitum vertical virtual camera:
 
 ```bash
@@ -813,6 +815,8 @@ apps/obs-hub/tools/aitum_vertical.py switch \
 ```
 
 Agent safety: `manual-operator`. This may start the Aitum vertical virtual camera, so it belongs only in the operator-approved FaceTime handoff path. It does not send messages, open FaceTime, play TTS, or change event lifecycle state.
+
+Current limitation: Aitum's websocket vendor API supports vertical scene switching/status/virtual-camera control. Creating or editing vertical scenes still requires the Aitum Vertical dock UI.
 
 ## CareSight OBS Overlay Update
 
