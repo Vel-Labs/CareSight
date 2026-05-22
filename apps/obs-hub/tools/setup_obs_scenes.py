@@ -19,6 +19,7 @@ APP_DIR = ROOT / "apps" / "obs-hub"
 CONFIG_PATH = APP_DIR / "config" / "cameras.json"
 EVENT_PATH = APP_DIR / "config" / "sample_event.json"
 OVERLAY_DIR = APP_DIR / "overlays"
+DEFAULT_BROWSER_FEED_URL = "http://127.0.0.1:8766/stream.mjpg"
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -225,9 +226,17 @@ def create_dashboard_scene(client: Any, width: int, height: int) -> None:
 def create_escalation_scene(client: Any, width: int, height: int) -> None:
     scene = "CareSight Hub - Escalation"
     ensure_scene(client, scene)
-    sample_image = os.environ.get("CARESIGHT_OBS_SAMPLE_IMAGE", str(APP_DIR / "config" / "live_preview.jpg"))
-    ensure_image_source(client, scene, "CareSight Escalation Main Feed", sample_image, width, height)
-    ensure_browser_source(client, scene, "CareSight Escalation Overlay", OVERLAY_DIR / "escalation.html", width, height)
+    ensure_placeholder_source(client, scene, "CareSight Escalation Background", width, height)
+    feed_url = quote(os.environ.get("CARESIGHT_OBS_BROWSER_FEED_URL", DEFAULT_BROWSER_FEED_URL), safe="")
+    ensure_browser_source(
+        client,
+        scene,
+        "CareSight Escalation Overlay",
+        OVERLAY_DIR / "escalation.html",
+        width,
+        height,
+        f"?feed=mjpeg&feed_url={feed_url}",
+    )
 
 
 def create_facetime_mobile_scene(client: Any, width: int, height: int) -> None:
@@ -236,14 +245,7 @@ def create_facetime_mobile_scene(client: Any, width: int, height: int) -> None:
     mobile_height = 1920
     ensure_scene(client, scene)
     ensure_placeholder_source(client, scene, "CareSight FaceTime Mobile Background", mobile_width, mobile_height)
-    ensure_image_source(
-        client,
-        scene,
-        "CareSight FaceTime Live Detector Preview",
-        str(APP_DIR / "config" / "live_preview.jpg"),
-        mobile_width,
-        mobile_height,
-    )
+    feed_url = quote(os.environ.get("CARESIGHT_OBS_BROWSER_FEED_URL", DEFAULT_BROWSER_FEED_URL), safe="")
     ensure_browser_source(
         client,
         scene,
@@ -251,6 +253,7 @@ def create_facetime_mobile_scene(client: Any, width: int, height: int) -> None:
         OVERLAY_DIR / "facetime-mobile.html",
         mobile_width,
         mobile_height,
+        f"?feed=mjpeg&feed_url={feed_url}",
     )
 
 

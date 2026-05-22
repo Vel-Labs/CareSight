@@ -82,6 +82,8 @@ Rationale: local SQLite is the blackbox source of truth. New sprint fields shoul
 
 The v0 live loop supports `--max-seconds` and `--stop-after-event` so an operator can collect one `event_persisted` receipt without leaving the process open-ended.
 
+`--stop-after-event` is proof/demo behavior only. Monitoring-style runs should omit it so CareSight continues observing after a persisted event.
+
 Rationale: live demo proof should be operationally repeatable and auditable without forcing a GUI quit path or an unbounded process.
 
 ## 2026-05-20: Keep Live CLI Help Independent of Camera Runtime Imports
@@ -214,11 +216,11 @@ Rationale: OBS Virtual Camera only solves the visual handoff. Audio needs a sepa
 
 ## 2026-05-21: Feed OBS From Detector-Owned Annotated Frames
 
-For the live FaceTime demo, the detector may write an annotated preview frame to `apps/obs-hub/config/live_preview.jpg`, and the OBS browser overlay may display that image as the active feed. OBS should not open the same webcam as the detector for this path.
+For the live FaceTime demo, the detector serves an annotated local MJPEG feed from `http://127.0.0.1:8766/stream.mjpg`, and the OBS browser overlay displays that stream as the active feed. OBS should not open the same webcam as the detector for this path.
 
-Rationale: macOS camera ownership can make OpenCV and OBS fight over the same camera. A local preview image keeps raw video local, lets OpenCV remain the camera owner, and gives caregivers the same boxed detector view through OBS Virtual Camera.
+Rationale: macOS camera ownership can make OpenCV and OBS fight over the same camera. A local MJPEG browser feed keeps raw video local, lets OpenCV remain the camera owner, and gives caregivers the same boxed detector view through OBS Virtual Camera.
 
-The browser overlays should refresh the local preview image directly for live handoff scenes. This keeps the desktop console and portrait FaceTime view dynamic without adding a raw camera source to OBS.
+`apps/obs-hub/config/live_preview.jpg` remains useful as a fallback/debug artifact, but it is not the primary live-video transport.
 
 ## 2026-05-22: Keep Escalation Evidence Event-Scoped
 

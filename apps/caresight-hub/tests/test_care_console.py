@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import subprocess
 import sys
@@ -16,6 +17,12 @@ from caresight.vision.detections import Detection
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT_DIR / "scripts" / "care_console.py"
 CONTACTS_SCRIPT = ROOT_DIR / "scripts" / "caresight_contacts_config.py"
+PREFLIGHT_SCRIPT = ROOT_DIR / "scripts" / "caresight_demo_preflight.py"
+preflight_spec = importlib.util.spec_from_file_location("caresight_demo_preflight", PREFLIGHT_SCRIPT)
+assert preflight_spec is not None
+preflight_module = importlib.util.module_from_spec(preflight_spec)
+assert preflight_spec.loader is not None
+preflight_spec.loader.exec_module(preflight_module)
 
 
 class CareConsoleTest(unittest.TestCase):
@@ -629,6 +636,20 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(payload["schema"], "care-contact-allowlist")
             self.assertEqual(payload["contacts"][0]["contact_id"], "contact_emergency_primary")
             self.assertEqual(payload["contacts"][0]["channel_refs"]["facetime"], "+15555550123")
+
+    def test_preflight_reads_local_demo_env_exports(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_path = Path(tmpdir) / "live-demo.local"
+            env_path.write_text(
+                'export OBS_WEBSOCKET_PASSWORD="local-secret"\n'
+                "export CARESIGHT_OBS_BROWSER_FEED_URL='http://127.0.0.1:8766/stream.mjpg'\n",
+                encoding="utf-8",
+            )
+
+            values = preflight_module.read_local_env(env_path)
+
+            self.assertEqual(values["OBS_WEBSOCKET_PASSWORD"], "local-secret")
+            self.assertEqual(values["CARESIGHT_OBS_BROWSER_FEED_URL"], "http://127.0.0.1:8766/stream.mjpg")
 
 
 class Seed:

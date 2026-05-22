@@ -4,6 +4,12 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OBS_APP_DIR="$ROOT_DIR/apps/obs-hub"
 VENV_DIR="$ROOT_DIR/.venv-obs"
+LOCAL_DEMO_ENV="$ROOT_DIR/apps/caresight-hub/config/live-demo.local"
+
+if [[ -f "$LOCAL_DEMO_ENV" ]]; then
+  # shellcheck source=/dev/null
+  source "$LOCAL_DEMO_ENV"
+fi
 
 HOST="${OBS_WEBSOCKET_HOST:-127.0.0.1}"
 PORT="${OBS_WEBSOCKET_PORT:-4455}"

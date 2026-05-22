@@ -277,6 +277,15 @@ export CARESIGHT_CONTACT_ALLOWLIST_PATH=apps/caresight-hub/config/hermes/allowli
 
 The generated `allowlisted-contacts.local.json` file is ignored by git. Shell env targets still work for one-off tests, but the local allowlist is the preferred demo setup because it keeps repeated commands smaller and gives Hermes/local tools a stable contact source.
 
+For first-time setup, operators can also copy and edit:
+
+```text
+apps/caresight-hub/config/hermes/allowlisted-contacts.local.example.json
+apps/caresight-hub/config/live-demo.local.example
+```
+
+Copy them to `allowlisted-contacts.local.json` and `live-demo.local`. The local files are ignored by git and are the closest project equivalent to `.env.local`.
+
 Live detector command:
 
 ```bash
@@ -285,6 +294,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --camera-id living_room \
   --max-seconds 600 \
   --no-window \
+  --obs-browser-feed \
   --auto-agent-live-run \
   --live-approved
 ```
@@ -324,9 +334,13 @@ This prefers `imsg` for a yes-like reply after the alert send, then falls back t
 
 The handoff switches OBS to `CareSight Hub - FaceTime Mobile` before opening FaceTime. This scene keeps the live detector feed and current event inside a portrait-safe center column so phone recipients do not see the landscape dashboard cropped off-screen.
 
-The mobile scene uses `CareSight FaceTime Live Detector Preview`, an OBS image source pointed at `apps/obs-hub/config/live_preview.jpg`. The live detector updates that file when run with `--obs-live-preview`, so the caregiver sees the detector-owned annotated feed without OBS competing for the webcam.
+The mobile scene uses a local browser-rendered detector feed. The live detector serves annotated MJPEG at:
 
-The escalation and FaceTime browser overlays also refresh that same local `live_preview.jpg` path about four times per second. This is the current local browser-feed approach: Python owns the camera and writes annotated frames, while OBS renders a local file-backed browser source. Do not add the webcam directly to OBS for this demo unless the detector camera source is changed too, because two processes can compete for the camera and the raw OBS feed will not include CareSight boxes.
+```text
+http://127.0.0.1:8766/stream.mjpg
+```
+
+OBS renders that stream inside the escalation and FaceTime browser-source overlays. Python owns the camera and draws the boxes/zone overlay; OBS does not open the webcam separately. `apps/obs-hub/config/live_preview.jpg` remains a fallback artifact when `--obs-live-preview` is enabled, not the primary live feed.
 
 If no reply is observed before the no-response escalation window, the command sends one follow-up iMessage with the local event snapshot attached:
 
@@ -336,13 +350,13 @@ This is CareSight Hub escalation. We have not heard back, but there is an event 
 
 The follow-up uses the same allowlisted target and remains bounded to caregiver verification. It does not dispatch help, diagnose, or send raw video to an agent.
 
-`--obs-live-preview` writes the annotated detector frame to:
+`--obs-live-preview` writes a fallback annotated detector frame to:
 
 ```text
 apps/obs-hub/config/live_preview.jpg
 ```
 
-The OBS escalation browser overlay reads that image directly, so FaceTime can show the same boxed detector view while OpenCV remains the only process that owns the camera.
+`--obs-browser-feed` is the primary live OBS feed. The JPG exists for audit/debug fallback and screenshot-style evidence.
 
 When the detector appears not to fire, add `--debug-floor-stay` to the same live command or run a short diagnostic-only pass:
 
@@ -352,6 +366,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --camera-id living_room \
   --max-seconds 60 \
   --no-window \
+  --obs-browser-feed \
   --obs-live-preview \
   --debug-floor-stay
 ```

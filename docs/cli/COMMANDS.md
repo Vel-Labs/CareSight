@@ -65,7 +65,7 @@ Agent safety: `manual-operator`.
 Configured source selection:
 
 ```bash
-python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room_usb --no-window --max-seconds 120 --stop-after-event
+python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room_usb --no-window --max-seconds 120
 ```
 
 Purpose: select one configured local camera source from `config.cameras` while preserving `camera_id`, `source_type`, and room label in runtime config and SQLite-backed event provenance.
@@ -81,6 +81,8 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v
 ```
 
 Purpose: let an operator collect one `event_persisted` line without leaving the live loop unbounded.
+
+`--stop-after-event` is a demo/proof flag only. Do not use it for monitoring-style runs where CareSight should continue watching after the first event.
 
 If no floor-stay event is created before the bounded run exits, the command persists an `observation_checks` row in SQLite and prints a `no_event_persisted` JSON line with `check_id`, `frame_count`, `elapsed_seconds`, `required_dwell_seconds`, `camera_id`, and `zone_id`. Use that row and line as the machine-readable receipt for normal/non-concerning no-event proof.
 
@@ -121,6 +123,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --camera-id living_room \
   --max-seconds 600 \
   --no-window \
+  --obs-browser-feed \
   --auto-agent-live-run \
   --live-approved
 ```
@@ -190,13 +193,15 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --post-facetime-hold-seconds 30
 ```
 
-Purpose: send the approved text when a real event persists, watch the local Messages database for a yes-like reply from the same target, open FaceTime, wait briefly for the caregiver to answer, play the approved Dakota TTS readout, and keep the local process alive briefly so the OBS feed remains available.
+Purpose: send the approved text when a real event persists, watch the local Messages database for a yes-like reply from the same target, open FaceTime, wait briefly for the caregiver to answer, play the approved Dakota TTS readout, and keep monitoring until `--max-seconds` or operator stop.
 
 Inputs: same private iMessage/FaceTime handles as the live iMessage test, `imsg` or local Messages database read access, OBS Virtual Camera already started/selected in FaceTime, and approved TTS playback.
 
 Outputs: `post_event_agent_live_run` with reply-watch status, FaceTime attempt ID if opened, and TTS playback status if attempted.
 
 Before opening FaceTime, the live handoff attempts to switch OBS to `CareSight Hub - FaceTime Mobile`, a portrait-safe scene for phone recipients. Run `./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile"` after pulling this change so OBS has the scene.
+
+`--reply-timeout-seconds` is the total reply watch window. `--no-response-escalation-seconds` controls when the one-time follow-up is sent inside that window. For example, timeout `120` and no-response escalation `90` means CareSight waits 90 seconds, sends the follow-up if there is still no reply, then watches for up to 30 more seconds.
 
 If no caregiver reply is observed before `--no-response-escalation-seconds`, the live handoff sends one bounded follow-up iMessage with the local event snapshot attached:
 
@@ -212,9 +217,9 @@ Default TTS readout:
 This is an automated CareSight message. A possible floor stay was observed in the Living Room. Please review the live feed. CareSight will keep this handoff open briefly for review.
 ```
 
-`--obs-live-preview` writes annotated detector frames to `apps/obs-hub/config/live_preview.jpg`. The OBS escalation browser overlay displays that local image behind the event panels so the caregiver can see the live detector view with boxes/zone overlay without OBS opening the webcam separately.
+`--obs-browser-feed` serves the annotated detector feed as local MJPEG at `http://127.0.0.1:8766/stream.mjpg`. OBS renders that stream inside its browser-source overlay, so the caregiver sees the boxed detector view without OBS competing for the webcam.
 
-The OBS browser overlays refresh `live_preview.jpg` locally every 250ms. This is intentionally a file-backed local browser feed: the Python detector owns the webcam and writes the annotated frame; OBS renders that local image feed. Adding the webcam directly to OBS can conflict with the detector and will not include the CareSight box/zone overlay.
+`--obs-live-preview` still writes `apps/obs-hub/config/live_preview.jpg` as a fallback/snapshot-style local artifact. It is not the primary live video path.
 
 Agent safety: `human-review-required`. This prefers `imsg` when installed, otherwise reads only the local Messages database for the configured contact target after the alert is sent. If macOS blocks database access, it fails closed with setup instructions; it does not bypass Full Disk Access, dispatch help, diagnose, or send raw video to an agent.
 
@@ -224,7 +229,7 @@ Demo preflight:
 python3 apps/caresight-hub/scripts/caresight_demo_preflight.py
 ```
 
-Purpose: check the local demo runway before an operator gets on the floor: SQLite path, ignored contact allowlist, YOLO runtime/model, OBS scene tooling, `live_preview.jpg`, Gemma endpoint, BlackHole switcher, and whether `OBS_WEBSOCKET_PASSWORD` is present in the current shell.
+Purpose: check the local demo runway before an operator gets on the floor: SQLite path, ignored contact allowlist, YOLO runtime/model, OBS scene tooling, local demo env, live preview artifact, Gemma endpoint, BlackHole switcher, and whether `OBS_WEBSOCKET_PASSWORD` is present in the shell or `apps/caresight-hub/config/live-demo.local`.
 
 Outputs: a skimmable readiness report and the recommended live command. Use `--json` for a machine-readable receipt.
 
@@ -254,6 +259,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --camera-id living_room \
   --max-seconds 60 \
   --no-window \
+  --obs-browser-feed \
   --obs-live-preview \
   --debug-floor-stay
 ```

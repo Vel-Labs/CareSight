@@ -17,6 +17,7 @@ DEFAULT_DB_PATH = ROOT_DIR / "data" / "caresight-v0.sqlite3"
 DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.local.json"
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
 DEFAULT_OBS_SCRIPT = REPO_ROOT / "apps" / "obs-hub" / "tools" / "setup_obs_scenes.py"
+DEFAULT_LOCAL_ENV_PATH = ROOT_DIR / "config" / "live-demo.local"
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,16 +34,18 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    local_env = read_local_env(DEFAULT_LOCAL_ENV_PATH)
     checks = [
         file_check("sqlite_db", Path(args.db), required=False),
         file_check("contact_allowlist", Path(args.allowlist_config), required=True),
+        file_check("local_demo_env", DEFAULT_LOCAL_ENV_PATH, required=False),
         file_check("yolo_python", ROOT_DIR / "vendor" / "yolo-mlx" / ".venv" / "bin" / "python", required=True),
         file_check("yolo_model", ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz", required=True),
         file_check("obs_live_preview", DEFAULT_OBS_PREVIEW_PATH, required=False),
         obs_dry_run_check(),
         executable_check("blackhole_switcher", "SwitchAudioSource", required=False),
         gemma_check(args.gemma_base_url),
-        env_check("OBS_WEBSOCKET_PASSWORD", required=True),
+        env_or_local_check("OBS_WEBSOCKET_PASSWORD", local_env, required=True),
     ]
     payload = {
         "schema": "caresight-demo-preflight",
@@ -55,8 +58,8 @@ def main() -> None:
             "living_room",
             "--max-seconds",
             "600",
-            "--stop-after-event",
             "--no-window",
+            "--obs-browser-feed",
             "--obs-live-preview",
             "--auto-agent-live-run",
             "--live-approved",
@@ -103,6 +106,31 @@ def env_check(name: str, *, required: bool) -> dict[str, object]:
         "required": required,
         "detail": "set" if present else "missing from this shell",
     }
+
+
+def env_or_local_check(name: str, local_env: dict[str, str], *, required: bool) -> dict[str, object]:
+    if os.environ.get(name, "").strip():
+        return {"name": name, "ok": True, "required": required, "detail": "set in current shell"}
+    if local_env.get(name, "").strip():
+        return {"name": name, "ok": True, "required": required, "detail": f"set in {DEFAULT_LOCAL_ENV_PATH}"}
+    return {"name": name, "ok": False, "required": required, "detail": "missing from shell and local demo env"}
+
+
+def read_local_env(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line.removeprefix("export ").strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip("\"'")
+    return values
 
 
 def obs_dry_run_check() -> dict[str, object]:

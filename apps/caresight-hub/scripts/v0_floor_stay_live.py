@@ -1,8 +1,10 @@
 import argparse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 import re
 import sys
+import threading
 import time
 import traceback
 from collections import deque
@@ -20,6 +22,8 @@ DEFAULT_MODEL_PATH = ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz"
 WINDOW_NAME = "CareSight v0 Floor Stay"
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
 DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.example.json"
+DEFAULT_BROWSER_FEED_HOST = "127.0.0.1"
+DEFAULT_BROWSER_FEED_PORT = 8766
 
 
 def parse_args():
@@ -54,6 +58,13 @@ def parse_args():
         action="store_true",
         help="Write annotated preview frames to apps/obs-hub/config/live_preview.jpg for OBS/browser overlays.",
     )
+    parser.add_argument(
+        "--obs-browser-feed",
+        action="store_true",
+        help="Serve an annotated local MJPEG browser feed for OBS at http://127.0.0.1:8766/live.html.",
+    )
+    parser.add_argument("--obs-browser-feed-host", default=DEFAULT_BROWSER_FEED_HOST)
+    parser.add_argument("--obs-browser-feed-port", type=int, default=DEFAULT_BROWSER_FEED_PORT)
     parser.add_argument(
         "--obs-live-preview-path",
         default=str(DEFAULT_OBS_PREVIEW_PATH),
@@ -259,6 +270,132 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float]):
         cv2.LINE_AA,
     )
     return display
+
+
+class MjpegPreviewServer:
+    def __init__(self, *, host: str, port: int):
+        self.host = host
+        self.port = port
+        self._condition = threading.Condition()
+        self._jpeg: bytes | None = None
+        self._updated_at = ""
+        self._server = ThreadingHTTPServer((host, port), self._handler())
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+
+    @property
+    def url(self) -> str:
+        return f"http://{self.host}:{self.port}/live.html"
+
+    def start(self) -> None:
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._server.shutdown()
+        self._server.server_close()
+
+    def update(self, cv2, frame) -> None:
+        ok, encoded = cv2.imencode(".jpg", frame, [int(cv2.IMWRITE_JPEG_QUALITY), 82])
+        if not ok:
+            return
+        with self._condition:
+            self._jpeg = encoded.tobytes()
+            self._updated_at = utc_now()
+            self._condition.notify_all()
+
+    def _snapshot(self) -> tuple[bytes | None, str]:
+        with self._condition:
+            return self._jpeg, self._updated_at
+
+    def _wait_for_frame(self, timeout: float = 2.0) -> tuple[bytes | None, str]:
+        with self._condition:
+            if self._jpeg is None:
+                self._condition.wait(timeout)
+            return self._jpeg, self._updated_at
+
+    def _handler(self):
+        owner = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:  # noqa: N802 - stdlib handler API.
+                if self.path in {"/", "/live.html"}:
+                    self._write_html()
+                    return
+                if self.path == "/health":
+                    self._write_json({"status": "ready", "frame_available": owner._snapshot()[0] is not None})
+                    return
+                if self.path == "/snapshot.jpg":
+                    self._write_snapshot()
+                    return
+                if self.path == "/stream.mjpg":
+                    self._write_stream()
+                    return
+                self.send_error(404)
+
+            def log_message(self, _format: str, *_args) -> None:
+                return
+
+            def _write_html(self) -> None:
+                body = b"""<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #02060b; }
+    img { width: 100vw; height: 100vh; object-fit: contain; background: #02060b; }
+  </style>
+</head>
+<body>
+  <img src="/stream.mjpg" alt="" />
+</body>
+</html>
+"""
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def _write_json(self, payload: dict) -> None:
+                body = json.dumps(payload, sort_keys=True).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def _write_snapshot(self) -> None:
+                jpeg, updated_at = owner._snapshot()
+                if jpeg is None:
+                    self.send_error(503, "No frame available yet")
+                    return
+                self.send_response(200)
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("X-CareSight-Updated-At", updated_at)
+                self.send_header("Content-Length", str(len(jpeg)))
+                self.end_headers()
+                self.wfile.write(jpeg)
+
+            def _write_stream(self) -> None:
+                self.send_response(200)
+                self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                while True:
+                    jpeg, updated_at = owner._wait_for_frame()
+                    if jpeg is None:
+                        continue
+                    try:
+                        self.wfile.write(b"--frame\r\n")
+                        self.wfile.write(b"Content-Type: image/jpeg\r\n")
+                        self.wfile.write(f"X-CareSight-Updated-At: {updated_at}\r\n".encode("utf-8"))
+                        self.wfile.write(f"Content-Length: {len(jpeg)}\r\n\r\n".encode("utf-8"))
+                        self.wfile.write(jpeg)
+                        self.wfile.write(b"\r\n")
+                    except (BrokenPipeError, ConnectionResetError):
+                        break
+
+        return Handler
 
 
 def should_stop_loop(
@@ -713,6 +850,14 @@ def main() -> None:
     detector = FloorStayDetector(config)
     fps_values: deque[float] = deque(maxlen=30)
     print(format_started_line(config, database_path))
+    mjpeg_server = None
+    if args.obs_browser_feed:
+        mjpeg_server = MjpegPreviewServer(host=args.obs_browser_feed_host, port=args.obs_browser_feed_port)
+        mjpeg_server.start()
+        print(
+            "obs_browser_feed_started "
+            + json.dumps({"url": mjpeg_server.url, "stream_url": f"http://{args.obs_browser_feed_host}:{args.obs_browser_feed_port}/stream.mjpg"}, sort_keys=True)
+        )
 
     if not args.no_window:
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
@@ -725,107 +870,117 @@ def main() -> None:
     obs_preview_path = resolve_runtime_path(args.obs_live_preview_path)
     last_obs_preview_write_at = 0.0
     last_floor_debug_at = 0.0
-    while True:
-        started_at = time.perf_counter()
-        ok, frame = cap.read()
-        if not ok:
-            break
-        frame_count += 1
-
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        result = model.predict(rgb_frame, conf=args.conf)[0]
-        height, width = frame.shape[:2]
-        event = detector.update(result_to_detections(result, width, height))
-        if args.debug_floor_stay and time.monotonic() - last_floor_debug_at >= 1.0:
-            print(format_floor_stay_debug_line(detector.diagnostic()))
-            last_floor_debug_at = time.monotonic()
-        if args.obs_live_preview:
-            last_obs_preview_write_at = maybe_write_obs_preview(
-                cv2=cv2,
-                frame=frame,
-                result=result,
-                config=config,
-                fps_values=fps_values,
-                preview_path=obs_preview_path,
-                last_write_at=last_obs_preview_write_at,
-                preview_fps=args.obs_live_preview_fps,
-            )
-        event_persisted = False
-        if event is not None:
-            snapshot_dir = database_path.parent / "snapshots"
-            event = attach_local_snapshot(
-                event=event,
-                snapshot_dir=snapshot_dir,
-                write_snapshot=lambda path: cv2.imwrite(str(path), frame),
-            )
-            store.insert_event(event)
-            print("event_persisted " + json.dumps(event, sort_keys=True))
-            event_persisted = True
-            persisted_event_count += 1
-            if args.auto_agent_live_run:
-                try:
-                    receipt = run_post_event_agent_live_run(
-                        store=store,
-                        event_id=event["event_id"],
-                        gemma_base_url=args.gemma_base_url,
-                        gemma_model=args.gemma_model,
-                        allowed_contact_id=args.allowed_contact_id,
-                        allowlist_config=args.allowlist_config,
-                        live_message=args.live_message,
-                        live_imessage_target=args.live_imessage_target,
-                        live_approved=args.live_approved,
-                        auto_facetime_on_reply=args.auto_facetime_on_reply,
-                        reply_timeout_seconds=args.reply_timeout_seconds,
-                        reply_poll_interval_seconds=args.reply_poll_interval_seconds,
-                        no_response_escalation_seconds=args.no_response_escalation_seconds,
-                        no_response_escalation_message=args.no_response_escalation_message,
-                        play_tts_after_facetime=args.play_tts_after_facetime,
-                        tts_text=args.tts_text,
-                        tts_voice=args.tts_voice,
-                        tts_audio_route=args.tts_audio_route,
-                        tts_volume=args.tts_volume,
-                        tts_after_facetime_delay_seconds=args.tts_after_facetime_delay_seconds,
-                        post_facetime_hold_seconds=args.post_facetime_hold_seconds,
-                    )
-                    print(format_post_event_agent_live_line(receipt))
-                except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
-                    print(format_post_event_agent_live_error_line(event["event_id"], exc), file=sys.stderr)
-                    traceback.print_exc()
-                    if args.auto_agent_fail_closed:
-                        raise
-            elif args.auto_agent_dry_run:
-                try:
-                    receipt = run_post_event_agent_dry_run(
-                        store=store,
-                        event_id=event["event_id"],
-                        gemma_base_url=args.gemma_base_url,
-                        gemma_model=args.gemma_model,
-                        allowed_contact_id=args.allowed_contact_id,
-                        allowlist_config=args.allowlist_config,
-                    )
-                    print(format_post_event_agent_line(receipt))
-                except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
-                    print(format_post_event_agent_error_line(event["event_id"], exc), file=sys.stderr)
-                    traceback.print_exc()
-                    if args.auto_agent_fail_closed:
-                        raise
-
-        elapsed = max(time.perf_counter() - started_at, 0.0001)
-        fps_values.append(1.0 / elapsed)
-
-        if should_stop_loop(
-            started_at=loop_started_at,
-            now=time.monotonic(),
-            max_seconds=args.max_seconds,
-            event_persisted=event_persisted,
-            stop_after_event=args.stop_after_event,
-        ):
-            break
-
-        if not args.no_window:
-            cv2.imshow(WINDOW_NAME, draw_frame(cv2, frame, result, config, fps_values))
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+    try:
+        while True:
+            started_at = time.perf_counter()
+            ok, frame = cap.read()
+            if not ok:
                 break
+            frame_count += 1
+
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = model.predict(rgb_frame, conf=args.conf)[0]
+            height, width = frame.shape[:2]
+            event = detector.update(result_to_detections(result, width, height))
+            if args.debug_floor_stay and time.monotonic() - last_floor_debug_at >= 1.0:
+                print(format_floor_stay_debug_line(detector.diagnostic()))
+                last_floor_debug_at = time.monotonic()
+
+            annotated_frame = None
+            if args.obs_browser_feed or args.obs_live_preview or not args.no_window:
+                annotated_frame = draw_frame(cv2, frame, result, config, fps_values)
+            if mjpeg_server is not None and annotated_frame is not None:
+                mjpeg_server.update(cv2, annotated_frame)
+            if args.obs_live_preview:
+                last_obs_preview_write_at = maybe_write_obs_preview(
+                    cv2=cv2,
+                    frame=frame,
+                    result=result,
+                    config=config,
+                    fps_values=fps_values,
+                    preview_path=obs_preview_path,
+                    last_write_at=last_obs_preview_write_at,
+                    preview_fps=args.obs_live_preview_fps,
+                )
+            event_persisted = False
+            if event is not None:
+                snapshot_dir = database_path.parent / "snapshots"
+                event = attach_local_snapshot(
+                    event=event,
+                    snapshot_dir=snapshot_dir,
+                    write_snapshot=lambda path: cv2.imwrite(str(path), frame),
+                )
+                store.insert_event(event)
+                print("event_persisted " + json.dumps(event, sort_keys=True))
+                event_persisted = True
+                persisted_event_count += 1
+                if args.auto_agent_live_run:
+                    try:
+                        receipt = run_post_event_agent_live_run(
+                            store=store,
+                            event_id=event["event_id"],
+                            gemma_base_url=args.gemma_base_url,
+                            gemma_model=args.gemma_model,
+                            allowed_contact_id=args.allowed_contact_id,
+                            allowlist_config=args.allowlist_config,
+                            live_message=args.live_message,
+                            live_imessage_target=args.live_imessage_target,
+                            live_approved=args.live_approved,
+                            auto_facetime_on_reply=args.auto_facetime_on_reply,
+                            reply_timeout_seconds=args.reply_timeout_seconds,
+                            reply_poll_interval_seconds=args.reply_poll_interval_seconds,
+                            no_response_escalation_seconds=args.no_response_escalation_seconds,
+                            no_response_escalation_message=args.no_response_escalation_message,
+                            play_tts_after_facetime=args.play_tts_after_facetime,
+                            tts_text=args.tts_text,
+                            tts_voice=args.tts_voice,
+                            tts_audio_route=args.tts_audio_route,
+                            tts_volume=args.tts_volume,
+                            tts_after_facetime_delay_seconds=args.tts_after_facetime_delay_seconds,
+                            post_facetime_hold_seconds=args.post_facetime_hold_seconds,
+                        )
+                        print(format_post_event_agent_live_line(receipt))
+                    except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
+                        print(format_post_event_agent_live_error_line(event["event_id"], exc), file=sys.stderr)
+                        traceback.print_exc()
+                        if args.auto_agent_fail_closed:
+                            raise
+                elif args.auto_agent_dry_run:
+                    try:
+                        receipt = run_post_event_agent_dry_run(
+                            store=store,
+                            event_id=event["event_id"],
+                            gemma_base_url=args.gemma_base_url,
+                            gemma_model=args.gemma_model,
+                            allowed_contact_id=args.allowed_contact_id,
+                            allowlist_config=args.allowlist_config,
+                        )
+                        print(format_post_event_agent_line(receipt))
+                    except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
+                        print(format_post_event_agent_error_line(event["event_id"], exc), file=sys.stderr)
+                        traceback.print_exc()
+                        if args.auto_agent_fail_closed:
+                            raise
+
+            elapsed = max(time.perf_counter() - started_at, 0.0001)
+            fps_values.append(1.0 / elapsed)
+
+            if should_stop_loop(
+                started_at=loop_started_at,
+                now=time.monotonic(),
+                max_seconds=args.max_seconds,
+                event_persisted=event_persisted,
+                stop_after_event=args.stop_after_event,
+            ):
+                break
+
+            if not args.no_window and annotated_frame is not None:
+                cv2.imshow(WINDOW_NAME, annotated_frame)
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
+    finally:
+        if mjpeg_server is not None:
+            mjpeg_server.stop()
 
     elapsed_seconds = time.monotonic() - loop_started_at
     if frame_count > 0 and persisted_event_count == 0:

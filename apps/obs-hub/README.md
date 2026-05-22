@@ -97,15 +97,24 @@ The caregiver UI intentionally displays a shortened event ID so it does not crow
 
 The live handoff script attempts to switch OBS to `CareSight Hub - FaceTime Mobile` before opening FaceTime. This scene uses a 1080x1920 browser source and requests matching OBS video output so phone recipients do not receive a tiny portrait UI embedded in a landscape frame.
 
-The FaceTime Mobile scene includes `CareSight FaceTime Live Detector Preview`, an OBS image source pointed at:
+The FaceTime Mobile scene renders the detector feed through the OBS browser overlay. Start the detector with:
 
-```text
-apps/obs-hub/config/live_preview.jpg
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --obs-browser-feed
 ```
 
-That file is written by `v0_floor_stay_live.py --obs-live-preview` and includes the detector boxes/zone overlay. This is the preferred demo feed because OBS does not need to open the webcam separately while the Python detector owns the camera.
+The detector serves annotated MJPEG locally at:
 
-The desktop escalation and FaceTime Mobile browser overlays refresh this local preview image every 250ms. Treat this as the demo's local browser video feed: the detector writes annotated frames locally, OBS renders them locally, and no raw video is sent to Gemma or Hermes.
+```text
+http://127.0.0.1:8766/stream.mjpg
+```
+
+This is the preferred demo feed because OBS does not need to open the webcam separately while the Python detector owns the camera. The stream includes detector boxes and the floor-zone overlay. No raw video is sent to Gemma or Hermes.
+
+`v0_floor_stay_live.py --obs-live-preview` can also write `apps/obs-hub/config/live_preview.jpg` as a fallback/debug artifact, but the MJPEG browser feed is the primary live path.
 
 ## Camera Sources
 

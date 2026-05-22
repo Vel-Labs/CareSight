@@ -24,6 +24,8 @@ const fallbackData = {
   constraints: ["Raw video stays local", "Human review required", "No emergency dispatch", "Not a medical device"]
 };
 
+const overlayParams = new URLSearchParams(window.location.search);
+
 async function loadEventData() {
   const scriptData = await loadScriptEventData();
   if (scriptData) {
@@ -181,9 +183,17 @@ function renderLivePreview(preview) {
 }
 
 function resolveLivePreview(preview) {
+  if (overlayParams.get("feed") === "mjpeg") {
+    return {
+      available: true,
+      stream: true,
+      url: overlayParams.get("feed_url") || "http://127.0.0.1:8766/stream.mjpg"
+    };
+  }
   const fallbackUrl = "../config/live_preview.jpg";
   return {
     available: Boolean(preview?.available) || true,
+    stream: false,
     url: preview?.url && preview.available ? preview.url : fallbackUrl
   };
 }
@@ -194,5 +204,11 @@ function refreshLivePreviewOnly() {
     return;
   }
   const preview = window.CareSightLivePreviewState || resolveLivePreview(null);
+  if (preview.stream) {
+    if (image.src !== preview.url) {
+      image.src = preview.url;
+    }
+    return;
+  }
   image.src = `${preview.url}?t=${Date.now()}`;
 }

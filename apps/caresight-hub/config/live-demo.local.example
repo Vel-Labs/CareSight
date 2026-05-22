@@ -1,0 +1,9 @@
+# Copy to apps/caresight-hub/config/live-demo.local and edit the local copy.
+# scripts/setup_obs_scene.sh and the documented demo commands can source this file.
+
+export OBS_WEBSOCKET_HOST="127.0.0.1"
+export OBS_WEBSOCKET_PORT="4455"
+export OBS_WEBSOCKET_PASSWORD="replace-with-local-obs-websocket-password"
+
+export CARESIGHT_CONTACT_ALLOWLIST_PATH="apps/caresight-hub/config/hermes/allowlisted-contacts.local.json"
+export CARESIGHT_OBS_BROWSER_FEED_URL="http://127.0.0.1:8766/stream.mjpg"

@@ -98,7 +98,7 @@
     },
     {
       "id": "live_no_response_escalation",
-      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --auto-agent-live-run --live-approved --auto-facetime-on-reply --no-response-escalation-seconds 90",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --obs-browser-feed --auto-agent-live-run --live-approved --auto-facetime-on-reply --no-response-escalation-seconds 90",
       "safety_class": "human-review-required",
       "description": "After a live alert, send one bounded no-response iMessage follow-up with the local event snapshot attached before continuing to watch for a yes-like reply.",
       "external_network": false,
@@ -154,9 +154,9 @@
     },
     {
       "id": "v0_auto_agent_live_run",
-      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --auto-agent-live-run --live-approved --auto-facetime-on-reply --play-tts-after-facetime --tts-audio-route blackhole",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --obs-browser-feed --obs-live-preview --auto-agent-live-run --live-approved --auto-facetime-on-reply --play-tts-after-facetime --tts-audio-route blackhole",
       "safety_class": "human-review-required",
-      "description": "After a persisted event, update OBS, draft locally, stage the action, send the approved iMessage, wait for yes-like reply, open FaceTime, and play approved TTS.",
+      "description": "After a persisted event, serve the local OBS browser feed, update OBS, draft locally, stage the action, send the approved iMessage, wait for yes-like reply, open FaceTime, and play approved TTS.",
       "external_network": false,
       "live_action": true
     }

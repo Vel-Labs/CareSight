@@ -1,0 +1,19 @@
+{
+  "schema": "care-contact-allowlist",
+  "updated_at": "2026-05-22T00:00:00Z",
+  "notes": [
+    "Copy this file to allowlisted-contacts.local.json and edit the local copy.",
+    "Do not commit the local file. It may contain phone numbers or iCloud email addresses."
+  ],
+  "contacts": [
+    {
+      "contact_id": "contact_emergency_primary",
+      "role": "emergency_contact",
+      "display_label": "Primary emergency contact",
+      "channel_refs": {
+        "imessage": "+15555550123",
+        "facetime": "+15555550123"
+      }
+    }
+  ]
+}
