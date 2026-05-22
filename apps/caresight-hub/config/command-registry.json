@@ -49,6 +49,46 @@
       "live_action": false
     },
     {
+      "id": "live_imessage_send",
+      "command": "python3 apps/caresight-hub/scripts/caresight_live_handoff.py send-imessage <request_id> --live-approved",
+      "safety_class": "human-review-required",
+      "description": "Send the approved CareSight iMessage to an allowlisted private local target.",
+      "external_network": false,
+      "live_action": true
+    },
+    {
+      "id": "live_facetime_if_yes",
+      "command": "python3 apps/caresight-hub/scripts/caresight_live_handoff.py facetime-if-yes <request_id> --reply-text <reply> --live-approved",
+      "safety_class": "human-review-required",
+      "description": "Open FaceTime only after an operator-provided yes-like caregiver reply.",
+      "external_network": false,
+      "live_action": true
+    },
+    {
+      "id": "live_reply_facetime_tts",
+      "command": "python3 apps/caresight-hub/scripts/caresight_live_handoff.py wait-reply-facetime-tts <request_id> --since-unix-seconds <timestamp> --live-approved --tts-audio-route blackhole --tts-volume 2.5",
+      "safety_class": "human-review-required",
+      "description": "Watch local Messages for a yes-like reply, switch OBS to the FaceTime Mobile scene, open FaceTime, then play approved Dakota TTS.",
+      "external_network": false,
+      "live_action": true
+    },
+    {
+      "id": "live_no_response_escalation",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --auto-agent-live-run --live-approved --auto-facetime-on-reply --no-response-escalation-seconds 90",
+      "safety_class": "human-review-required",
+      "description": "After a live alert, send one bounded no-response iMessage follow-up with the local event snapshot attached before continuing to watch for a yes-like reply.",
+      "external_network": false,
+      "live_action": true
+    },
+    {
+      "id": "audio_route_check",
+      "command": "python3 apps/caresight-hub/scripts/caresight_audio_route.py check",
+      "safety_class": "manual-operator",
+      "description": "Check optional imsg, BlackHole 2ch, and switchaudio-osx readiness for live demo routing.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
       "id": "tts_generate",
       "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text <approved_text>",
       "safety_class": "manual-operator",
@@ -58,9 +98,41 @@
     },
     {
       "id": "tts_play",
-      "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text <approved_text> --play",
+      "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text <approved_text> --play --play-volume 2.5",
       "safety_class": "human-review-required",
       "description": "Play approved local TTS audio for human validation.",
+      "external_network": false,
+      "live_action": true
+    },
+    {
+      "id": "obs_setup",
+      "command": "./scripts/setup_obs_scene.sh",
+      "safety_class": "manual-operator",
+      "description": "Create or update local CareSight OBS scenes through obs-websocket.",
+      "external_network": true,
+      "live_action": false
+    },
+    {
+      "id": "obs_update_overlay",
+      "command": "./scripts/update_obs_overlay.sh --event-id <event_id>",
+      "safety_class": "agent-safe-read",
+      "description": "Refresh local OBS browser-overlay state from SQLite for one event.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "obs_watch_overlay",
+      "command": "./scripts/update_obs_overlay.sh --watch",
+      "safety_class": "manual-operator",
+      "description": "Continuously refresh local OBS browser-overlay state from the latest SQLite event.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "v0_auto_agent_live_run",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --auto-agent-live-run --live-approved --auto-facetime-on-reply --play-tts-after-facetime --tts-audio-route blackhole",
+      "safety_class": "human-review-required",
+      "description": "After a persisted event, update OBS, draft locally, stage the action, send the approved iMessage, wait for yes-like reply, open FaceTime, and play approved TTS.",
       "external_network": false,
       "live_action": true
     }

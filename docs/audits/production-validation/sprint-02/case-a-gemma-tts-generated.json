@@ -20,7 +20,15 @@
   },
   "audio_played": false,
   "external_action_performed": false,
-  "next_human_gate": "Approve the Gemma wording, then approve local playback and confirm the voice is audible, calm, understandable, and does not imply medical or emergency certainty.",
+  "human_feedback": {
+    "playback_functionally_works": true,
+    "audio_quality": "clean",
+    "requested_voice": "dakota",
+    "dakota_voice_approved": true,
+    "requested_wording_change": "Use the concise approved Gemma alert wording and avoid repeated possible phrasing.",
+    "recommended_next_text": "CareSight alert. Possible floor stay observed in the Living Room. Needs review."
+  },
+  "next_human_gate": "Complete live-message and visual-handoff validation; Dakota TTS playback is approved.",
   "safety_boundaries": [
     "local_audio_generation_only",
     "no_tts_playback_without_human_approval",

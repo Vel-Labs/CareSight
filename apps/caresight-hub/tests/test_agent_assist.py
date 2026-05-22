@@ -13,6 +13,10 @@ from caresight.runtime.agent_assist import (
     build_hermes_config_plan,
     build_hermes_handoff_payload,
     GemmaLocalProvider,
+    execute_facetime_if_yes,
+    execute_live_imessage,
+    is_yes_like_reply,
+    wait_for_yes_reply,
     run_hermes_dry_run,
     stage_action_request,
     validate_draft_text,
@@ -238,6 +242,142 @@ class AgentAssistTest(unittest.TestCase):
             self.assertIn("hermes_preflight", attempt["payload"])
             self.assertNotIn("targets", attempt["payload"]["hermes_preflight"])
             self.assertEqual(seed.store.list_agent_execution_attempts(request["request_id"])[0]["attempt_id"], attempt["attempt_id"])
+
+    def test_live_imessage_dry_run_requires_staged_allowlisted_request_and_redacts_target(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+            )
+            attempt = execute_live_imessage(
+                seed.store,
+                request_id=request["request_id"],
+                message="CareSight alert. Possible floor stay observed. Would you like to connect to CareSight?",
+                contact_id="contact_emergency_primary",
+                allowlist_config="/does/not/need/to/exist.json",
+                target="+15555550123",
+                dry_run=True,
+            )
+
+            self.assertEqual(attempt["harness"], "local_macos_live_handoff")
+            self.assertEqual(attempt["result"], "imessage_live_dry_run")
+            self.assertFalse(attempt["external_action_performed"])
+            self.assertEqual(attempt["payload"]["target"]["redacted"], True)
+            self.assertNotIn("+15555550123", json.dumps(attempt))
+
+    def test_live_imessage_dry_run_can_include_redacted_local_snapshot_attachment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            snapshot = Path(tmp) / "evt_snapshot.jpg"
+            snapshot.write_bytes(b"fake image")
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+            )
+
+            attempt = execute_live_imessage(
+                seed.store,
+                request_id=request["request_id"],
+                message="This is CareSight Hub escalation. Please see the image attached.",
+                contact_id="contact_emergency_primary",
+                allowlist_config="/does/not/need/to/exist.json",
+                target="+15555550123",
+                attachment_path=snapshot,
+                result_name="imessage_no_response_escalation_sent",
+                dry_run=True,
+            )
+
+            delivery = attempt["payload"]["delivery"]
+            self.assertEqual(attempt["result"], "imessage_no_response_escalation_sent")
+            self.assertEqual(delivery["attachment"]["name"], "evt_snapshot.jpg")
+            self.assertTrue(delivery["attachment"]["redacted"])
+            self.assertNotIn(str(snapshot), json.dumps(attempt))
+
+    def test_facetime_handoff_is_reply_gated(self) -> None:
+        with seeded_store() as seed:
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+                response_options=["request_facetime_handoff"],
+            )
+
+            self.assertTrue(is_yes_like_reply("yes please connect"))
+            self.assertFalse(is_yes_like_reply("no not now"))
+
+            no_attempt = execute_facetime_if_yes(
+                seed.store,
+                request_id=request["request_id"],
+                reply_text="no not now",
+                contact_id="contact_emergency_primary",
+                allowlist_config="/does/not/need/to/exist.json",
+                target="+15555550123",
+                live_approved=True,
+            )
+            yes_attempt = execute_facetime_if_yes(
+                seed.store,
+                request_id=request["request_id"],
+                reply_text="yes please",
+                contact_id="contact_emergency_primary",
+                allowlist_config="/does/not/need/to/exist.json",
+                target="+15555550123",
+                live_approved=True,
+                dry_run=True,
+            )
+
+            self.assertEqual(no_attempt["result"], "facetime_not_requested_reply_not_yes_like")
+            self.assertFalse(no_attempt["external_action_performed"])
+            self.assertEqual(yes_attempt["result"], "facetime_live_dry_run")
+            self.assertTrue(yes_attempt["payload"]["delivery"]["reply_interpreted_as_yes"])
+
+    def test_reply_watch_times_out_without_messages_access_or_reply(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "messages.sqlite3"
+            import sqlite3
+
+            conn = sqlite3.connect(db_path)
+            try:
+                conn.executescript(
+                    """
+                    CREATE TABLE handle (ROWID INTEGER PRIMARY KEY, id TEXT);
+                    CREATE TABLE message (
+                      ROWID INTEGER PRIMARY KEY,
+                      handle_id INTEGER,
+                      text TEXT,
+                      date INTEGER,
+                      is_from_me INTEGER
+                    );
+                    """
+                )
+            finally:
+                conn.close()
+
+            result = wait_for_yes_reply(
+                target="+15555550123",
+                since_unix_seconds=1000.0,
+                timeout_seconds=0.01,
+                poll_interval_seconds=0.01,
+                messages_db=db_path,
+            )
+
+            self.assertEqual(result["status"], "timeout")
+            self.assertFalse(result["reply_interpreted_as_yes"])
 
     def test_harness_plan_routes_tts_to_holler_lane(self) -> None:
         with seeded_store() as seed:

@@ -88,6 +88,142 @@ The startup line reports `required_dwell_seconds`; this is the configured thresh
 
 Omit `--no-window` when the operator needs the preview overlay to position the floor/low zone.
 
+No-send agent pipeline:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 600 \
+  --no-window \
+  --auto-agent-dry-run
+```
+
+Purpose: after each persisted possible floor-stay event, automatically update the OBS overlay, create a local Gemma alert draft, stage an allowlisted iMessage request, and run Hermes no-send preflight.
+
+Outputs: normal `event_persisted` line plus `post_event_agent_dry_run` receipt with `event_id`, `draft_id`, `request_id`, `attempt_id`, `execution_state`, and `external_action_performed: false`.
+
+Validation: `test_v0_floor_stay_live.py` verifies the CLI option and machine-readable receipt formatting. Runtime validation requires a live event and must still stop before live iMessage or FaceTime execution.
+
+Agent safety: `manual-operator`. This performs local no-send automation only. It does not send iMessage, start FaceTime, play TTS, dispatch help, or expose raw video to Gemma/Hermes.
+
+Live iMessage test:
+
+```bash
+export CARESIGHT_LIVE_IMESSAGE_TARGET="<private-imessage-handle>"
+
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 600 \
+  --no-window \
+  --auto-agent-live-run \
+  --live-approved
+```
+
+Purpose: after each persisted possible floor-stay event, run the same post-event chain, then send the approved text to the allowlisted emergency-contact target:
+
+```text
+CareSight alert. Possible floor stay observed in the Living Room. Needs review. Would you like to connect to CareSight?
+```
+
+Outputs: normal `event_persisted` line, a Hermes dry-run attempt receipt in SQLite, and `post_event_agent_live_run` with the staged `request_id`, live `attempt_id`, and `external_action_performed: true`.
+
+Agent safety: `human-review-required`. This sends one live iMessage only after `--live-approved` and a private target are provided. It does not automatically start FaceTime because reply monitoring is not enabled by default.
+
+Reply-gated FaceTime handoff:
+
+```bash
+export CARESIGHT_LIVE_FACETIME_TARGET="<private-facetime-handle>"
+
+python3 apps/caresight-hub/scripts/caresight_live_handoff.py \
+  facetime-if-yes <request_id> \
+  --reply-text "yes please" \
+  --live-approved
+```
+
+Purpose: open FaceTime for the same allowlisted contact only when the operator-provided reply text is interpreted as yes-like.
+
+Validation: `test_agent_assist.py` verifies yes/no reply interpretation, target redaction, and dry-run live-handoff receipts. `test_v0_floor_stay_live.py` verifies the live-run CLI option and receipt formatting.
+
+Agent safety: `human-review-required`. This is an operator-mediated handoff. It does not start emergency dispatch, diagnose, or expose raw video to an agent. OBS Virtual Camera must be selected/configured by the operator.
+
+Automatic reply-gated demo:
+
+```bash
+export CARESIGHT_LIVE_IMESSAGE_TARGET="<private-imessage-handle>"
+export CARESIGHT_LIVE_FACETIME_TARGET="<private-facetime-handle>"
+
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 600 \
+  --no-window \
+  --auto-agent-live-run \
+  --live-approved \
+  --obs-live-preview \
+  --auto-facetime-on-reply \
+  --no-response-escalation-seconds 90 \
+  --play-tts-after-facetime \
+  --tts-audio-route blackhole \
+  --tts-volume 2.5 \
+  --tts-after-facetime-delay-seconds 8 \
+  --post-facetime-hold-seconds 30
+```
+
+Purpose: send the approved text when a real event persists, watch the local Messages database for a yes-like reply from the same target, open FaceTime, wait briefly for the caregiver to answer, play the approved Dakota TTS readout, and keep the local process alive briefly so the OBS feed remains available.
+
+Inputs: same private iMessage/FaceTime handles as the live iMessage test, `imsg` or local Messages database read access, OBS Virtual Camera already started/selected in FaceTime, and approved TTS playback.
+
+Outputs: `post_event_agent_live_run` with reply-watch status, FaceTime attempt ID if opened, and TTS playback status if attempted.
+
+Before opening FaceTime, the live handoff attempts to switch OBS to `CareSight Hub - FaceTime Mobile`, a portrait-safe scene for phone recipients. Run `./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile"` after pulling this change so OBS has the scene.
+
+If no caregiver reply is observed before `--no-response-escalation-seconds`, the live handoff sends one bounded follow-up iMessage with the local event snapshot attached:
+
+```text
+This is CareSight Hub escalation. We have not heard back, but there is an event that requires caregiver verification. Please see the image attached, and reply yes to see a live feed.
+```
+
+This is a no-response follow-up only. A negative reply does not trigger FaceTime or the follow-up escalation.
+
+Default TTS readout:
+
+```text
+This is an automated CareSight message. A possible floor stay was observed in the Living Room. Please review the live feed. CareSight will keep this handoff open briefly for review.
+```
+
+`--obs-live-preview` writes annotated detector frames to `apps/obs-hub/config/live_preview.jpg`. The OBS escalation browser overlay displays that local image behind the event panels so the caregiver can see the live detector view with boxes/zone overlay without OBS opening the webcam separately.
+
+Agent safety: `human-review-required`. This prefers `imsg` when installed, otherwise reads only the local Messages database for the configured contact target after the alert is sent. If macOS blocks database access, it fails closed with setup instructions; it does not bypass Full Disk Access, dispatch help, diagnose, or send raw video to an agent.
+
+Floor-stay detector diagnostics:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 60 \
+  --no-window \
+  --obs-live-preview \
+  --debug-floor-stay
+```
+
+Purpose: print one `floor_stay_debug` JSON line per second showing the observed person boxes, whether each bottom-center is inside the configured floor zone, whether the box passes low-posture shape checks, and the current dwell seconds.
+
+Use this when a live test appears not to trigger. A valid possible-floor-stay event requires a person detection that is both inside the floor zone and low-posture for the configured dwell window.
+
+Optional audio route check:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_audio_route.py check
+python3 apps/caresight-hub/scripts/caresight_audio_route.py install-plan
+```
+
+Purpose: verify whether `SwitchAudioSource` and `BlackHole 2ch` are available for temporarily routing Dakota TTS into FaceTime. The install plan prints the Homebrew commands for `imsg`, `switchaudio-osx`, and `blackhole-2ch`.
+
+Agent safety: `manual-operator`. This check does not change audio devices. The `run-with-blackhole` subcommand temporarily switches default input/output to `BlackHole 2ch` only while its child command runs, then restores the prior devices.
+
 Readiness check:
 
 ```bash
@@ -550,7 +686,7 @@ Agent safety: `manual-operator`.
 Command:
 
 ```bash
-python3 apps/caresight-hub/scripts/caresight_tts.py --text "CareSight noted a possible floor stay in the living room. Please review when available."
+python3 apps/caresight-hub/scripts/caresight_tts.py --voice dakota --text "CareSight alert. Possible floor stay observed in the Living Room. Needs review."
 ```
 
 Purpose: generate local Holler TTS audio from approved bounded text.
@@ -559,9 +695,53 @@ Inputs: ignored local runtime venv, Holler model files under `apps/caresight-hub
 
 Outputs: local audio file under `apps/caresight-hub/data/tts/` by default.
 
-Validation: local generation succeeds with the `kit` voice. Playback is not part of default validation.
+Validation: local generation succeeds. Operator feedback on 2026-05-21 confirmed playback functionally works and sounds clean, with `dakota` preferred for the final validation pass. Playback is not part of default validation.
 
 Agent safety: `manual-operator`. The default command generates audio only. `--play` requires explicit human approval because it plays local audio.
+
+## CareSight OBS Scene Setup
+
+Command:
+
+```bash
+./scripts/setup_obs_scene.sh --dry-run
+```
+
+Purpose: create or inspect the local CareSight OBS scene package for caregiver-facing visual handoff demos.
+
+Inputs: OBS Studio 28 or newer, optional `OBS_WEBSOCKET_HOST`, optional `OBS_WEBSOCKET_PORT`, optional `OBS_WEBSOCKET_PASSWORD`, optional `CARESIGHT_OBS_SAMPLE_IMAGE`, and local files under `apps/obs-hub/`.
+
+Outputs: a repo-local `.venv-obs/`, validated scene plan, and when OBS websocket is enabled, the scenes `CareSight Hub - Dashboard`, `CareSight Hub - Escalation`, `CareSight Camera - Living Room`, `CareSight Camera - Kitchen`, `CareSight Camera - Hallway`, and `CareSight Camera - Bedroom`.
+
+Validation: `apps/obs-hub/tools/setup_obs_scenes.py --dry-run` validates JSON config and prints planned scenes without connecting to OBS. Live OBS setup requires the operator to enable OBS websocket and confirm the scene shows only intended CareSight content.
+
+Agent safety: `manual-operator`. The setup can create local OBS scenes, but it must not start FaceTime, start OBS Virtual Camera for a live handoff, capture private desktop content, send raw video, or perform caregiver messaging without human approval.
+
+## CareSight OBS Overlay Update
+
+Command:
+
+```bash
+./scripts/update_obs_overlay.sh --event-id <event_id>
+```
+
+Purpose: refresh the local browser-overlay state file from SQLite so OBS scenes show current event and recent activity context without rebuilding OBS scenes.
+
+Inputs: optional `--db <path>`, optional `--event-id <event_id>`, optional `--sample`, optional `--dry-run`, optional `--watch`, optional `--interval-seconds <seconds>`, and local files under `apps/obs-hub/config/`.
+
+Outputs: `apps/obs-hub/config/current_event.json` and `apps/obs-hub/config/current_event.js` by default. Browser overlays prefer the JavaScript state file because OBS Browser Source can load local scripts more reliably than JSON fetches from `file://` URLs.
+
+Validation: `./scripts/update_obs_overlay.sh --sample --dry-run` prints bounded fixture overlay JSON. `./scripts/update_obs_overlay.sh --event-id <event_id> --dry-run` prints SQLite-derived overlay JSON without writing. The tool rejects unsafe display wording such as detected-fall or dispatch language.
+
+Watch mode:
+
+```bash
+./scripts/update_obs_overlay.sh --watch
+```
+
+Watch mode follows the latest SQLite event and refreshes the OBS overlay state at the configured interval. It is the preferred operator command during live testing because new events appear in OBS without manually rerunning the update command.
+
+Agent safety: `agent-safe-read` for one-shot updates and `manual-operator` for watch mode. The command reads SQLite and writes local overlay state only; it does not create OBS scenes, start virtual camera, start FaceTime, send messages, expose raw video, or execute Hermes delivery.
 
 ## CareSight Hermes Start
 

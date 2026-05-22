@@ -5,6 +5,7 @@ coverage/
 .env
 .env.*
 .venv/
+.venv-obs/
 __pycache__/
 .pytest_cache/
 apps/caresight-hub/vendor/yolo-mlx/models/
@@ -14,4 +15,9 @@ apps/caresight-hub/vendor/yolo-mlx/results/
 apps/caresight-hub/images/
 apps/caresight-hub/results/
 apps/caresight-hub/data/
+apps/obs-hub/assets/*
+!apps/obs-hub/assets/.gitkeep
+apps/obs-hub/config/current_event.json
+apps/obs-hub/config/current_event.js
+apps/obs-hub/config/live_preview.jpg
 docs/goals/**/.goalbuddy-board/

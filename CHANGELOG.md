@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added CareSight OBS Hub scene setup with browser-source overlays, local websocket-driven scene creation, dry-run planning, and FaceTime/OBS Virtual Camera operator docs.
+- Added a dynamic OBS overlay-state update tool so local agents can refresh event and recent-activity context from SQLite without rebuilding OBS scenes.
+- Added OBS overlay watch mode for live sessions and shortened caregiver-facing event IDs while preserving full IDs in SQLite/audit state.
+- Added a live-detector `--auto-agent-dry-run` path that automatically updates OBS overlay state, creates a local Gemma alert draft, stages an allowlisted iMessage request, and records Hermes no-send preflight after an event is persisted.
+- Recorded 2026-05-21 human validation feedback: Gemma wording approved, Dakota requested for final TTS playback, OBS browser-overlay scene direction approved, and `contact_emergency_primary` approved for iMessage/FaceTime testing without tracking real contact details.
+- Added requested alert lifecycle follow-up cadence notes for unresolved alerts and resolution updates with total-duration estimates.
 - Added production-validation Sprint 01 Case A artifacts for the accepted seeded-real event: generated review packet and blackbox receipt JSON plus skimmable Markdown companions under `docs/audits/production-validation/sprint-01/`.
 - Reworked Sprint 01 review-packet and blackbox-receipt Markdown output into clear human-facing summaries while keeping JSON as the machine/audit receipt format.
 - Recorded human acceptance of the Case A Markdown direction as an actionable audit receipt surface, with evidence-label translation and future concise Gemma alerts kept as follow-up boundaries.
@@ -15,6 +21,18 @@
 - Added repeatable local operations scripts for starting/stopping the Gemma endpoint and generating Holler TTS audio, plus getting-started and local model operations docs.
 - Added Hermes readiness and stack start/stop scripts so the local test stack can bring Gemma online, pulse-check chat completions, verify Hermes no-send readiness, and stop cleanly.
 - Added a local `gemma_mlx` agent-draft provider path for SQLite-derived audit context, generated the Case A Gemma draft/no-send Hermes receipts, and recorded Case B Gemma non-escalation.
+- Added an explicit macOS live-handoff harness for human-approved iMessage sends and reply-gated FaceTime opening, with private contact targets kept out of Git and persisted execution receipts redacting target handles.
+- Added an automatic demo mode that can watch local Messages for a yes-like reply, open FaceTime to the allowlisted contact, and play approved Dakota TTS after the handoff starts.
+- Added optional `imsg` reply-watch support and a BlackHole/SwitchAudioSource audio-route check so Dakota TTS can be routed into FaceTime only during the triggered handoff.
+- Added an OBS live-preview image path from the detector so the FaceTime handoff can show annotated YOLO frames without OBS opening the camera separately.
+- Added `--debug-floor-stay` live-loop diagnostics so operator tests can see why a person box is or is not being counted as a floor-stay candidate before the iMessage/FaceTime path runs.
+- Added FaceTime/TTS timing controls so the automatic handoff waits briefly after call initiation, plays an automated CareSight message, and holds the live process open for a bounded review window.
+- Corrected the FaceTime pre-call coordinate fallback so the live handoff clicks the visible video-call control instead of only opening the FaceTime pre-call sheet.
+- Added a portrait-safe `CareSight Hub - FaceTime Mobile` OBS scene for phone recipients and switched live FaceTime handoffs to request that scene before calling.
+- Added local TTS playback volume control so FaceTime handoff audio can be boosted through `afplay` while keeping generation local.
+- Added a bounded no-response iMessage escalation that sends one follow-up with the local event snapshot attached before continuing to wait for a yes-like reply.
+- Added a short BlackHole hold after TTS playback so the virtual call input is not restored immediately at the end of the utterance.
+- Added a dedicated OBS `CareSight FaceTime Live Detector Preview` source and overlay fallback for `live_preview.jpg` so the FaceTime scene has an explicit detector-feed source instead of relying only on event JSON.
 - Added install/setup wrappers for the local runtime, Gemma/Holler models, OBS, full prerequisite install, fixture setup, and a machine-readable command registry.
 - Added SQLite execution-attempt logging for dry-run external-action receipts before any Hermes/iMessage/FaceTime/TTS live path is enabled.
 - Added redacted contact allowlist handling for iMessage/FaceTime staging and blocked unconfigured contact IDs without committing real contact details.

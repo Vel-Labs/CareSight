@@ -56,6 +56,7 @@ async function assertRootIsClean(allowedRootEntries: string[]): Promise<void> {
   const ignored = new Set([
     ".git",
     ".venv",
+    ".venv-obs",
     ".goalbuddy-board",
     "__pycache__",
     ".pytest_cache",
@@ -159,6 +160,7 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
   const ignored = new Set([
     ".git",
     ".venv",
+    ".venv-obs",
     ".goalbuddy-board",
     "__pycache__",
     ".pytest_cache",
@@ -169,6 +171,11 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
     "results"
   ]);
   const ignoredVendorRoots = new Set(["apps/caresight-hub/vendor/hermes-agent"]);
+  const ignoredFiles = new Set([
+    "apps/obs-hub/config/current_event.json",
+    "apps/obs-hub/config/current_event.js",
+    "apps/obs-hub/config/live_preview.jpg"
+  ]);
   const entries = await readdir(path.join(dir, prefix), { withFileTypes: true });
   const files: string[] = [];
 
@@ -177,7 +184,10 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
       continue;
     }
     const relative = path.join(prefix, entry.name);
-    if (ignoredVendorRoots.has(relative)) {
+    if (ignoredVendorRoots.has(relative) || ignoredFiles.has(relative)) {
+      continue;
+    }
+    if (relative.startsWith("apps/obs-hub/assets/") && relative !== "apps/obs-hub/assets/.gitkeep") {
       continue;
     }
     if (entry.isDirectory()) {

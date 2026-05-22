@@ -1,0 +1,37 @@
+{
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "cameras": [
+    {
+      "id": "C1",
+      "zone": "Living Room",
+      "scene": "CareSight Camera - Living Room",
+      "source_name": "CareSight Feed - Living Room",
+      "source_type": "image",
+      "image_path": "apps/obs-hub/assets/sample-living-room.jpg"
+    },
+    {
+      "id": "C2",
+      "zone": "Kitchen",
+      "scene": "CareSight Camera - Kitchen",
+      "source_name": "CareSight Feed - Kitchen",
+      "source_type": "placeholder"
+    },
+    {
+      "id": "C3",
+      "zone": "Hallway",
+      "scene": "CareSight Camera - Hallway",
+      "source_name": "CareSight Feed - Hallway",
+      "source_type": "placeholder"
+    },
+    {
+      "id": "C4",
+      "zone": "Bedroom",
+      "scene": "CareSight Camera - Bedroom",
+      "source_name": "CareSight Feed - Bedroom",
+      "source_type": "placeholder"
+    }
+  ]
+}

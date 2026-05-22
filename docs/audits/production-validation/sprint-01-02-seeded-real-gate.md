@@ -18,3 +18,11 @@ Case B, normal/no-event path:
 Decision:
 
 The seeded-real A/B proof is sufficient to proceed to human review of wording, contact mapping, TTS playback, OBS/visual privacy, and live-action approvals. It is not approval to send iMessage, start FaceTime, play audio, or capture/share a visual feed.
+
+2026-05-21 human feedback advanced the gate:
+
+- Gemma wording approved with requested time relevance and alert lifecycle follow-up/resolution additions.
+- TTS playback functionally works and Dakota voice is approved with the shorter alert wording.
+- OBS visual handoff direction approved as websocket-managed scenes plus browser-source overlays; scenes were created, but dynamic overlay updates and privacy confirmation remain pending.
+- `contact_emergency_primary` approved for iMessage and FaceTime testing, with the real contact identity kept outside Git.
+- iMessage test text is approved, but no live send has been executed yet.

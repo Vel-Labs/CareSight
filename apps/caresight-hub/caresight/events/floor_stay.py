@@ -14,6 +14,10 @@ class FloorStayDetector:
         self._tracker = TrackState(occlusion_grace_seconds=config.tracking.occlusion_grace_seconds)
         self._entered_at_by_track: dict[str, float] = {}
         self._last_event_at_by_track: dict[str, float] = {}
+        self._floor_candidate_entered_at: float | None = None
+        self._floor_candidate_last_seen_at: float | None = None
+        self._last_floor_event_at: float | None = None
+        self._last_diagnostic: dict = {"status": "not_started"}
 
     def update(self, detections: list[Detection], now: float | None = None) -> dict | None:
         if now is None:
@@ -27,21 +31,36 @@ class FloorStayDetector:
             for track_id, entered_at in self._entered_at_by_track.items()
             if track_id in active_track_ids
         }
+        self._last_diagnostic = self._build_diagnostic(tracked_people, person, now)
         if person is None:
+            if (
+                self._floor_candidate_last_seen_at is not None
+                and now - self._floor_candidate_last_seen_at > self.config.tracking.occlusion_grace_seconds
+            ):
+                self._floor_candidate_entered_at = None
+                self._floor_candidate_last_seen_at = None
+                self._last_floor_event_at = None
             return None
 
-        entered_at = self._entered_at_by_track.get(person.track_id)
-        if entered_at is None:
+        if person.track_id not in self._entered_at_by_track:
             self._entered_at_by_track[person.track_id] = now
+        if self._floor_candidate_entered_at is None:
+            self._floor_candidate_entered_at = now
+        self._floor_candidate_last_seen_at = now
+
+        entered_at = self._floor_candidate_entered_at
+        if entered_at is None:
+            self._last_diagnostic = self._build_diagnostic(tracked_people, person, now)
             return None
 
         dwell_seconds = now - entered_at
-        last_event_at = self._last_event_at_by_track.get(person.track_id)
+        self._last_diagnostic = self._build_diagnostic(tracked_people, person, now)
         if dwell_seconds < self.config.floor_stay.dwell_seconds:
             return None
-        if last_event_at is not None and now - last_event_at < self.config.tracking.dedupe_seconds:
+        if self._last_floor_event_at is not None and now - self._last_floor_event_at < self.config.tracking.dedupe_seconds:
             return None
 
+        self._last_floor_event_at = now
         self._last_event_at_by_track[person.track_id] = now
         return self._build_event(person, dwell_seconds, now)
 
@@ -50,6 +69,9 @@ class FloorStayDetector:
             now=now,
             missing_seconds=self.config.tracking.missing_seconds,
         )
+
+    def diagnostic(self) -> dict:
+        return self._last_diagnostic
 
     def _best_person_in_floor_zone(self, detections: list[TrackSnapshot]) -> TrackSnapshot | None:
         people_in_zone = [
@@ -64,6 +86,54 @@ class FloorStayDetector:
         if not people_in_zone:
             return None
         return max(people_in_zone, key=lambda track: track.detection.confidence)
+
+    def _build_diagnostic(
+        self,
+        tracked_people: list[TrackSnapshot],
+        selected: TrackSnapshot | None,
+        now: float,
+    ) -> dict:
+        people = []
+        for track in tracked_people:
+            detection = track.detection
+            x1, y1, x2, y2 = detection.bbox_xyxy
+            width = max(x2 - x1, 1.0)
+            height = max(y2 - y1, 1.0)
+            aspect_ratio = width / height
+            center_y = ((y1 + y2) / 2.0) / detection.frame_height
+            bottom_center = detection.bottom_center_normalized
+            in_floor_zone = self.config.floor_zone.contains_normalized_point(*bottom_center)
+            low_posture = _looks_like_low_posture(detection)
+            entered_at = self._entered_at_by_track.get(track.track_id)
+            if selected is not None and track.track_id == selected.track_id:
+                entered_at = self._floor_candidate_entered_at
+            dwell_seconds = 0.0 if entered_at is None else max(0.0, now - entered_at)
+            people.append(
+                {
+                    "track_id": track.track_id,
+                    "confidence": round(detection.confidence, 4),
+                    "bbox_xyxy": [round(value, 1) for value in detection.bbox_xyxy],
+                    "aspect_ratio": round(aspect_ratio, 2),
+                    "center_y": round(center_y, 2),
+                    "bottom_center": [round(value, 2) for value in bottom_center],
+                    "in_floor_zone": in_floor_zone,
+                    "low_posture": low_posture,
+                    "dwell_seconds": round(dwell_seconds, 2),
+                }
+            )
+
+        status = "no_person_detected"
+        if people:
+            status = "person_detected_but_not_floor_stay_candidate"
+        if selected is not None:
+            status = "floor_stay_candidate_tracking"
+
+        return {
+            "status": status,
+            "required_dwell_seconds": self.config.floor_stay.dwell_seconds,
+            "selected_track_id": selected.track_id if selected else None,
+            "people": people,
+        }
 
     def _build_event(self, track: TrackSnapshot, dwell_seconds: float, now: float) -> dict:
         detection = track.detection

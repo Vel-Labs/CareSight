@@ -70,6 +70,33 @@ class FloorStayDetectorTest(unittest.TestCase):
         assert event is not None
         self.assertEqual(event["evidence"]["track_id"], "track_1")
 
+    def test_floor_stay_dwell_survives_jittery_candidate_track_ids(self) -> None:
+        config = CareSightConfig.default()
+        detector = FloorStayDetector(config)
+        first = Detection(
+            class_name="person",
+            confidence=0.91,
+            bbox_xyxy=(50, 430, 650, 715),
+            frame_width=1280,
+            frame_height=720,
+        )
+        shifted = Detection(
+            class_name="person",
+            confidence=0.88,
+            bbox_xyxy=(680, 430, 1280, 715),
+            frame_width=1280,
+            frame_height=720,
+        )
+
+        detector.update([first], now=100.0)
+        event = detector.update([shifted], now=109.0)
+
+        self.assertIsNotNone(event)
+        assert event is not None
+        self.assertEqual(event["event_type"], "possible_floor_stay")
+        self.assertEqual(event["evidence"]["track_id"], "track_2")
+        self.assertGreaterEqual(event["evidence"]["dwell_seconds"], 8.0)
+
     def test_long_occlusion_resets_floor_stay_dwell(self) -> None:
         config = CareSightConfig.default()
         detector = FloorStayDetector(config)
@@ -124,6 +151,27 @@ class FloorStayDetectorTest(unittest.TestCase):
         event = detector.update([detection], now=109.0)
 
         self.assertIsNone(event)
+
+    def test_diagnostic_explains_non_floor_stay_person(self) -> None:
+        config = CareSightConfig.default()
+        detector = FloorStayDetector(config)
+        detection = Detection(
+            class_name="person",
+            confidence=0.95,
+            bbox_xyxy=(500, 0, 1000, 720),
+            frame_width=1280,
+            frame_height=720,
+        )
+
+        detector.update([detection], now=100.0)
+        diagnostic = detector.diagnostic()
+
+        self.assertEqual(diagnostic["status"], "person_detected_but_not_floor_stay_candidate")
+        self.assertEqual(diagnostic["required_dwell_seconds"], 8.0)
+        self.assertEqual(diagnostic["selected_track_id"], None)
+        self.assertEqual(len(diagnostic["people"]), 1)
+        self.assertTrue(diagnostic["people"][0]["in_floor_zone"])
+        self.assertFalse(diagnostic["people"][0]["low_posture"])
 
 
 if __name__ == "__main__":

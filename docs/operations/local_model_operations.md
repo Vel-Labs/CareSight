@@ -154,7 +154,8 @@ Generate a local Holler TTS WAV without playback:
 
 ```bash
 python3 apps/caresight-hub/scripts/caresight_tts.py \
-  --text "CareSight noted a possible floor stay in the living room. Please review when available."
+  --voice dakota \
+  --text "CareSight alert. Possible floor stay observed in the Living Room. Needs review."
 ```
 
 Default output directory:
@@ -163,10 +164,10 @@ Default output directory:
 apps/caresight-hub/data/tts/
 ```
 
-Default voice:
+Preferred validation voice:
 
 ```text
-kit
+dakota
 ```
 
 Known local voices include `kit`, `dakota`, `nora`, `joe`, `oliver`, and `tessa`.
@@ -174,7 +175,10 @@ Known local voices include `kit`, `dakota`, `nora`, `joe`, `oliver`, and `tessa`
 Playback is intentionally opt-in:
 
 ```bash
-python3 apps/caresight-hub/scripts/caresight_tts.py --play
+python3 apps/caresight-hub/scripts/caresight_tts.py \
+  --voice dakota \
+  --text "CareSight alert. Possible floor stay observed in the Living Room. Needs review." \
+  --play
 ```
 
 Only use playback after the message wording has been approved for human validation. TTS may read an approved utterance; it must not decide what happened.
@@ -196,6 +200,176 @@ Keep context and generation bounded:
 - No iMessage, FaceTime, Apple Notes, OBS capture, or TTS playback without the relevant human approval gate.
 - No medical diagnosis, fall certainty, injury claim, or autonomous emergency dispatch.
 - JSON remains the machine/audit receipt; Gemma may draft concise caregiver-facing wording.
+
+## OBS Visual Handoff Scenes
+
+CareSight OBS Hub lives under `apps/obs-hub/` and uses OBS browser sources for caregiver-facing overlays.
+
+Dry-run:
+
+```bash
+./scripts/setup_obs_scene.sh --dry-run
+```
+
+Live local setup:
+
+```bash
+export OBS_WEBSOCKET_PASSWORD="your-obs-password"
+./scripts/setup_obs_scene.sh
+```
+
+If OBS websocket is unavailable, enable it in OBS under `Tools > WebSocket Server Settings`, set port `4455`, set/copy the password, and rerun the setup command.
+
+Refresh dynamic overlay state:
+
+```bash
+./scripts/update_obs_overlay.sh --event-id evt_d9aa38bdc636459c92ea4e25f665cd0d
+```
+
+Follow the latest SQLite event during live testing:
+
+```bash
+./scripts/update_obs_overlay.sh --watch
+```
+
+Local Gemma/Hermes tools should prefer the one-shot update command for explicit visual handoff updates. Operators should prefer watch mode during live testing. Both rewrite ignored `apps/obs-hub/config/current_event.json` and `apps/obs-hub/config/current_event.js` from SQLite-derived event context, while OBS scenes and browser sources remain stable.
+
+## Automatic No-Send Event Pipeline
+
+After `python3 apps/caresight-hub/scripts/caresight_stack_start.py` reports `stack_started`, the live detector can run the local no-send agent path automatically:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 600 \
+  --no-window \
+  --auto-agent-dry-run
+```
+
+For each persisted event, the detector updates OBS overlay state, asks local Gemma for a bounded alert draft, stages an allowlisted iMessage request, and records a Hermes no-send preflight receipt. It prints `post_event_agent_dry_run` when the chain succeeds.
+
+This is not a live-send command. Human approval remains required before any iMessage, FaceTime, TTS playback, or visual handoff execution.
+
+## Human-Approved Live Handoff Test
+
+The bounded live test is split into two steps:
+
+1. Send the approved alert text after a real persisted event.
+2. Open FaceTime only if the caregiver reply is yes-like and the operator supplies that reply text.
+
+The live alert text is:
+
+```text
+CareSight alert. Possible floor stay observed in the Living Room. Needs review. Would you like to connect to CareSight?
+```
+
+Set private contact targets in the shell or in an ignored private allowlist. Do not commit real phone numbers, emails, BlueBubbles credentials, or contact handles.
+
+```bash
+export CARESIGHT_LIVE_IMESSAGE_TARGET="<private-imessage-handle>"
+export CARESIGHT_LIVE_FACETIME_TARGET="<private-facetime-handle>"
+```
+
+Live detector command:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 600 \
+  --no-window \
+  --auto-agent-live-run \
+  --live-approved
+```
+
+When `post_event_agent_live_run` prints, copy its `request_id`. If the caregiver replies affirmatively, run:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_live_handoff.py \
+  facetime-if-yes <request_id> \
+  --reply-text "yes please" \
+  --live-approved
+```
+
+The repo does not poll the macOS Messages database by default. Reply polling would require a separate privacy decision because it usually needs Full Disk Access.
+
+For the hackathon live demo, the detector can run the full approved flow:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 600 \
+  --no-window \
+  --auto-agent-live-run \
+  --live-approved \
+  --obs-live-preview \
+  --auto-facetime-on-reply \
+  --no-response-escalation-seconds 90 \
+  --play-tts-after-facetime \
+  --tts-audio-route blackhole \
+  --tts-volume 2.5 \
+  --tts-after-facetime-delay-seconds 8 \
+  --post-facetime-hold-seconds 30
+```
+
+This prefers `imsg` for a yes-like reply after the alert send, then falls back to the scoped SQLite reader. `imsg` and the fallback both need macOS Full Disk Access to read Messages. If access is blocked, the command fails closed and no FaceTime/TTS step runs automatically. After FaceTime is requested, the command waits briefly before TTS playback and then keeps running for a bounded review window so the OBS feed does not disappear immediately.
+
+The handoff switches OBS to `CareSight Hub - FaceTime Mobile` before opening FaceTime. This scene keeps the live detector feed and current event inside a portrait-safe center column so phone recipients do not see the landscape dashboard cropped off-screen.
+
+The mobile scene uses `CareSight FaceTime Live Detector Preview`, an OBS image source pointed at `apps/obs-hub/config/live_preview.jpg`. The live detector updates that file when run with `--obs-live-preview`, so the caregiver sees the detector-owned annotated feed without OBS competing for the webcam.
+
+If no reply is observed before the no-response escalation window, the command sends one follow-up iMessage with the local event snapshot attached:
+
+```text
+This is CareSight Hub escalation. We have not heard back, but there is an event that requires caregiver verification. Please see the image attached, and reply yes to see a live feed.
+```
+
+The follow-up uses the same allowlisted target and remains bounded to caregiver verification. It does not dispatch help, diagnose, or send raw video to an agent.
+
+`--obs-live-preview` writes the annotated detector frame to:
+
+```text
+apps/obs-hub/config/live_preview.jpg
+```
+
+The OBS escalation browser overlay reads that image directly, so FaceTime can show the same boxed detector view while OpenCV remains the only process that owns the camera.
+
+When the detector appears not to fire, add `--debug-floor-stay` to the same live command or run a short diagnostic-only pass:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 60 \
+  --no-window \
+  --obs-live-preview \
+  --debug-floor-stay
+```
+
+Each `floor_stay_debug` line reports whether a person box is in the configured floor zone, whether it has low-posture shape, and the current dwell seconds. This is the fastest way to tell camera/source setup problems from post-event iMessage/FaceTime failures.
+
+The TTS readout uses Dakota by default:
+
+```text
+This is an automated CareSight message. A possible floor stay was observed in the Living Room. Please review the live feed. CareSight will keep this handoff open briefly for review.
+```
+
+Audio routing into the FaceTime call depends on the operator's macOS audio setup. `--tts-audio-route blackhole` uses `SwitchAudioSource` to temporarily set default input/output to `BlackHole 2ch` while TTS plays, then restores the prior devices. This requires:
+
+```bash
+brew install switchaudio-osx
+brew install --cask blackhole-2ch
+```
+
+BlackHole install requires a reboot before the device appears. Run:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_audio_route.py check
+```
+
+The temporary BlackHole route is intended for the TTS moment only; it is not a permanent microphone change.
 
 ## Command Registry
 

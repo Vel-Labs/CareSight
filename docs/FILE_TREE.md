@@ -34,6 +34,7 @@ apps/caresight-hub/caresight/runtime/__init__.py
 apps/caresight-hub/caresight/runtime/agent_assist/__init__.py
 apps/caresight-hub/caresight/runtime/agent_assist/contacts.py
 apps/caresight-hub/caresight/runtime/agent_assist/harness.py
+apps/caresight-hub/caresight/runtime/agent_assist/live_handoff.py
 apps/caresight-hub/caresight/runtime/agent_assist/service.py
 apps/caresight-hub/caresight/runtime/agents/__init__.py
 apps/caresight-hub/caresight/runtime/agents/policy.py
@@ -77,6 +78,7 @@ apps/caresight-hub/config/hermes/model-routes.json
 apps/caresight-hub/config/v0.local.json
 apps/caresight-hub/pyproject.toml
 apps/caresight-hub/scripts/care_console.py
+apps/caresight-hub/scripts/caresight_audio_route.py
 apps/caresight-hub/scripts/caresight_gemma_start.py
 apps/caresight-hub/scripts/caresight_gemma_stop.py
 apps/caresight-hub/scripts/caresight_hermes_start.py
@@ -86,6 +88,7 @@ apps/caresight-hub/scripts/caresight_install_model.py
 apps/caresight-hub/scripts/caresight_install_models.py
 apps/caresight-hub/scripts/caresight_install_obs.py
 apps/caresight-hub/scripts/caresight_install_runtime.py
+apps/caresight-hub/scripts/caresight_live_handoff.py
 apps/caresight-hub/scripts/caresight_setup_fixtures.py
 apps/caresight-hub/scripts/caresight_stack_start.py
 apps/caresight-hub/scripts/caresight_stack_stop.py
@@ -224,6 +227,18 @@ apps/caresight-hub/vendor/yolo-mlx/tests/test_segmentation.py
 apps/caresight-hub/vendor/yolo-mlx/tests/test_segmentation_integration.py
 apps/caresight-hub/vendor/yolo-mlx/tests/test_tracking.py
 apps/caresight-hub/vendor/yolo-mlx/webAI-contributor-license-agreement.md
+apps/obs-hub/README.md
+apps/obs-hub/assets/.gitkeep
+apps/obs-hub/config/cameras.json
+apps/obs-hub/config/sample_event.json
+apps/obs-hub/overlays/camera-feed.html
+apps/obs-hub/overlays/dashboard.html
+apps/obs-hub/overlays/escalation.html
+apps/obs-hub/overlays/facetime-mobile.html
+apps/obs-hub/overlays/obs-overlay.css
+apps/obs-hub/overlays/obs-overlay.js
+apps/obs-hub/tools/setup_obs_scenes.py
+apps/obs-hub/tools/update_obs_event.py
 contracts/README.md
 contracts/examples/invalid/agent-action-request-executed.json
 contracts/examples/invalid/agent-action-request-missing-allowlist.json
@@ -328,6 +343,7 @@ docs/audits/production-validation/sprint-01/case-b-normal-desk-false-positive.md
 docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.json
 docs/audits/production-validation/sprint-01/case-b-normal-desk-no-event.md
 docs/audits/production-validation/sprint-01/human-acceptance.md
+docs/audits/production-validation/sprint-02/alert-lifecycle-follow-up-cadence.md
 docs/audits/production-validation/sprint-02/allowlisted-contacts-redacted.json
 docs/audits/production-validation/sprint-02/case-a-agent-draft.json
 docs/audits/production-validation/sprint-02/case-a-gemma-draft.json
@@ -347,6 +363,7 @@ docs/audits/production-validation/sprint-02/facetime-tts-approval-blocked.json
 docs/audits/production-validation/sprint-02/facetime-tts-execution-blocked.json
 docs/audits/production-validation/sprint-02/gemma-local-endpoint.json
 docs/audits/production-validation/sprint-02/hermes-invocation-dry-run.json
+docs/audits/production-validation/sprint-02/human-validation-feedback-2026-05-21.md
 docs/audits/production-validation/sprint-02/production-acceptance.md
 docs/audits/production-validation/sprint-02/screen-capture-obs-readiness.json
 docs/caresight_hub_docs_pack/01_product_roadmap.md
@@ -471,6 +488,8 @@ packages/core/src/read-json-files.ts
 packages/core/src/types.ts
 packages/core/src/validate-contracts.ts
 scripts/init-template.ts
+scripts/setup_obs_scene.sh
+scripts/update_obs_overlay.sh
 scripts/validate-contracts.ts
 scripts/validate-scaffold.ts
 skills/README.md

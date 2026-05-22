@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>CareSight Camera Feed Overlay</title>
+  <link rel="stylesheet" href="./obs-overlay.css" />
+</head>
+<body>
+  <main class="camera-overlay">
+    <section class="brand">
+      <div class="brand-title">CareSight Hub</div>
+      <div class="brand-subtitle">
+        Zone: <span id="zone">Living Room</span> | Camera: <span id="camera">C1</span>
+        <span class="badge">LIVE</span>
+      </div>
+    </section>
+
+    <section class="clock">
+      <div class="clock-date" data-now-date>May 21, 2026</div>
+      <div class="clock-time" data-now-time>7:43 PM</div>
+      <div class="clock-status">System: <strong>Monitoring</strong></div>
+    </section>
+
+    <section class="panel event-panel">
+      <div class="panel-title">Current Event</div>
+      <div class="event-label" id="eventLabel">Possible floor-stay</div>
+      <div class="divider"></div>
+
+      <div class="kv"><div class="key">Observed at</div><div class="value" id="observedAt">7:41 PM</div></div>
+      <div class="kv"><div class="key">Subject</div><div class="value" id="subject">Resident</div></div>
+      <div class="kv"><div class="key">Review Status</div><div class="value attention" id="reviewStatus">Unreviewed</div></div>
+      <div class="kv"><div class="key">Escalation</div><div class="value attention" id="escalation">Draft caregiver alert prepared</div></div>
+      <div class="kv"><div class="key">Event ID</div><div class="value compact-id" id="eventId">EVT-0042</div></div>
+
+      <div class="divider"></div>
+      <div class="suggested">
+        <div class="suggested-title">Suggested Next Step</div>
+        <div class="suggested-body" id="suggested">Check live feed and contact caregiver if concern remains</div>
+      </div>
+    </section>
+
+    <section class="panel activity-strip">
+      <div class="activity-title">Recent Activity</div>
+      <div class="activity-grid" id="activityGrid"></div>
+    </section>
+
+    <div class="footer-note">Raw video stays local | Human review required | <span id="overlaySource">Data: loading</span> | <span id="overlayGeneratedAt">Updated: loading</span></div>
+  </main>
+
+  <script src="./obs-overlay.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const requestedCamera = params.get("camera") || "C1";
+    const requestedZone = params.get("zone") || "Living Room";
+    document.getElementById("camera").textContent = requestedCamera;
+    document.getElementById("zone").textContent = requestedZone;
+
+    refreshOverlayData();
+    setInterval(refreshOverlayData, 10000);
+    setInterval(updateClock, 10000);
+  </script>
+</body>
+</html>

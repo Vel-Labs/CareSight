@@ -29,6 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=96)
     parser.add_argument("--audio-format", default="wav")
     parser.add_argument("--play", action="store_true", help="Play audio locally after generation. Requires human approval.")
+    parser.add_argument("--play-volume", type=float, default=2.5, help="afplay playback gain used with --play.")
     return parser.parse_args()
 
 
@@ -66,19 +67,36 @@ def main() -> int:
         "--audio_format",
         args.audio_format,
     ]
-    if args.play:
-        command.append("--play")
-
     result = subprocess.run(command, cwd=REPO_ROOT, text=True)
     if result.returncode != 0:
         print(f"tts_failed returncode={result.returncode}", file=sys.stderr)
         return result.returncode
 
+    generated_path = newest_generated_audio(args.output_dir, args.file_prefix, args.audio_format)
+    if args.play:
+        if generated_path is None:
+            print("tts_failed generated_audio_not_found", file=sys.stderr)
+            return 2
+        playback = subprocess.run(["afplay", "-v", str(args.play_volume), str(generated_path)], check=False)
+        if playback.returncode != 0:
+            print(f"tts_playback_failed returncode={playback.returncode}", file=sys.stderr)
+            return playback.returncode
+
     print(
         f"tts_generated output_dir={args.output_dir} voice={args.voice} "
-        f"played={str(args.play).lower()} model={args.model}"
+        f"played={str(args.play).lower()} play_volume={args.play_volume} "
+        f"audio_path={generated_path or 'unknown'} model={args.model}"
     )
     return 0
+
+
+def newest_generated_audio(output_dir: Path, file_prefix: str, audio_format: str) -> Path | None:
+    candidates = sorted(
+        output_dir.glob(f"{file_prefix}_*.{audio_format}"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    return candidates[0] if candidates else None
 
 
 if __name__ == "__main__":

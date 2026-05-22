@@ -260,7 +260,12 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
   - `docs/cli/COMMANDS.md`
 - Proof of completion:
   - `docs/audits/production-validation/sprint-02/screen-capture-obs-readiness.json`
-  - Current result: OBS is installed and `obsws_python` is importable in `apps/caresight-hub/.venv`. Remaining work is operator scene setup and human visual privacy confirmation before any capture, virtual camera, or FaceTime handoff proof.
+  - `apps/obs-hub/README.md`
+  - `apps/obs-hub/tools/setup_obs_scenes.py`
+  - `scripts/setup_obs_scene.sh`
+  - `apps/obs-hub/tools/update_obs_event.py`
+  - `scripts/update_obs_overlay.sh`
+  - Current result: OBS is installed, `obsws_python` is importable in `apps/caresight-hub/.venv`, scenes were created, event IDs are shortened in the caregiver-facing panel, and dynamic overlay-state update/watch scripts now exist. Remaining work is operator validation that `current_event.js` updates the scene with real event/recent-activity context and that no private content appears before any capture, virtual camera, or FaceTime handoff proof.
 - Human validation command as needed:
   - Ask: "Please confirm the screen capture or OBS virtual camera output displays the intended camera feed and does not show unrelated private desktop content."
 
@@ -276,7 +281,8 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
   - `contracts/schemas/agent-action-request.schema.json`
 - Proof of completion:
   - `docs/audits/production-validation/sprint-02/facetime-tts-approval-blocked.json`
-  - Current result: user approved FaceTime handoff preparation, but no FaceTime call was started. Remaining work is privacy-safe OBS/visual setup plus approved Apple contact mapping without storing real contact details in Git.
+  - `docs/audits/production-validation/sprint-02/human-validation-feedback-2026-05-21.md`
+  - Current result: user approved FaceTime handoff preparation and approved `contact_emergency_primary` for FaceTime testing, but no FaceTime call was started. Remaining work is privacy-safe OBS/visual setup execution and explicit approval for one live handoff test.
 - Human validation command as needed:
   - Ask before live action: "Approve one allowlisted FaceTime handoff test, or keep this at prepared-instructions only."
 
@@ -292,7 +298,8 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
   - `docs/audits/2026-05-21-sprint-02-agent-model-surface.md`
 - Proof of completion:
   - `docs/audits/production-validation/sprint-02/facetime-tts-approval-blocked.json`
-  - Current result: runtime dependencies are installed in `apps/caresight-hub/.venv`, `mlx_audio.tts.generate` produced a local WAV using the Holler model and `kit` voice, and no audio was played. Remaining work is human-approved playback after the Gemma message wording is approved.
+  - `docs/audits/production-validation/sprint-02/human-validation-feedback-2026-05-21.md`
+  - Current result: runtime dependencies are installed in `apps/caresight-hub/.venv`, `mlx_audio.tts.generate` produced a local WAV, the operator confirmed playback functionally works and sounds clean, and Dakota voice is approved for the shorter alert wording.
 - Human validation command as needed:
   - Ask: "Please confirm the TTS message is audible, calm, understandable, and does not imply medical or emergency certainty."
 
@@ -312,7 +319,10 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
 - Proof of completion:
   - `docs/audits/production-validation/sprint-02/case-a-agent-draft.json`
   - `docs/audits/production-validation/sprint-02/case-a-gemma-draft.json`
+  - `docs/audits/production-validation/sprint-02/human-validation-feedback-2026-05-21.md`
   - Current result: persisted a validated Gemma MLX draft from the SQLite audit chain through the local `mlx-vlm` endpoint. The draft says: "Possible floor stay observed in the Living Room. Needs review."
+  - Human result: wording approved, with a follow-up request to add time relevance, unresolved-alert cadence, and resolution-update support.
+  - Automation path: `v0_floor_stay_live.py --auto-agent-dry-run` now wires event persistence to OBS overlay update, Gemma draft, staged iMessage request, and Hermes no-send preflight.
 - Human validation command as needed:
   - Ask: "Does the concerning-event draft communicate urgency without saying fall, injury, medical emergency, or dispatch?"
 
@@ -412,6 +422,7 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
   - `docs/audits/production-validation/sprint-02/case-a-hermes-dry-run.json`
 - Proof of completion:
   - Target artifact: `docs/audits/production-validation/sprint-02/human-approved-imessage-send.md`
+  - Current result: `contact_emergency_primary` is approved for one iMessage test, and the text is approved: "CareSight alert. Possible floor stay observed in the Living Room. Needs review." The live send has not been executed.
 - Human validation command as needed:
   - Ask: "Approve sending one test iMessage to the allowlisted contact. Confirm receipt and whether the text is acceptable."
 
@@ -427,13 +438,14 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
   - `docs/audits/production-validation/sprint-02/facetime-handoff.md`
 - Proof of completion:
   - `docs/audits/production-validation/sprint-02/facetime-tts-execution-blocked.json`
-  - Current result: user approved the FaceTime handoff direction, but no visual handoff executed. Remaining work is OBS scene setup, privacy confirmation, and allowed Apple contact mapping.
+  - `docs/audits/production-validation/sprint-02/human-validation-feedback-2026-05-21.md`
+  - Current result: user approved the FaceTime handoff direction and the OBS browser-overlay scene architecture, and scenes were created. FaceTime handoff is intentionally held until OBS dynamic overlay updates are validated.
 - Human validation command as needed:
   - Ask: "Approve one visual handoff test. Confirm that only the intended camera feed/screen capture is shown."
 
 ---
 
-## Sprint Item: Human-Validated TTS Playback: Status ⚠️ Wording Approval Pending
+## Sprint Item: Human-Validated TTS Playback: Status ✅
 
 - Description: Play a validated local TTS message for Case A or Case B and have the human confirm the audio quality and wording.
 - Required files for reference when working on this:
@@ -443,7 +455,8 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
 - Proof of completion:
   - `docs/audits/production-validation/sprint-02/facetime-tts-execution-blocked.json`
   - `docs/audits/production-validation/sprint-02/case-a-gemma-tts-generated.json`
-  - Current result: TTS generation succeeded locally from the Gemma Case A message and produced an ignored local WAV. Playback intentionally has not happened yet. Per the operator sequence, playback waits until Gemma-generated message wording is approved.
+  - `docs/audits/production-validation/sprint-02/human-validation-feedback-2026-05-21.md`
+  - Current result: TTS generation succeeded locally from the Gemma Case A message and produced an ignored local WAV. Operator confirmed audio playback functionally works and sounds clean, then approved the `dakota` voice for the shorter wording.
 - Human validation command as needed:
   - Ask: "Confirm the TTS playback was audible, calm, and did not overclaim."
 
@@ -460,7 +473,7 @@ The A/B set should let Sprint 01 and Sprint 02 prove both escalation and non-esc
   - `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`
 - Proof of completion:
   - `docs/audits/production-validation/sprint-02/production-acceptance.md`
-  - Current result: local no-send Sprint 02 operation is validated, but production acceptance remains blocked on human-approved wording, TTS playback confirmation, OBS/visual privacy confirmation, approved Apple contact mapping, and any live iMessage/FaceTime tests that remain in scope.
+  - Current result: local no-send Sprint 02 operation is validated, Gemma wording is approved, Dakota TTS is approved, and contact mapping/text are approved for `contact_emergency_primary`. Production acceptance remains blocked on dynamic OBS overlay validation, visual privacy confirmation, and live iMessage/FaceTime tests if they remain in scope.
 - Human validation command as needed:
   - Ask: "Approve Sprint 02 as production-ready for the current local prototype scope, or list exact remaining blockers."
 

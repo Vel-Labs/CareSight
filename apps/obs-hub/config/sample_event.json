@@ -1,0 +1,51 @@
+{
+  "site": {
+    "name": "Maple Residence",
+    "mode": "Observation Mode"
+  },
+  "current_time": "2026-05-21T19:43:18-05:00",
+  "current_event": {
+    "event_id": "EVT-2026-05-21-0042",
+    "event_type": "possible_floor_stay",
+    "display_label": "Possible floor-stay",
+    "zone": "Living Room",
+    "camera_id": "C1",
+    "observed_at": "2026-05-21T19:41:00-05:00",
+    "subject_label": "Resident",
+    "review_status": "unreviewed",
+    "escalation_state": "draft_caregiver_alert_prepared",
+    "suggested_next_step": "Check live feed and contact caregiver if concern remains"
+  },
+  "recent_activity": [
+    {
+      "time": "7:41 PM",
+      "label": "Possible floor-stay",
+      "zone": "Living Room",
+      "status": "Unreviewed"
+    },
+    {
+      "time": "7:14 PM",
+      "label": "Routine activity observed",
+      "zone": "Living Room",
+      "status": "Reviewed"
+    },
+    {
+      "time": "6:58 PM",
+      "label": "Last movement observed",
+      "zone": "Hallway",
+      "status": "Logged"
+    },
+    {
+      "time": "6:15 PM",
+      "label": "Evening routine observed",
+      "zone": "Bedroom",
+      "status": "Reviewed"
+    }
+  ],
+  "constraints": [
+    "Raw video stays local",
+    "Human review required",
+    "No emergency dispatch",
+    "Not a medical device"
+  ]
+}

@@ -13,6 +13,13 @@ from .harness import (
     build_hermes_handoff_payload,
     run_hermes_dry_run,
 )
+from .live_handoff import (
+    DEFAULT_LIVE_MESSAGE,
+    execute_facetime_if_yes,
+    execute_live_imessage,
+    is_yes_like_reply,
+    wait_for_yes_reply,
+)
 
 __all__ = [
     "FakeAgentProvider",
@@ -24,6 +31,11 @@ __all__ = [
     "build_hermes_config_plan",
     "build_hermes_handoff_payload",
     "contact_ids",
+    "DEFAULT_LIVE_MESSAGE",
+    "execute_facetime_if_yes",
+    "execute_live_imessage",
+    "is_yes_like_reply",
+    "wait_for_yes_reply",
     "load_contact_allowlist",
     "run_hermes_dry_run",
     "stage_action_request",

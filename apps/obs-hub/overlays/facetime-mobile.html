@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>CareSight FaceTime Mobile Handoff</title>
+  <link rel="stylesheet" href="./obs-overlay.css" />
+</head>
+<body>
+  <main class="facetime-stage">
+    <section class="facetime-shell">
+      <header class="facetime-header">
+        <div>
+          <div class="facetime-title">CareSight Hub</div>
+          <div class="facetime-subtitle">Live caregiver handoff <span class="badge">LIVE</span></div>
+        </div>
+        <div class="facetime-clock">
+          <div data-now-time>7:43 PM</div>
+          <span>Monitoring</span>
+        </div>
+      </header>
+
+      <section class="facetime-feed">
+        <img class="facetime-preview-image" id="livePreviewImage" alt="" />
+        <div class="facetime-feed-label" id="mainFeedLabel">Living Room</div>
+      </section>
+
+      <section class="facetime-event panel">
+        <div class="facetime-event-kicker">Current Event</div>
+        <div class="event-label" id="eventLabel">Possible floor-stay</div>
+        <div class="facetime-kv-row">
+          <span>Observed</span>
+          <strong id="observedAt">7:41 PM</strong>
+        </div>
+        <div class="facetime-kv-row">
+          <span>Review</span>
+          <strong class="attention" id="reviewStatus">Unreviewed</strong>
+        </div>
+        <div class="facetime-kv-row">
+          <span>Event</span>
+          <strong id="eventId">EVT-0042</strong>
+        </div>
+        <p id="suggested">Review the live feed and approved caregiver alert draft.</p>
+      </section>
+
+      <section class="facetime-activity panel">
+        <div class="activity-title">Recent Activity</div>
+        <div class="facetime-activity-list" id="activityGrid"></div>
+      </section>
+
+      <footer class="facetime-footer">
+        Raw video stays local | Human review required
+      </footer>
+    </section>
+  </main>
+
+  <script src="./obs-overlay.js"></script>
+  <script>
+    refreshOverlayData();
+    setInterval(refreshOverlayData, 10000);
+    setInterval(updateClock, 10000);
+  </script>
+</body>
+</html>

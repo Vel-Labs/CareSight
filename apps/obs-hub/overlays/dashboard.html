@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>CareSight Hub Dashboard</title>
+  <link rel="stylesheet" href="./obs-overlay.css" />
+</head>
+<body>
+  <main class="dashboard">
+    <header class="dashboard-header">
+      <div>
+        <div class="dashboard-title">CareSight Hub</div>
+        <div class="dashboard-subtitle">Caregiver Overview | <span data-site-name>Maple Residence</span> | <span data-site-mode>Observation Mode</span></div>
+      </div>
+      <div class="clock" style="position: static;">
+        <div class="clock-date" data-now-date>May 21, 2026</div>
+        <div class="clock-time" data-now-time>7:43 PM</div>
+      </div>
+    </header>
+
+    <section class="cards">
+      <div class="panel card">
+        <div class="card-label">Most Recent Event</div>
+        <div class="card-value attention" id="dashboardEventLabel">Possible floor-stay</div>
+        <div class="card-note" id="dashboardEventMeta">Living Room | 7:41 PM</div>
+      </div>
+      <div class="panel card">
+        <div class="card-label">Current Status</div>
+        <div class="card-value attention" id="dashboardReviewStatus">Review required</div>
+        <div class="card-note" id="dashboardEscalation">Human confirmation needed</div>
+      </div>
+      <div class="panel card">
+        <div class="card-label">Open Review Items</div>
+        <div class="card-value" id="dashboardOpenItems">1 unresolved</div>
+        <div class="card-note">1 attention item</div>
+      </div>
+      <div class="panel card">
+        <div class="card-label">Last Normal Activity</div>
+        <div class="card-value" id="dashboardLastNormalTime">7:14 PM</div>
+        <div class="card-note" id="dashboardLastNormalMeta">Living Room routine activity</div>
+      </div>
+    </section>
+
+    <section class="dashboard-body">
+      <div class="panel timeline">
+        <div class="panel-title">Recent Events</div>
+        <div id="dashboardTimeline"></div>
+      </div>
+
+      <aside class="panel side">
+        <div class="panel-title">Care Operations</div>
+        <div class="side-section">
+          <div class="side-title">Family Update Status</div>
+          <div class="side-value attention" id="dashboardFamilyUpdate">Draft awaiting approval</div>
+        </div>
+        <div class="side-section">
+          <div class="side-title">Escalation State</div>
+          <div class="side-value" id="dashboardSideEscalation">Caregiver alert prepared</div>
+        </div>
+        <div class="side-section">
+          <div class="side-title">Camera Health</div>
+          <div class="side-value" id="dashboardCameraHealth">Configured locally</div>
+        </div>
+        <div class="side-section">
+          <div class="side-title">System Boundary</div>
+          <div class="side-value">No emergency dispatch</div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script src="./obs-overlay.js"></script>
+  <script>
+    updateClock();
+    async function refreshDashboard() {
+      const data = await refreshOverlayData();
+      const event = data.current_event || fallbackData.current_event;
+      setText("dashboardEventLabel", event.display_label || "Review required");
+      setText("dashboardEventMeta", `${event.zone || "Configured room"} | ${formatObservedAt(event.observed_at)}`);
+      setText("dashboardReviewStatus", humanizeState(event.review_status || "unreviewed"));
+      setText("dashboardEscalation", humanizeState(event.escalation_state || "draft_caregiver_alert_prepared"));
+      setText("dashboardSideEscalation", humanizeState(event.escalation_state || "draft_caregiver_alert_prepared"));
+      setText("dashboardFamilyUpdate", event.escalation_state === "none" ? "No update pending" : "Draft awaiting approval");
+      setText("dashboardOpenItems", event.review_status === "reviewed" ? "0 unresolved" : "1 unresolved");
+      setText("dashboardCameraHealth", data.camera_health || "Configured locally");
+      const normal = (data.recent_activity || []).find((item) => /routine|normal|movement/i.test(item.label));
+      if (normal) {
+        setText("dashboardLastNormalTime", normal.time);
+        setText("dashboardLastNormalMeta", `${normal.zone} ${normal.label}`);
+      }
+      const timeline = document.getElementById("dashboardTimeline");
+      timeline.innerHTML = "";
+      (data.recent_activity || fallbackData.recent_activity).forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "timeline-row";
+        row.innerHTML = `<div>${item.time}</div><div>${item.label}</div><div>${item.zone}</div><div class="${statusClass(item.status)}">${item.status}</div>`;
+        timeline.appendChild(row);
+      });
+    }
+    refreshDashboard();
+    setInterval(refreshDashboard, 10000);
+    setInterval(updateClock, 10000);
+  </script>
+</body>
+</html>

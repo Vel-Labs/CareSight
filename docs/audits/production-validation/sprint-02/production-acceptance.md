@@ -20,4 +20,13 @@ Remaining gates before Sprint 02 production acceptance:
 - One human-approved allowlisted iMessage test, if still in scope.
 - One human-approved visual/FaceTime handoff test, if still in scope.
 
+Human feedback recorded on 2026-05-21:
+
+- Gemma wording is approved, with a follow-up request to add time relevance, unresolved-alert cadence, and resolution updates in the alert lifecycle.
+- TTS playback functionally works and sounds clean; Dakota voice is approved for the shorter message.
+- OBS direction is approved around websocket-created scenes with browser-source overlays, and scenes were created. Dynamic event/recent-activity overlay updates and privacy confirmation remain pending before FaceTime.
+- `contact_emergency_primary` is approved for one iMessage test and one FaceTime test, with the real contact identity kept out of Git.
+- Live iMessage text is approved, but the send has not been executed.
+- A no-send post-event automation path is available through `v0_floor_stay_live.py --auto-agent-dry-run`, wiring event persistence to OBS overlay update, Gemma draft, staged iMessage request, and Hermes dry-run receipt.
+
 No live iMessage, FaceTime call, Apple Notes write, OBS capture, or TTS playback was performed by this receipt.

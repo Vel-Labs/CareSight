@@ -167,3 +167,53 @@ Rationale: Sprint 02 needs inspectable service-wrapper receipts without letting 
 CareSight iMessage and FaceTime staging validates requested contact IDs against a redacted local allowlist. Git-tracked examples may include stable IDs, roles, display labels, and redacted channel references, but not phone numbers, addresses, passwords, tokens, or BlueBubbles credentials.
 
 Rationale: service-capable handoff paths need deterministic allowlist checks before dry-run or live harness work, but caregiver contact details are private operational data and must stay out of committed repo files.
+
+## 2026-05-21: OBS Visual Handoff Uses Browser Source Overlays
+
+CareSight visual handoff scenes should be created through OBS websocket using a small number of stable OBS sources: camera/image/video feeds plus local browser-source overlays from `apps/obs-hub/`.
+
+Rationale: browser overlays keep caregiver-facing text, event cards, recent activity, and future local API updates in HTML/CSS/JS instead of brittle native OBS text-source layers. This preserves scriptability and makes FaceTime/OBS Virtual Camera demos reproducible.
+
+The default visual language remains bounded: possible floor-stay, review required, draft caregiver alert prepared, raw video stays local, and human review required. It must not show diagnostic, medical-device, emergency-dispatch, or raw confidence claims by default.
+
+## 2026-05-21: Alert Lifecycle Needs Follow-Up And Resolution Updates
+
+The approved initial Gemma wording is concise enough for the immediate validation path, but the operator requested time relevance, unresolved-alert follow-up cadence, and a resolution update with estimated total duration.
+
+Future alert lifecycle behavior should keep these as bounded updates and must not say the person is stable, injured, diagnosed, or receiving autonomous emergency dispatch.
+
+## 2026-05-21: Keep OBS Scenes Stable And Update Overlay State
+
+CareSight OBS scenes should remain stable after setup. Dynamic event data should flow through `apps/obs-hub/config/current_event.json`, written by `scripts/update_obs_overlay.sh` from SQLite-derived context.
+
+Rationale: local Gemma/Hermes tooling needs a simple command/tool surface it can invoke safely. Rewriting a local overlay-state JSON file is safer and more reproducible than letting agents create OBS text sources, modify scene graphs, or touch raw video feeds for every alert.
+
+The caregiver-facing OBS panel should use shortened event IDs to preserve layout, while full IDs remain in SQLite, ignored overlay state files, and audit receipts.
+
+## 2026-05-21: Start Post-Event Agent Automation In No-Send Mode
+
+The live detector may automatically run the local post-event agent pipeline after persisting an event behind `--auto-agent-dry-run`. That pipeline may update OBS overlay state, draft with local Gemma, stage an allowlisted iMessage request, and run Hermes no-send preflight.
+
+Rationale: this gives the demo a realistic event-to-alert path without hiding live external actions behind detection. Live iMessage, FaceTime, TTS playback, and visual handoff execution remain explicit human gates.
+
+## 2026-05-21: Keep Live Handoffs Explicit And Reply-Gated
+
+CareSight may run a bounded `--auto-agent-live-run` only when the operator provides `--live-approved` and a private allowlisted contact target outside Git. The live detector may send the approved iMessage after a persisted event, but it must not automatically start FaceTime without an affirmative caregiver reply supplied to the reply-gated handoff command.
+
+Rationale: the hackathon test needs a realistic text-to-visual-handoff path, but automatic call initiation and message-database polling would weaken the bounded control loop. Keeping the FaceTime step reply-gated preserves human approval, contact privacy, and local auditability.
+
+The live demo may optionally use `imsg` or watch `~/Library/Messages/chat.db` after the alert is sent when the operator enables `--auto-facetime-on-reply`. This requires macOS Full Disk Access and is constrained to the configured target handle and the post-alert time window.
+
+Rationale: automatic reply detection is useful for the demo, but it is private local data. It should be explicit, time-bounded, target-bounded, and fail closed when the OS denies access.
+
+## 2026-05-21: Route TTS Audio Temporarily For FaceTime
+
+CareSight may use `BlackHole 2ch` plus `switchaudio-osx` to route approved Dakota TTS into a FaceTime handoff, but only for the playback window. The script records the current input/output devices, switches both to `BlackHole 2ch`, runs TTS playback, and restores the prior devices afterward.
+
+Rationale: OBS Virtual Camera only solves the visual handoff. Audio needs a separate local route, and the operator should not have their microphone permanently changed for the demo.
+
+## 2026-05-21: Feed OBS From Detector-Owned Annotated Frames
+
+For the live FaceTime demo, the detector may write an annotated preview frame to `apps/obs-hub/config/live_preview.jpg`, and the OBS browser overlay may display that image as the active feed. OBS should not open the same webcam as the detector for this path.
+
+Rationale: macOS camera ownership can make OpenCV and OBS fight over the same camera. A local preview image keeps raw video local, lets OpenCV remain the camera owner, and gives caregivers the same boxed detector view through OBS Virtual Camera.

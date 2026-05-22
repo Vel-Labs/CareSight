@@ -4,7 +4,7 @@
   "created_at": "2026-05-21T00:00:00Z",
   "updated_at": "2026-05-21T19:51:05Z",
   "sprint": "02",
-  "status": "tooling_ready_scene_privacy_pending",
+  "status": "setup_package_added_scene_privacy_pending",
   "requirement": "Configure and validate local screen-capture or OBS virtual camera handoff in non-live-send mode with privacy proof.",
   "checks": [
     {
@@ -23,6 +23,24 @@
       "check": "Human visual privacy confirmation",
       "status": "pending",
       "result": "needs operator-created OBS scene containing only the intended CareSight feed/dashboard"
+    },
+    {
+      "check": "OBS Hub setup package",
+      "command": "./scripts/setup_obs_scene.sh --dry-run",
+      "status": "pass",
+      "result": "operator confirmed scenes were created"
+    },
+    {
+      "check": "Dynamic overlay update path",
+      "command": "./scripts/update_obs_overlay.sh --event-id <event_id>",
+      "status": "pending",
+      "result": "added local overlay-state writer; operator requested validation before FaceTime handoff"
+    },
+    {
+      "check": "Dynamic latest-event watch path",
+      "command": "./scripts/update_obs_overlay.sh --watch",
+      "status": "pending",
+      "result": "added latest-event watcher for live test sessions; operator validation still pending"
     }
   ],
   "external_action_performed": false,
@@ -37,6 +55,10 @@
   ],
   "next_operator_steps": [
     "Create a local OBS scene named CareSight Demo with only the intended CareSight feed/dashboard visible.",
+    "Run ./scripts/setup_obs_scene.sh --dry-run to inspect the stable CareSight scene plan.",
+    "Run ./scripts/setup_obs_scene.sh after enabling OBS websocket to create/update scenes.",
+    "Run ./scripts/update_obs_overlay.sh --event-id <event_id> to refresh current event and recent activity context.",
+    "Run ./scripts/update_obs_overlay.sh --watch during live test sessions so the OBS overlay follows latest SQLite events.",
     "Enable or confirm OBS websocket local access if scripted scene checks are needed.",
     "Have the operator confirm the scene is privacy-safe before any screenshot, virtual camera, or FaceTime handoff proof is captured."
   ]

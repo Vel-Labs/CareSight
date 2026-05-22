@@ -26,6 +26,17 @@ class V0FloorStayLiveTest(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--stop-after-event", result.stdout)
+        self.assertIn("--auto-agent-dry-run", result.stdout)
+        self.assertIn("--auto-agent-live-run", result.stdout)
+        self.assertIn("--live-approved", result.stdout)
+        self.assertIn("--obs-live-preview", result.stdout)
+        self.assertIn("--auto-facetime-on-reply", result.stdout)
+        self.assertIn("--no-response-escalation-seconds", result.stdout)
+        self.assertIn("--play-tts-after-facetime", result.stdout)
+        self.assertIn("--tts-audio-route", result.stdout)
+        self.assertIn("--tts-volume", result.stdout)
+        self.assertIn("--tts-after-facetime-delay-seconds", result.stdout)
+        self.assertIn("--post-facetime-hold-seconds", result.stdout)
         self.assertIn("--max-seconds", result.stdout)
         self.assertIn("--camera-id", result.stdout)
         self.assertIn("--source-type", result.stdout)
@@ -96,6 +107,52 @@ class V0FloorStayLiveTest(unittest.TestCase):
         resolved = module.resolve_runtime_path("apps/caresight-hub/data/caresight-v0.sqlite3")
 
         self.assertEqual(resolved, module.REPO_ROOT / "apps/caresight-hub/data/caresight-v0.sqlite3")
+
+    def test_post_event_agent_receipt_line_is_machine_readable(self) -> None:
+        line = module.format_post_event_agent_line(
+            {
+                "event_id": "evt_123",
+                "draft_id": "draft_123",
+                "request_id": "action_req_123",
+                "attempt_id": "attempt_123",
+                "execution_state": "dry_run",
+                "external_action_performed": False,
+                "obs_overlay_updated": True,
+            }
+        )
+
+        prefix, payload_text = line.split(" ", 1)
+        payload = json.loads(payload_text)
+        self.assertEqual(prefix, "post_event_agent_dry_run")
+        self.assertEqual(payload["event_id"], "evt_123")
+        self.assertFalse(payload["external_action_performed"])
+
+    def test_post_event_agent_live_receipt_line_is_machine_readable(self) -> None:
+        line = module.format_post_event_agent_live_line(
+            {
+                "event_id": "evt_123",
+                "request_id": "action_req_123",
+                "live_attempt_id": "attempt_live_123",
+                "external_action_performed": True,
+                "facetime_started": False,
+            }
+        )
+
+        prefix, payload_text = line.split(" ", 1)
+        payload = json.loads(payload_text)
+        self.assertEqual(prefix, "post_event_agent_live_run")
+        self.assertEqual(payload["event_id"], "evt_123")
+        self.assertTrue(payload["external_action_performed"])
+
+    def test_post_event_agent_error_line_is_machine_readable(self) -> None:
+        line = module.format_post_event_agent_error_line("evt_123", RuntimeError("no gemma"))
+
+        prefix, payload_text = line.split(" ", 1)
+        payload = json.loads(payload_text)
+        self.assertEqual(prefix, "post_event_agent_dry_run_failed")
+        self.assertEqual(payload["event_id"], "evt_123")
+        self.assertEqual(payload["status"], "post_event_agent_dry_run_failed")
+        self.assertFalse(payload["external_action_performed"])
 
 
 if __name__ == "__main__":
