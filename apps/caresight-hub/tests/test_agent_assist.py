@@ -4,6 +4,7 @@ import unittest
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 
 from caresight.events.floor_stay import FloorStayDetector
 from caresight.runtime.agent_assist import (
@@ -22,6 +23,7 @@ from caresight.runtime.agent_assist import (
     validate_draft_text,
 )
 from caresight.runtime.config import CareSightConfig
+from caresight.runtime.agent_assist.live_handoff import switch_aitum_vertical_scene
 from caresight.storage.sqlite_store import SQLiteStore
 from caresight.vision.detections import Detection
 
@@ -345,6 +347,32 @@ class AgentAssistTest(unittest.TestCase):
             self.assertFalse(no_attempt["external_action_performed"])
             self.assertEqual(yes_attempt["result"], "facetime_live_dry_run")
             self.assertTrue(yes_attempt["payload"]["delivery"]["reply_interpreted_as_yes"])
+
+    def test_aitum_vertical_switch_falls_back_when_optional_plugin_missing(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        with patch.dict("os.environ", {"CARESIGHT_AITUM_VERTICAL_MODE": "auto"}, clear=False):
+            with patch("subprocess.run") as run:
+                run.return_value.returncode = 2
+                run.return_value.stdout = ""
+                run.return_value.stderr = "vendor not found"
+
+                result = switch_aitum_vertical_scene(repo_root, "CareSight Hub - FaceTime Mobile")
+
+            self.assertEqual(result["status"], "fallback")
+            self.assertEqual(result["path"], "aitum_vertical")
+
+    def test_aitum_vertical_switch_can_be_required_for_handoff(self) -> None:
+        repo_root = Path(__file__).resolve().parents[3]
+        with patch.dict("os.environ", {"CARESIGHT_AITUM_VERTICAL_MODE": "required"}, clear=False):
+            with patch("subprocess.run") as run:
+                run.return_value.returncode = 2
+                run.return_value.stdout = ""
+                run.return_value.stderr = "vendor not found"
+
+                result = switch_aitum_vertical_scene(repo_root, "CareSight Hub - FaceTime Mobile")
+
+            self.assertEqual(result["status"], "failed")
+            self.assertEqual(result["path"], "aitum_vertical")
 
     def test_reply_watch_times_out_without_messages_access_or_reply(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

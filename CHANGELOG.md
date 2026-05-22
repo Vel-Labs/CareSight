@@ -34,6 +34,7 @@
 - Added a short BlackHole hold after TTS playback so the virtual call input is not restored immediately at the end of the utterance.
 - Added a dedicated OBS `CareSight FaceTime Live Detector Preview` source and overlay fallback for `live_preview.jpg` so the FaceTime scene has an explicit detector-feed source instead of relying only on event JSON.
 - Added a detector-owned local MJPEG browser feed for OBS escalation and FaceTime Mobile overlays, keeping `live_preview.jpg` as fallback/debug evidence instead of the primary live-video path.
+- Added an optional Aitum Vertical Canvas integration path so FaceTime can use a dedicated vertical OBS canvas/virtual camera while the desktop/operator OBS output stays landscape, with plain OBS portrait output retained as fallback.
 - Added an ignored caregiver contact config initializer, live-demo preflight checker, and event-scoped escalation receipt command linking drafts, requests, execution attempts, OBS state, and preview evidence.
 - Added install/setup wrappers for the local runtime, Gemma/Holler models, OBS, full prerequisite install, fixture setup, and a machine-readable command registry.
 - Added SQLite execution-attempt logging for dry-run external-action receipts before any Hermes/iMessage/FaceTime/TTS live path is enabled.

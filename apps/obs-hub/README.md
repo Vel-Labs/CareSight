@@ -40,6 +40,36 @@ By default, scene setup preserves the current OBS canvas/output resolution. OBS 
 ./scripts/setup_obs_scene.sh --scene "CareSight Hub - Dashboard" --video-mode landscape
 ```
 
+## Optional Aitum Vertical Canvas
+
+CareSight prefers a dual-output OBS model for live FaceTime tests: the normal OBS canvas stays `1920x1080` for desktop/operator views, while the optional [Aitum Vertical Canvas](https://github.com/Aitum/obs-vertical-canvas) plugin owns the `1080x1920` phone handoff surface.
+
+Install helper:
+
+```bash
+./scripts/install_obs_vertical_canvas.sh
+open apps/obs-hub/vendor/aitum/vertical-canvas-macos-universal.pkg
+```
+
+After installing, restart OBS and enable OBS websocket. The Aitum plugin exposes a vendor websocket API named `aitum-vertical-canvas`; CareSight uses that API to switch the vertical scene and start the vertical virtual camera during FaceTime handoff.
+
+Check plugin status:
+
+```bash
+apps/obs-hub/tools/aitum_vertical.py status
+```
+
+Operator setup still needs one manual step in OBS: create a vertical scene named `CareSight Hub - FaceTime Mobile` in the Aitum Vertical dock and add the CareSight mobile browser source/overlay there. The automation can switch and start the vertical virtual camera once that scene exists.
+
+Local env options:
+
+```bash
+export CARESIGHT_AITUM_VERTICAL_MODE="auto"
+export CARESIGHT_AITUM_VERTICAL_SCENE="CareSight Hub - FaceTime Mobile"
+```
+
+`auto` tries Aitum first and falls back to plain OBS portrait output if the plugin is not available. `required` fails closed when the Aitum path is unavailable.
+
 ## Dynamic Overlay Data
 
 OBS scenes are intentionally stable. Event-specific data is written to:
@@ -102,7 +132,7 @@ The caregiver UI intentionally displays a shortened event ID so it does not crow
 7. Use `CareSight Hub - FaceTime Mobile` for phone FaceTime recipients.
 8. Switch to an individual camera scene if the caregiver needs one zone.
 
-The live handoff script attempts to switch OBS to `CareSight Hub - FaceTime Mobile` and applies `--video-mode portrait` immediately before opening FaceTime. This scene uses a 1080x1920 browser source and matching OBS video output so phone recipients do not receive a tiny portrait UI embedded in a landscape frame.
+The live handoff script first tries the optional Aitum Vertical Canvas path. If unavailable, it falls back to switching OBS to `CareSight Hub - FaceTime Mobile` and applying `--video-mode portrait` immediately before opening FaceTime. This scene uses a 1080x1920 browser source and matching OBS video output so phone recipients do not receive a tiny portrait UI embedded in a landscape frame.
 
 The FaceTime Mobile scene renders the detector feed through the OBS browser overlay. Start the detector with:
 

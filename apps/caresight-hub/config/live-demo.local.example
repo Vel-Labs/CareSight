@@ -7,3 +7,9 @@ export OBS_WEBSOCKET_PASSWORD="replace-with-local-obs-websocket-password"
 
 export CARESIGHT_CONTACT_ALLOWLIST_PATH="apps/caresight-hub/config/hermes/allowlisted-contacts.local.json"
 export CARESIGHT_OBS_BROWSER_FEED_URL="http://127.0.0.1:8766/stream.mjpg"
+
+# Optional preferred FaceTime path when Aitum Vertical Canvas is installed.
+# "auto" tries Aitum first and falls back to plain OBS portrait output.
+# Use "required" when you want the live handoff to fail instead of falling back.
+export CARESIGHT_AITUM_VERTICAL_MODE="auto"
+export CARESIGHT_AITUM_VERTICAL_SCENE="CareSight Hub - FaceTime Mobile"

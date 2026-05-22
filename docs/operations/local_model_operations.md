@@ -220,6 +220,21 @@ export OBS_WEBSOCKET_PASSWORD="your-obs-password"
 
 If OBS websocket is unavailable, enable it in OBS under `Tools > WebSocket Server Settings`, set port `4455`, set/copy the password, and rerun the setup command.
 
+Optional preferred phone output with [Aitum Vertical Canvas](https://github.com/Aitum/obs-vertical-canvas):
+
+```bash
+./scripts/install_obs_vertical_canvas.sh
+open apps/obs-hub/vendor/aitum/vertical-canvas-macos-universal.pkg
+```
+
+Restart OBS after installing Aitum Vertical Canvas, then check:
+
+```bash
+apps/obs-hub/tools/aitum_vertical.py status
+```
+
+The Aitum path lets CareSight keep the desktop OBS canvas at `1920x1080` while FaceTime can use a purpose-built `1080x1920` vertical canvas. Create a vertical scene named `CareSight Hub - FaceTime Mobile` in the Aitum Vertical dock and set `CARESIGHT_AITUM_VERTICAL_MODE=auto` in `apps/caresight-hub/config/live-demo.local`.
+
 Refresh dynamic overlay state:
 
 ```bash
@@ -332,7 +347,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
 
 This prefers `imsg` for a yes-like reply after the alert send, then falls back to the scoped SQLite reader. `imsg` and the fallback both need macOS Full Disk Access to read Messages. If access is blocked, the command fails closed and no FaceTime/TTS step runs automatically. After FaceTime is requested, the command waits briefly before TTS playback and then keeps running for a bounded review window so the OBS feed does not disappear immediately.
 
-The handoff switches OBS to `CareSight Hub - FaceTime Mobile` and applies portrait output immediately before opening FaceTime. OBS video resolution is profile-global, not scene-local, so ordinary setup preserves the current output resolution unless `--video-mode portrait` or `--video-mode landscape` is explicitly requested.
+The handoff first tries Aitum Vertical Canvas when available, switching the vertical canvas to `CareSight Hub - FaceTime Mobile` and starting the Aitum vertical virtual camera before opening FaceTime. If Aitum is unavailable, it falls back to plain OBS by switching OBS to `CareSight Hub - FaceTime Mobile` and applying portrait output immediately before opening FaceTime. OBS video resolution is profile-global, not scene-local, so ordinary setup preserves the current output resolution unless `--video-mode portrait` or `--video-mode landscape` is explicitly requested.
 
 The mobile scene uses a local browser-rendered detector feed. The live detector serves annotated MJPEG at:
 

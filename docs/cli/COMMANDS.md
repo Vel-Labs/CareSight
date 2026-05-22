@@ -199,7 +199,7 @@ Inputs: same private iMessage/FaceTime handles as the live iMessage test, `imsg`
 
 Outputs: `post_event_agent_live_run` with reply-watch status, FaceTime attempt ID if opened, and TTS playback status if attempted.
 
-Before opening FaceTime, the live handoff attempts to switch OBS to `CareSight Hub - FaceTime Mobile` and applies portrait OBS output. Run `./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile"` after pulling this change so OBS has the scene; ordinary setup preserves the current OBS output resolution.
+Before opening FaceTime, the live handoff first tries Aitum Vertical Canvas when available. This keeps the desktop/operator OBS canvas stable while the phone recipient sees a dedicated vertical scene. If Aitum is unavailable, the fallback switches OBS to `CareSight Hub - FaceTime Mobile` and applies portrait OBS output. Run `./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile"` after pulling this change so the fallback scene exists; ordinary setup preserves the current OBS output resolution.
 
 OBS video resolution is profile-global, not scene-local. If you need to preview phone output manually, use:
 
@@ -783,6 +783,36 @@ Outputs: a repo-local `.venv-obs/`, validated scene plan, and when OBS websocket
 Validation: `apps/obs-hub/tools/setup_obs_scenes.py --dry-run` validates JSON config and prints planned scenes without connecting to OBS. Live OBS setup requires the operator to enable OBS websocket and confirm the scene shows only intended CareSight content.
 
 Agent safety: `manual-operator`. The setup can create local OBS scenes, but it must not start FaceTime, start OBS Virtual Camera for a live handoff, capture private desktop content, send raw video, or perform caregiver messaging without human approval.
+
+## CareSight OBS Aitum Vertical Canvas
+
+Install helper:
+
+```bash
+./scripts/install_obs_vertical_canvas.sh
+```
+
+Purpose: download the latest macOS universal installer for the optional Aitum Vertical Canvas OBS plugin without committing plugin binaries.
+
+Inputs: internet access to GitHub releases and local write access to ignored `apps/obs-hub/vendor/`.
+
+Outputs: `apps/obs-hub/vendor/aitum/vertical-canvas-macos-universal.pkg`.
+
+Validation: install the package, restart OBS, confirm the Vertical dock appears, and run:
+
+```bash
+apps/obs-hub/tools/aitum_vertical.py status
+```
+
+Switch the vertical canvas and start the Aitum vertical virtual camera:
+
+```bash
+apps/obs-hub/tools/aitum_vertical.py switch \
+  --scene "CareSight Hub - FaceTime Mobile" \
+  --start-virtual-camera
+```
+
+Agent safety: `manual-operator`. This may start the Aitum vertical virtual camera, so it belongs only in the operator-approved FaceTime handoff path. It does not send messages, open FaceTime, play TTS, or change event lifecycle state.
 
 ## CareSight OBS Overlay Update
 

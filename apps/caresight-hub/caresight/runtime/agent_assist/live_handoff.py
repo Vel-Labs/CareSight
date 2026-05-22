@@ -162,6 +162,10 @@ def switch_obs_to_facetime_scene() -> dict[str, Any]:
     if not scene:
         return {"status": "not_requested"}
     repo_root = Path(__file__).resolve().parents[5]
+    aitum_result = switch_aitum_vertical_scene(repo_root, scene)
+    if aitum_result["status"] == "scene_requested":
+        return aitum_result
+
     script = repo_root / "apps" / "obs-hub" / "tools" / "setup_obs_scenes.py"
     python = repo_root / ".venv-obs" / "bin" / "python"
     if not python.exists():
@@ -174,10 +178,56 @@ def switch_obs_to_facetime_scene() -> dict[str, Any]:
         return {
             "status": "failed",
             "scene": scene,
+            "preferred_path": aitum_result,
             "returncode": result.returncode,
             "stderr": result.stderr.strip()[-500:],
         }
-    return {"status": "scene_requested", "scene": scene}
+    return {"status": "scene_requested", "scene": scene, "preferred_path": aitum_result}
+
+
+def switch_aitum_vertical_scene(repo_root: Path, scene: str) -> dict[str, Any]:
+    mode = os.environ.get("CARESIGHT_AITUM_VERTICAL_MODE", "auto").strip().lower()
+    if mode in {"0", "off", "false", "disabled"}:
+        return {"status": "not_requested", "path": "aitum_vertical"}
+    script = repo_root / "apps" / "obs-hub" / "tools" / "aitum_vertical.py"
+    python = repo_root / ".venv-obs" / "bin" / "python"
+    if not python.exists():
+        python = Path(shutil.which("python3") or "python3")
+    if not script.exists():
+        return {"status": "blocked", "path": "aitum_vertical", "reason": "aitum_vertical_tool_missing"}
+
+    aitum_scene = os.environ.get("CARESIGHT_AITUM_VERTICAL_SCENE", scene).strip() or scene
+    command = [
+        str(python),
+        str(script),
+        "switch",
+        "--scene",
+        aitum_scene,
+        "--start-virtual-camera",
+        "--json",
+    ]
+    result = subprocess.run(command, cwd=repo_root, capture_output=True, check=False, text=True, timeout=10)
+    if result.returncode != 0:
+        if mode in {"1", "on", "true", "required"}:
+            return {
+                "status": "failed",
+                "path": "aitum_vertical",
+                "scene": aitum_scene,
+                "returncode": result.returncode,
+                "stderr": result.stderr.strip()[-500:],
+                "stdout": result.stdout.strip()[-500:],
+            }
+        return {"status": "fallback", "path": "aitum_vertical", "scene": aitum_scene, "reason": "not_available"}
+    try:
+        payload = json.loads(result.stdout)
+    except Exception:
+        payload = {"raw_stdout": result.stdout.strip()[-500:]}
+    status = str(payload.get("status", "scene_requested"))
+    if status != "scene_requested":
+        if mode in {"1", "on", "true", "required"}:
+            return {"status": "failed", "path": "aitum_vertical", "scene": aitum_scene, "payload": payload}
+        return {"status": "fallback", "path": "aitum_vertical", "scene": aitum_scene, "payload": payload}
+    return {"status": "scene_requested", "path": "aitum_vertical", "scene": aitum_scene, "payload": payload}
 
 
 def press_facetime_call_button(target: str) -> dict[str, Any]:

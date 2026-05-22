@@ -178,6 +178,12 @@ Rationale: browser overlays keep caregiver-facing text, event cards, recent acti
 
 The default visual language remains bounded: possible floor-stay, review required, draft caregiver alert prepared, raw video stays local, and human review required. It must not show diagnostic, medical-device, emergency-dispatch, or raw confidence claims by default.
 
+## 2026-05-22: Prefer Dual OBS Output Targets for FaceTime
+
+CareSight should prefer a dual-output OBS model for live caregiver handoff: the normal OBS canvas remains landscape for desktop/operator review, and an optional Aitum Vertical Canvas output owns the phone-oriented FaceTime surface. Plain OBS portrait output remains a fallback when the plugin is not installed.
+
+Rationale: OBS video settings are profile-global, not scene-local. Mutating the main OBS output from landscape to portrait during a call makes desktop review unstable and creates confusing preview behavior. A separate vertical canvas matches how multi-stream operators handle desktop and mobile outputs and lets CareSight keep purpose-built views for each recipient device.
+
 ## 2026-05-21: Alert Lifecycle Needs Follow-Up And Resolution Updates
 
 The approved initial Gemma wording is concise enough for the immediate validation path, but the operator requested time relevance, unresolved-alert follow-up cadence, and a resolution update with estimated total duration.

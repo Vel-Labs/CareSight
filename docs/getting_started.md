@@ -114,7 +114,20 @@ During live testing, keep the overlay following the latest SQLite event:
 ./scripts/update_obs_overlay.sh --watch
 ```
 
-Use OBS Virtual Camera in FaceTime only after confirming the scene shows intended CareSight feed/dashboard content and no unrelated private desktop content.
+Optional preferred FaceTime path: install [Aitum Vertical Canvas](https://github.com/Aitum/obs-vertical-canvas) so the desktop OBS canvas can stay landscape while FaceTime uses a dedicated vertical canvas.
+
+```bash
+./scripts/install_obs_vertical_canvas.sh
+open apps/obs-hub/vendor/aitum/vertical-canvas-macos-universal.pkg
+```
+
+After restarting OBS, create the Aitum vertical scene `CareSight Hub - FaceTime Mobile`, then check:
+
+```bash
+apps/obs-hub/tools/aitum_vertical.py status
+```
+
+Use OBS or Aitum Virtual Camera in FaceTime only after confirming the scene shows intended CareSight feed/dashboard content and no unrelated private desktop content.
 
 ## 6. Preserve the Control Loop
 

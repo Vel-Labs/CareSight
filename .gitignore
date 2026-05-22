@@ -19,6 +19,7 @@ apps/caresight-hub/results/
 apps/caresight-hub/data/
 apps/obs-hub/assets/*
 !apps/obs-hub/assets/.gitkeep
+apps/obs-hub/vendor/
 apps/obs-hub/config/current_event.json
 apps/obs-hub/config/current_event.js
 apps/obs-hub/config/live_preview.jpg

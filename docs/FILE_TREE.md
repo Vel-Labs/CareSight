@@ -244,6 +244,7 @@ apps/obs-hub/overlays/escalation.html
 apps/obs-hub/overlays/facetime-mobile.html
 apps/obs-hub/overlays/obs-overlay.css
 apps/obs-hub/overlays/obs-overlay.js
+apps/obs-hub/tools/aitum_vertical.py
 apps/obs-hub/tools/setup_obs_scenes.py
 apps/obs-hub/tools/update_obs_event.py
 contracts/README.md
@@ -495,6 +496,7 @@ packages/core/src/read-json-files.ts
 packages/core/src/types.ts
 packages/core/src/validate-contracts.ts
 scripts/init-template.ts
+scripts/install_obs_vertical_canvas.sh
 scripts/setup_obs_scene.sh
 scripts/update_obs_overlay.sh
 scripts/validate-contracts.ts

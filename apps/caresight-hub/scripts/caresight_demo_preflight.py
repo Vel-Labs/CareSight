@@ -17,6 +17,8 @@ DEFAULT_DB_PATH = ROOT_DIR / "data" / "caresight-v0.sqlite3"
 DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.local.json"
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
 DEFAULT_OBS_SCRIPT = REPO_ROOT / "apps" / "obs-hub" / "tools" / "setup_obs_scenes.py"
+DEFAULT_AITUM_SCRIPT = REPO_ROOT / "apps" / "obs-hub" / "tools" / "aitum_vertical.py"
+DEFAULT_AITUM_INSTALLER = REPO_ROOT / "scripts" / "install_obs_vertical_canvas.sh"
 DEFAULT_LOCAL_ENV_PATH = ROOT_DIR / "config" / "live-demo.local"
 DEFAULT_YOLO_MODEL = ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz"
 DEFAULT_GEMMA_MODEL = ROOT_DIR / "models" / "reasoning" / "gemma" / "gemma-4-e2b-it-4bit"
@@ -50,6 +52,8 @@ def main() -> None:
         model_file_check("tts_model", Path(args.tts_model), model_id=Path(args.tts_model).name, required=True),
         file_check("obs_live_preview", DEFAULT_OBS_PREVIEW_PATH, required=False),
         obs_dry_run_check(),
+        file_check("aitum_vertical_installer", DEFAULT_AITUM_INSTALLER, required=False),
+        aitum_vertical_check(local_env),
         executable_check("blackhole_switcher", "SwitchAudioSource", required=False),
         gemma_check(args.gemma_base_url),
         env_or_local_check("OBS_WEBSOCKET_PASSWORD", local_env, required=True),
@@ -180,6 +184,45 @@ def obs_dry_run_check() -> dict[str, object]:
         "ok": result.returncode == 0,
         "required": True,
         "detail": "dry-run passed" if result.returncode == 0 else (result.stderr or result.stdout).strip()[-300:],
+    }
+
+
+def aitum_vertical_check(local_env: dict[str, str]) -> dict[str, object]:
+    python = REPO_ROOT / ".venv-obs" / "bin" / "python"
+    if not python.exists():
+        python = Path(shutil.which("python3") or sys.executable)
+    if not DEFAULT_AITUM_SCRIPT.exists():
+        return {"name": "aitum_vertical_canvas", "ok": False, "required": False, "detail": "aitum_vertical.py missing"}
+    env = os.environ.copy()
+    for key, value in local_env.items():
+        env.setdefault(key, value)
+    result = subprocess.run(
+        [str(python), str(DEFAULT_AITUM_SCRIPT), "status", "--json"],
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return {
+            "name": "aitum_vertical_canvas",
+            "ok": False,
+            "required": False,
+            "detail": "optional plugin not reachable; plain OBS fallback remains available",
+        }
+    try:
+        payload = json.loads(result.stdout)
+    except Exception:
+        payload = {}
+    version = payload.get("version") or "unknown"
+    current = payload.get("current_scene") or "none"
+    virtual_camera = str(bool(payload.get("virtual_camera"))).lower()
+    return {
+        "name": "aitum_vertical_canvas",
+        "ok": True,
+        "required": False,
+        "detail": f"ready version={version} current_scene={current} vertical_virtual_camera={virtual_camera}",
     }
 
 

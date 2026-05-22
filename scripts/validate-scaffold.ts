@@ -170,7 +170,7 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
     "images",
     "results"
   ]);
-  const ignoredVendorRoots = new Set(["apps/caresight-hub/vendor/hermes-agent"]);
+  const ignoredVendorRoots = new Set(["apps/caresight-hub/vendor/hermes-agent", "apps/obs-hub/vendor"]);
   const ignoredFiles = new Set([
     "apps/obs-hub/config/current_event.json",
     "apps/obs-hub/config/current_event.js",
