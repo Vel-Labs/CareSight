@@ -97,14 +97,23 @@ def file_check(name: str, path: Path, *, required: bool) -> dict[str, object]:
 def model_file_check(name: str, path: Path, *, model_id: str, required: bool) -> dict[str, object]:
     exists = path.exists()
     kind = "directory" if exists and path.is_dir() else "file"
+    display_path = display_path_for(path)
     return {
         "name": name,
         "ok": exists,
         "required": required,
         "model": model_id,
         "path": str(path),
-        "detail": f"{model_id} present at {path} ({kind})" if exists else f"{model_id} missing at {path}",
+        "display_path": display_path,
+        "detail": f"{model_id} present at {display_path} ({kind})" if exists else f"{model_id} missing at {display_path}",
     }
+
+
+def display_path_for(path: Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def executable_check(name: str, executable: str, *, required: bool) -> dict[str, object]:

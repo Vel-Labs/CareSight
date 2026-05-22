@@ -269,8 +269,8 @@ def set_video_output_for_scene(client: Any, scene_name: str) -> dict[str, Any]:
         client.set_video_settings(
             base_width=1080,
             base_height=1920,
-            output_width=1080,
-            output_height=1920,
+            out_width=1080,
+            out_height=1920,
         )
         return {"status": "requested", "base": "1080x1920", "output": "1080x1920"}
     except Exception as exc:
