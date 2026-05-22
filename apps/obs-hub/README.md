@@ -33,6 +33,13 @@ Set a specific program scene:
 ./scripts/setup_obs_scene.sh --scene "CareSight Hub - Dashboard"
 ```
 
+By default, scene setup preserves the current OBS canvas/output resolution. OBS video settings are profile-global, not scene-local. Use explicit video modes only when needed:
+
+```bash
+./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile" --video-mode portrait
+./scripts/setup_obs_scene.sh --scene "CareSight Hub - Dashboard" --video-mode landscape
+```
+
 ## Dynamic Overlay Data
 
 OBS scenes are intentionally stable. Event-specific data is written to:
@@ -95,7 +102,7 @@ The caregiver UI intentionally displays a shortened event ID so it does not crow
 7. Use `CareSight Hub - FaceTime Mobile` for phone FaceTime recipients.
 8. Switch to an individual camera scene if the caregiver needs one zone.
 
-The live handoff script attempts to switch OBS to `CareSight Hub - FaceTime Mobile` before opening FaceTime. This scene uses a 1080x1920 browser source and requests matching OBS video output so phone recipients do not receive a tiny portrait UI embedded in a landscape frame.
+The live handoff script attempts to switch OBS to `CareSight Hub - FaceTime Mobile` and applies `--video-mode portrait` immediately before opening FaceTime. This scene uses a 1080x1920 browser source and matching OBS video output so phone recipients do not receive a tiny portrait UI embedded in a landscape frame.
 
 The FaceTime Mobile scene renders the detector feed through the OBS browser overlay. Start the detector with:
 

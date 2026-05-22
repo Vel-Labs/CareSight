@@ -332,7 +332,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
 
 This prefers `imsg` for a yes-like reply after the alert send, then falls back to the scoped SQLite reader. `imsg` and the fallback both need macOS Full Disk Access to read Messages. If access is blocked, the command fails closed and no FaceTime/TTS step runs automatically. After FaceTime is requested, the command waits briefly before TTS playback and then keeps running for a bounded review window so the OBS feed does not disappear immediately.
 
-The handoff switches OBS to `CareSight Hub - FaceTime Mobile` before opening FaceTime. This scene keeps the live detector feed and current event inside a portrait-safe center column so phone recipients do not see the landscape dashboard cropped off-screen.
+The handoff switches OBS to `CareSight Hub - FaceTime Mobile` and applies portrait output immediately before opening FaceTime. OBS video resolution is profile-global, not scene-local, so ordinary setup preserves the current output resolution unless `--video-mode portrait` or `--video-mode landscape` is explicitly requested.
 
 The mobile scene uses a local browser-rendered detector feed. The live detector serves annotated MJPEG at:
 

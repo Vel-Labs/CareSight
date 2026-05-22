@@ -199,7 +199,19 @@ Inputs: same private iMessage/FaceTime handles as the live iMessage test, `imsg`
 
 Outputs: `post_event_agent_live_run` with reply-watch status, FaceTime attempt ID if opened, and TTS playback status if attempted.
 
-Before opening FaceTime, the live handoff attempts to switch OBS to `CareSight Hub - FaceTime Mobile`, a portrait-safe scene for phone recipients. Run `./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile"` after pulling this change so OBS has the scene.
+Before opening FaceTime, the live handoff attempts to switch OBS to `CareSight Hub - FaceTime Mobile` and applies portrait OBS output. Run `./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile"` after pulling this change so OBS has the scene; ordinary setup preserves the current OBS output resolution.
+
+OBS video resolution is profile-global, not scene-local. If you need to preview phone output manually, use:
+
+```bash
+./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile" --video-mode portrait
+```
+
+To restore desktop output:
+
+```bash
+./scripts/setup_obs_scene.sh --scene "CareSight Hub - Dashboard" --video-mode landscape
+```
 
 `--reply-timeout-seconds` is the total reply watch window. `--no-response-escalation-seconds` controls when the one-time follow-up is sent inside that window. For example, timeout `120` and no-response escalation `90` means CareSight waits 90 seconds, sends the follow-up if there is still no reply, then watches for up to 30 more seconds.
 

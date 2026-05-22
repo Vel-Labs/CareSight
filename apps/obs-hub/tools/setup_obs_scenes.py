@@ -277,6 +277,20 @@ def set_video_output_for_scene(client: Any, scene_name: str, width: int, height:
         return {"status": "failed", "error": str(exc)}
 
 
+def apply_video_mode(client: Any, video_mode: str, scene_name: str, width: int, height: int) -> dict[str, Any]:
+    if video_mode == "preserve":
+        return {"status": "preserved", "scene": scene_name}
+    if video_mode == "portrait":
+        return set_video_output_for_scene(client, "CareSight Hub - FaceTime Mobile", width, height)
+    if video_mode == "landscape":
+        current = client.get_video_settings()
+        numerator = obs_get_attr(current, "fpsNumerator", "fps_numerator") or 60
+        denominator = obs_get_attr(current, "fpsDenominator", "fps_denominator") or 1
+        client.set_video_settings(numerator, denominator, width, height, width, height)
+        return {"status": "requested", "scene": scene_name, "base": f"{width}x{height}", "output": f"{width}x{height}"}
+    return set_video_output_for_scene(client, scene_name, width, height)
+
+
 def planned_scenes(cameras: list[dict[str, Any]]) -> list[str]:
     return [
         "CareSight Hub - Dashboard",
@@ -303,6 +317,15 @@ def main() -> int:
     parser.add_argument("--password", default=os.environ.get("OBS_WEBSOCKET_PASSWORD", ""))
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--scene", default="CareSight Hub - Escalation")
+    parser.add_argument(
+        "--video-mode",
+        choices=["preserve", "auto", "portrait", "landscape"],
+        default="preserve",
+        help=(
+            "OBS video settings are global for the profile. Preserve by default; "
+            "use portrait only for the FaceTime handoff path."
+        ),
+    )
     parser.add_argument("--refresh-overlays", action="store_true", help="Accepted for idempotent reruns; browser sources are always updated.")
     args = parser.parse_args()
 
@@ -339,9 +362,11 @@ def main() -> int:
 
     try:
         client.set_current_program_scene(args.scene)
-        video_settings = set_video_output_for_scene(client, args.scene, width, height)
+        video_settings = apply_video_mode(client, args.video_mode, args.scene, width, height)
         if video_settings["status"] == "requested":
             print(f"OBS video output set: {video_settings['output']}")
+        elif video_settings["status"] == "preserved":
+            print("OBS video output preserved")
     except Exception as exc:
         print(f"warn: could not switch to scene {args.scene}: {exc}")
 

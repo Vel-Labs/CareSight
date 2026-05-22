@@ -168,7 +168,7 @@ def switch_obs_to_facetime_scene() -> dict[str, Any]:
         python = Path(shutil.which("python3") or "python3")
     if not script.exists():
         return {"status": "blocked", "reason": "setup_obs_scenes_missing", "scene": scene}
-    command = [str(python), str(script), "--scene", scene, "--refresh-overlays"]
+    command = [str(python), str(script), "--scene", scene, "--video-mode", "portrait", "--refresh-overlays"]
     result = subprocess.run(command, cwd=repo_root, capture_output=True, check=False, text=True, timeout=10)
     if result.returncode != 0:
         return {
