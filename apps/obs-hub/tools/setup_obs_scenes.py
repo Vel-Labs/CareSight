@@ -262,16 +262,15 @@ def create_facetime_mobile_scene(client: Any, width: int, height: int) -> None:
     )
 
 
-def set_video_output_for_scene(client: Any, scene_name: str) -> dict[str, Any]:
+def set_video_output_for_scene(client: Any, scene_name: str, width: int, height: int) -> dict[str, Any]:
+    current = client.get_video_settings()
+    numerator = obs_get_attr(current, "fpsNumerator", "fps_numerator") or 60
+    denominator = obs_get_attr(current, "fpsDenominator", "fps_denominator") or 1
     if scene_name != "CareSight Hub - FaceTime Mobile":
-        return {"status": "not_requested", "scene": scene_name}
+        client.set_video_settings(numerator, denominator, width, height, width, height)
+        return {"status": "requested", "scene": scene_name, "base": f"{width}x{height}", "output": f"{width}x{height}"}
     try:
-        client.set_video_settings(
-            base_width=1080,
-            base_height=1920,
-            out_width=1080,
-            out_height=1920,
-        )
+        client.set_video_settings(numerator, denominator, 1080, 1920, 1080, 1920)
         return {"status": "requested", "base": "1080x1920", "output": "1080x1920"}
     except Exception as exc:
         print(f"warn: could not set vertical OBS video output: {exc}")
@@ -340,9 +339,9 @@ def main() -> int:
 
     try:
         client.set_current_program_scene(args.scene)
-        video_settings = set_video_output_for_scene(client, args.scene)
+        video_settings = set_video_output_for_scene(client, args.scene, width, height)
         if video_settings["status"] == "requested":
-            print("OBS video output set for FaceTime Mobile: 1080x1920")
+            print(f"OBS video output set: {video_settings['output']}")
     except Exception as exc:
         print(f"warn: could not switch to scene {args.scene}: {exc}")
 
