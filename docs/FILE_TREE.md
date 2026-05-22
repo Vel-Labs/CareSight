@@ -74,9 +74,11 @@ apps/caresight-hub/config/command-registry.json
 apps/caresight-hub/config/hermes/README.md
 apps/caresight-hub/config/hermes/allowlisted-contacts.example.json
 apps/caresight-hub/config/hermes/allowlisted-contacts.local.example.json
+apps/caresight-hub/config/hermes/allowlisted-contacts.local.json
 apps/caresight-hub/config/hermes/config.caresight.local.yaml
 apps/caresight-hub/config/hermes/env.caresight.example
 apps/caresight-hub/config/hermes/model-routes.json
+apps/caresight-hub/config/live-demo.local
 apps/caresight-hub/config/live-demo.local.example
 apps/caresight-hub/config/v0.local.json
 apps/caresight-hub/pyproject.toml

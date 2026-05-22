@@ -651,6 +651,22 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(values["OBS_WEBSOCKET_PASSWORD"], "local-secret")
             self.assertEqual(values["CARESIGHT_OBS_BROWSER_FEED_URL"], "http://127.0.0.1:8766/stream.mjpg")
 
+    def test_preflight_model_check_names_actual_model(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            model_path = Path(tmpdir) / "gemma-4-e2b-it-4bit"
+            model_path.mkdir()
+
+            check = preflight_module.model_file_check(
+                "gemma_model",
+                model_path,
+                model_id="gemma-4-e2b-it-4bit",
+                required=True,
+            )
+
+            self.assertTrue(check["ok"])
+            self.assertEqual(check["model"], "gemma-4-e2b-it-4bit")
+            self.assertIn("gemma-4-e2b-it-4bit present", check["detail"])
+
 
 class Seed:
     def __init__(self, tmpdir: tempfile.TemporaryDirectory[str]):

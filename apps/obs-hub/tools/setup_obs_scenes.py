@@ -54,7 +54,9 @@ def validate_config(config: dict[str, Any]) -> tuple[int, int, list[dict[str, An
     return width, height, cameras
 
 
-def print_obs_help() -> None:
+def print_obs_help(error: Exception | None = None) -> None:
+    if error is not None:
+        print(f"OBS websocket connection failed: {type(error).__name__}: {error}")
     print(
         """
 Could not connect to OBS websocket.
@@ -68,6 +70,9 @@ Open OBS and configure:
 5. Run:
    export OBS_WEBSOCKET_PASSWORD='your-password'
    ./scripts/setup_obs_scene.sh
+
+If OBS_WEBSOCKET_PASSWORD is already set, re-copy the password from OBS.
+An auth/identify failure usually means the host/port is reachable but the password is wrong.
 """.strip()
     )
 
@@ -323,8 +328,8 @@ def main() -> int:
 
     try:
         client = ReqClient(host=args.host, port=args.port, password=args.password, timeout=5)
-    except Exception:
-        print_obs_help()
+    except Exception as exc:
+        print_obs_help(exc)
         return 2
 
     create_dashboard_scene(client, width, height)

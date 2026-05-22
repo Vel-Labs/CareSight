@@ -18,6 +18,9 @@ DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
 DEFAULT_OBS_SCRIPT = REPO_ROOT / "apps" / "obs-hub" / "tools" / "setup_obs_scenes.py"
 DEFAULT_LOCAL_ENV_PATH = ROOT_DIR / "config" / "live-demo.local"
+DEFAULT_YOLO_MODEL = ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz"
+DEFAULT_GEMMA_MODEL = ROOT_DIR / "models" / "reasoning" / "gemma" / "gemma-4-e2b-it-4bit"
+DEFAULT_TTS_MODEL = ROOT_DIR / "models" / "tts" / "holler" / "holler-0.6b-6bit"
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +31,8 @@ def parse_args() -> argparse.Namespace:
         default=os.environ.get("CARESIGHT_CONTACT_ALLOWLIST_PATH", str(DEFAULT_ALLOWLIST_PATH)),
     )
     parser.add_argument("--gemma-base-url", default=os.environ.get("CARESIGHT_GEMMA_BASE_URL", "http://127.0.0.1:8080/v1"))
+    parser.add_argument("--gemma-model", default=os.environ.get("CARESIGHT_GEMMA_MODEL", str(DEFAULT_GEMMA_MODEL)))
+    parser.add_argument("--tts-model", default=os.environ.get("CARESIGHT_TTS_MODEL", str(DEFAULT_TTS_MODEL)))
     parser.add_argument("--json", action="store_true", help="Print only JSON.")
     return parser.parse_args()
 
@@ -40,7 +45,9 @@ def main() -> None:
         file_check("contact_allowlist", Path(args.allowlist_config), required=True),
         file_check("local_demo_env", DEFAULT_LOCAL_ENV_PATH, required=False),
         file_check("yolo_python", ROOT_DIR / "vendor" / "yolo-mlx" / ".venv" / "bin" / "python", required=True),
-        file_check("yolo_model", ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz", required=True),
+        model_file_check("yolo_model", DEFAULT_YOLO_MODEL, model_id="yolo26n", required=True),
+        model_file_check("gemma_model", Path(args.gemma_model), model_id=Path(args.gemma_model).name, required=True),
+        model_file_check("tts_model", Path(args.tts_model), model_id=Path(args.tts_model).name, required=True),
         file_check("obs_live_preview", DEFAULT_OBS_PREVIEW_PATH, required=False),
         obs_dry_run_check(),
         executable_check("blackhole_switcher", "SwitchAudioSource", required=False),
@@ -84,6 +91,19 @@ def file_check(name: str, path: Path, *, required: bool) -> dict[str, object]:
         "required": required,
         "path": str(path),
         "detail": "present" if path.exists() else "missing",
+    }
+
+
+def model_file_check(name: str, path: Path, *, model_id: str, required: bool) -> dict[str, object]:
+    exists = path.exists()
+    kind = "directory" if exists and path.is_dir() else "file"
+    return {
+        "name": name,
+        "ok": exists,
+        "required": required,
+        "model": model_id,
+        "path": str(path),
+        "detail": f"{model_id} present at {path} ({kind})" if exists else f"{model_id} missing at {path}",
     }
 
 
@@ -156,9 +176,16 @@ def obs_dry_run_check() -> dict[str, object]:
 
 def gemma_check(base_url: str) -> dict[str, object]:
     request = Request(base_url.rstrip("/") + "/models", method="GET")
+    model_ids: list[str] = []
     try:
         with urlopen(request, timeout=2) as response:
             ok = 200 <= response.status < 300
+            try:
+                payload = json.loads(response.read().decode("utf-8"))
+                data = payload.get("data", []) if isinstance(payload, dict) else []
+                model_ids = [str(item.get("id")) for item in data if isinstance(item, dict) and item.get("id")]
+            except Exception:
+                model_ids = []
     except Exception as exc:
         return {
             "name": "gemma_endpoint",
@@ -167,7 +194,8 @@ def gemma_check(base_url: str) -> dict[str, object]:
             "url": base_url,
             "detail": f"not ready: {exc}",
         }
-    return {"name": "gemma_endpoint", "ok": ok, "required": False, "url": base_url, "detail": "ready"}
+    model_detail = f" models={','.join(model_ids)}" if model_ids else ""
+    return {"name": "gemma_endpoint", "ok": ok, "required": False, "url": base_url, "models": model_ids, "detail": f"ready{model_detail}"}
 
 
 def print_human(payload: dict[str, object]) -> None:
