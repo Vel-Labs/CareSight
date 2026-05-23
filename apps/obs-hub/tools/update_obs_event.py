@@ -114,6 +114,47 @@ def latest_action_request(conn: sqlite3.Connection, event_id: str) -> sqlite3.Ro
     ).fetchone()
 
 
+def action_requests(conn: sqlite3.Connection, event_id: str) -> list[sqlite3.Row]:
+    try:
+        return conn.execute(
+            """
+            SELECT * FROM agent_action_requests
+            WHERE event_id = ?
+            ORDER BY created_at, request_id
+            """,
+            (event_id,),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+
+def execution_attempts(conn: sqlite3.Connection, event_id: str) -> list[sqlite3.Row]:
+    try:
+        return conn.execute(
+            """
+            SELECT * FROM agent_execution_attempts
+            WHERE event_id = ?
+            ORDER BY created_at, attempt_id
+            """,
+            (event_id,),
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+
+def camera_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    try:
+        return conn.execute(
+            """
+            SELECT camera_id, name, source_type, source_uri, width, height, fps
+            FROM cameras
+            ORDER BY camera_id
+            """
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+
 def recent_event_rows(conn: sqlite3.Connection, limit: int) -> list[sqlite3.Row]:
     return conn.execute(
         """
@@ -241,11 +282,185 @@ def activity_from_check(row: sqlite3.Row) -> dict[str, str]:
     }
 
 
+def alert_feed_from_state(
+    *,
+    event: sqlite3.Row,
+    draft: sqlite3.Row | None,
+    requests: list[sqlite3.Row],
+    attempts: list[sqlite3.Row],
+) -> list[dict[str, str]]:
+    feed = [
+        {
+            "type": "event_created",
+            "time": format_activity_time(str(event["occurred_at"])),
+            "label": display_label(str(event["event_type"])),
+            "detail": f"{room_for_event(event)} | Human review required",
+            "status": review_status(str(event["status"])).replace("_", " ").title(),
+            "tone": "attention",
+        }
+    ]
+    if draft is not None:
+        feed.append(
+            {
+                "type": "draft_prepared",
+                "time": format_activity_time(str(draft["created_at"])),
+                "label": "Caregiver alert drafted",
+                "detail": f"{humanize_token(str(draft['provider']))} | {humanize_token(str(draft['validation_status']))}",
+                "status": "Prepared" if draft["validation_status"] == "validated" else "Needs review",
+                "tone": "cool" if draft["validation_status"] == "validated" else "attention",
+            }
+        )
+    if requests:
+        latest_request = requests[-1]
+        feed.append(
+            {
+                "type": "action_staged",
+                "time": format_activity_time(str(latest_request["created_at"])),
+                "label": action_label(str(latest_request["requested_action"])),
+                "detail": f"{humanize_token(str(latest_request['destination'] or 'handoff'))} | Human-approved lane",
+                "status": "Staged",
+                "tone": "cool",
+            }
+        )
+
+    for attempt in attempts:
+        feed.append(alert_item_from_attempt(attempt))
+    return feed[-6:]
+
+
+def action_label(action: str) -> str:
+    labels = {
+        "send_caregiver_message": "Caregiver message prepared",
+        "send_imessage_draft": "iMessage caregiver alert",
+        "prepare_facetime_handoff": "FaceTime handoff prepared",
+        "play_tts_utterance": "CareSight audio prepared",
+    }
+    return labels.get(action, humanize_token(action))
+
+
+def alert_item_from_attempt(row: sqlite3.Row) -> dict[str, str]:
+    payload = json.loads(row["payload_json"] or "{}")
+    result = str(row["result"])
+    labels = {
+        "hermes_no_send_preflight_ready": "Hermes preflight ready",
+        "imessage_sent": "Caregiver alert sent",
+        "imessage_no_response_escalation_sent": "Follow-up sent with snapshot",
+        "facetime_open_requested": "FaceTime handoff opened",
+        "tts_playback_requested": "CareSight audio played",
+        "tts_playback_failed": "CareSight audio failed",
+    }
+    details = {
+        "hermes_no_send_preflight_ready": "Local harness ready | No send",
+        "imessage_sent": "iMessage | Waiting for reply",
+        "imessage_no_response_escalation_sent": "No reply observed | Snapshot attached",
+        "facetime_open_requested": "Caregiver requested live feed",
+        "tts_playback_requested": "Automated message played",
+        "tts_playback_failed": "Check local TTS/audio route",
+    }
+    delivery = payload.get("delivery") if isinstance(payload, dict) else None
+    delivery_status = delivery.get("status") if isinstance(delivery, dict) else None
+    status = "Complete" if row["execution_state"] == "executed" else humanize_token(str(row["execution_state"]))
+    if result == "hermes_no_send_preflight_ready":
+        status = "Ready"
+    if result == "tts_playback_failed":
+        status = "Failed"
+    return {
+        "type": result,
+        "time": format_activity_time(str(row["created_at"])),
+        "label": labels.get(result, humanize_token(result)),
+        "detail": details.get(result, humanize_token(str(delivery_status or row["harness"]))),
+        "status": status,
+        "tone": "cool" if row["execution_state"] in ("dry_run", "executed") else "attention",
+    }
+
+
+def humanize_token(value: str) -> str:
+    text = value.replace("_", " ").replace("-", " ").title()
+    replacements = {
+        "Imessage": "iMessage",
+        "Gemma Mlx": "Gemma MLX",
+        "Mlx": "MLX",
+        "Tts": "TTS",
+        "Obs": "OBS",
+    }
+    for source, target in replacements.items():
+        text = text.replace(source, target)
+    return text
+
+
+def camera_cards_from_state(conn: sqlite3.Connection, event: sqlite3.Row) -> list[dict[str, str]]:
+    active_camera_id = str(event["camera_id"] or "")
+    rows = camera_rows(conn)
+    cards = [camera_card(row, active_camera_id) for row in rows]
+    known = {card["camera_id"] for card in cards}
+    fallback = [
+        ("living_room", "Living Room", "C1"),
+        ("kitchen", "Kitchen", "C2"),
+        ("hallway", "Hallway", "C3"),
+        ("bedroom", "Bedroom", "C4"),
+    ]
+    for camera_id, zone, display_id in fallback:
+        if camera_id in known:
+            continue
+        cards.append(
+            {
+                "camera_id": camera_id,
+                "display_id": display_id,
+                "zone": zone,
+                "status": "not_configured",
+                "status_label": "Not configured",
+                "source": "No local source",
+                "icon": "camera-off",
+                "tone": "muted",
+            }
+        )
+    cards.sort(key=lambda item: (item["status"] != "active", item["display_id"]))
+    return cards[:4]
+
+
+def camera_card(row: sqlite3.Row, active_camera_id: str) -> dict[str, str]:
+    camera_id = str(row["camera_id"] or "")
+    source_type = str(row["source_type"] or "unknown")
+    is_active = camera_id == active_camera_id
+    return {
+        "camera_id": camera_id,
+        "display_id": camera_alias(camera_id),
+        "zone": camera_zone_label(camera_id, str(row["name"] or "")),
+        "status": "active" if is_active else "configured",
+        "status_label": "Live priority feed" if is_active else "Configured",
+        "source": source_type.replace("_", " ").title(),
+        "icon": "camera-live" if is_active else "camera",
+        "tone": "cool" if is_active else "muted",
+    }
+
+
+def camera_zone_label(camera_id: str, name: str) -> str:
+    labels = {
+        "living_room": "Living Room",
+        "kitchen": "Kitchen",
+        "hallway": "Hallway",
+        "bedroom": "Bedroom",
+    }
+    return labels.get(camera_id, name or camera_id.replace("_", " ").title())
+
+
+def camera_alias(camera_id: str) -> str:
+    aliases = {
+        "living_room": "C1",
+        "kitchen": "C2",
+        "hallway": "C3",
+        "bedroom": "C4",
+    }
+    return aliases.get(camera_id, camera_id or "C?")
+
+
 def build_overlay_state(conn: sqlite3.Connection, args: argparse.Namespace) -> dict[str, Any]:
     event_id = args.event_id or latest_event_id(conn)
     event = event_row(conn, event_id)
     draft = latest_draft(conn, event_id)
     action_request = latest_action_request(conn, event_id)
+    requests = action_requests(conn, event_id)
+    attempts = execution_attempts(conn, event_id)
     room = room_for_event(event)
     observed_at = str(event["occurred_at"])
 
@@ -278,6 +493,9 @@ def build_overlay_state(conn: sqlite3.Connection, args: argparse.Namespace) -> d
             "suggested_next_step": suggested_next_step(draft),
         },
         "recent_activity": (recent_events + recent_checks)[: args.recent_limit],
+        "alert_feed": alert_feed_from_state(event=event, draft=draft, requests=requests, attempts=attempts),
+        "camera_cards": camera_cards_from_state(conn, event),
+        "handoff_status": handoff_status(attempts),
         "camera_health": "Configured locally",
         "live_preview": live_preview_state(args.live_preview),
         "constraints": [
@@ -289,6 +507,19 @@ def build_overlay_state(conn: sqlite3.Connection, args: argparse.Namespace) -> d
     }
     assert_safe_language(state)
     return state
+
+
+def handoff_status(attempts: list[sqlite3.Row]) -> dict[str, str]:
+    results = [str(row["result"]) for row in attempts]
+    if "facetime_open_requested" in results:
+        return {"label": "Live handoff opened", "status": "live", "tone": "cool"}
+    if "imessage_no_response_escalation_sent" in results:
+        return {"label": "Follow-up sent", "status": "waiting_for_reply", "tone": "attention"}
+    if "imessage_sent" in results:
+        return {"label": "Caregiver alert sent", "status": "waiting_for_reply", "tone": "attention"}
+    if "hermes_no_send_preflight_ready" in results:
+        return {"label": "Alert prepared", "status": "ready", "tone": "cool"}
+    return {"label": "Review required", "status": "review_required", "tone": "attention"}
 
 
 def suggested_next_step(draft: sqlite3.Row | None) -> str:

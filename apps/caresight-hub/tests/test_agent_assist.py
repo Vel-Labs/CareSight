@@ -23,7 +23,11 @@ from caresight.runtime.agent_assist import (
     validate_draft_text,
 )
 from caresight.runtime.config import CareSightConfig
-from caresight.runtime.agent_assist.live_handoff import switch_aitum_vertical_scene
+from caresight.runtime.agent_assist.live_handoff import (
+    _imessage_command,
+    switch_aitum_vertical_scene,
+    switch_obs_to_facetime_scene,
+)
 from caresight.storage.sqlite_store import SQLiteStore
 from caresight.vision.detections import Detection
 
@@ -306,6 +310,15 @@ class AgentAssistTest(unittest.TestCase):
             self.assertTrue(delivery["attachment"]["redacted"])
             self.assertNotIn(str(snapshot), json.dumps(attempt))
 
+    def test_live_imessage_attachment_command_uses_alias_file_send(self) -> None:
+        command = _imessage_command("+15555550123", "CareSight follow-up", Path("/tmp/evt_snapshot.jpg"))
+        script = command[2]
+
+        self.assertIn("POSIX file attachmentPath as alias", script)
+        self.assertIn("send attachmentFile to targetBuddy", script)
+        self.assertIn("delay 1", script)
+        self.assertEqual(command[-1], "/tmp/evt_snapshot.jpg")
+
     def test_facetime_handoff_is_reply_gated(self) -> None:
         with seeded_store() as seed:
             draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
@@ -373,6 +386,28 @@ class AgentAssistTest(unittest.TestCase):
 
             self.assertEqual(result["status"], "failed")
             self.assertEqual(result["path"], "aitum_vertical")
+
+    def test_facetime_landscape_scene_does_not_force_portrait_output(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {
+                "CARESIGHT_AITUM_VERTICAL_MODE": "off",
+                "CARESIGHT_OBS_FACETIME_SCENE": "CareSight Hub - Escalation",
+            },
+            clear=False,
+        ):
+            with patch("subprocess.run") as run:
+                run.return_value.returncode = 0
+                run.return_value.stdout = "ready"
+                run.return_value.stderr = ""
+
+                result = switch_obs_to_facetime_scene()
+
+            self.assertEqual(result["status"], "scene_requested")
+            self.assertEqual(result["scene"], "CareSight Hub - Escalation")
+            self.assertEqual(result["video_mode"], "landscape")
+            self.assertIn("--video-mode", run.call_args.args[0])
+            self.assertIn("landscape", run.call_args.args[0])
 
     def test_reply_watch_times_out_without_messages_access_or_reply(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

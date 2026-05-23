@@ -18,8 +18,9 @@ ROOT = Path(__file__).resolve().parents[3]
 APP_DIR = ROOT / "apps" / "obs-hub"
 CONFIG_PATH = APP_DIR / "config" / "cameras.json"
 EVENT_PATH = APP_DIR / "config" / "sample_event.json"
+LAYOUT_PATH = APP_DIR / "config" / "overlay_layout.json"
 OVERLAY_DIR = APP_DIR / "overlays"
-DEFAULT_BROWSER_FEED_URL = "http://127.0.0.1:8766/stream.mjpg"
+DEFAULT_BROWSER_FEED_URL = "http://127.0.0.1:8766/live.html"
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -54,6 +55,12 @@ def validate_config(config: dict[str, Any]) -> tuple[int, int, list[dict[str, An
     return width, height, cameras
 
 
+def load_layout() -> dict[str, Any]:
+    if not LAYOUT_PATH.exists():
+        return {}
+    return load_json(LAYOUT_PATH)
+
+
 def print_obs_help(error: Exception | None = None) -> None:
     if error is not None:
         print(f"OBS websocket connection failed: {type(error).__name__}: {error}")
@@ -75,6 +82,23 @@ If OBS_WEBSOCKET_PASSWORD is already set, re-copy the password from OBS.
 An auth/identify failure usually means the host/port is reachable but the password is wrong.
 """.strip()
     )
+
+
+def connect_client(args: argparse.Namespace) -> Any:
+    if ReqClient is None:
+        raise RuntimeError("Missing dependency: obsws-python")
+    return ReqClient(host=args.host, port=args.port, password=args.password, timeout=5)
+
+
+def run_obs_step(args: argparse.Namespace, client: Any, label: str, step: Any) -> Any:
+    try:
+        step(client)
+        return client
+    except OSError as exc:
+        print(f"warn: OBS websocket dropped during {label}; reconnecting once: {type(exc).__name__}: {exc}")
+        client = connect_client(args)
+        step(client)
+        return client
 
 
 def obs_get_attr(value: Any, key: str, attr: str) -> Any:
@@ -107,7 +131,10 @@ def create_or_update_input(
     enabled: bool = True,
 ) -> None:
     if source_exists(client, input_name):
-        client.set_input_settings(input_name, settings, True)
+        try:
+            client.set_input_settings(input_name, settings, True)
+        except Exception as exc:
+            print(f"warn: could not update existing input {input_name}: {type(exc).__name__}: {exc}")
         add_existing_source_to_scene(client, scene_name, input_name)
         return
     client.create_input(scene_name, input_name, input_kind, settings, enabled)
@@ -133,6 +160,26 @@ def set_transform(client: Any, scene_name: str, source_name: str, transform: dic
         print(f"warn: could not set transform for {source_name}: {exc}")
 
 
+def set_scene_item_index(client: Any, scene_name: str, source_name: str, index: int) -> None:
+    try:
+        item = client.get_scene_item_id(scene_name, source_name)
+        scene_item_id = obs_get_attr(item, "sceneItemId", "scene_item_id")
+        if scene_item_id is not None:
+            client.set_scene_item_index(scene_name, scene_item_id, index)
+    except Exception as exc:
+        print(f"warn: could not set source order for {source_name}: {exc}")
+
+
+def set_scene_item_enabled(client: Any, scene_name: str, source_name: str, enabled: bool) -> None:
+    try:
+        item = client.get_scene_item_id(scene_name, source_name)
+        scene_item_id = obs_get_attr(item, "sceneItemId", "scene_item_id")
+        if scene_item_id is not None:
+            client.set_scene_item_enabled(scene_name, scene_item_id, enabled)
+    except Exception:
+        return
+
+
 def fill_transform(width: int, height: int) -> dict[str, Any]:
     return {
         "positionX": 0,
@@ -142,6 +189,22 @@ def fill_transform(width: int, height: int) -> dict[str, Any]:
         "boundsType": "OBS_BOUNDS_SCALE_INNER",
         "boundsWidth": width,
         "boundsHeight": height,
+        "alignment": 5,
+    }
+
+
+def rect_transform(rect: dict[str, Any], *, fit: str = "contain") -> dict[str, Any]:
+    bounds_type = "OBS_BOUNDS_SCALE_INNER"
+    if fit == "cover":
+        bounds_type = "OBS_BOUNDS_SCALE_OUTER"
+    return {
+        "positionX": int(rect.get("x", rect.get("left", 0))),
+        "positionY": int(rect.get("y", rect.get("top", 0))),
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "boundsType": bounds_type,
+        "boundsWidth": int(rect.get("width", 1920)),
+        "boundsHeight": int(rect.get("height", 1080)),
         "alignment": 5,
     }
 
@@ -166,6 +229,53 @@ def ensure_browser_source(
     }
     create_or_update_input(client, scene_name, source_name, "browser_source", settings, True)
     set_transform(client, scene_name, source_name, fill_transform(width, height))
+
+
+def ensure_browser_url_source(
+    client: Any,
+    scene_name: str,
+    source_name: str,
+    url: str,
+    width: int,
+    height: int,
+) -> None:
+    settings = {
+        "url": url,
+        "width": width,
+        "height": height,
+        "fps": 30,
+        "shutdown": False,
+        "restart_when_active": True,
+        "css": "body { background-color: rgba(0, 0, 0, 0); }",
+    }
+    create_or_update_input(client, scene_name, source_name, "browser_source", settings, True)
+    set_transform(client, scene_name, source_name, fill_transform(width, height))
+
+
+def ensure_live_feed_source(
+    client: Any,
+    scene_name: str,
+    source_name: str,
+    width: int,
+    height: int,
+    *,
+    fit: str = "cover",
+) -> None:
+    feed_url = os.environ.get("CARESIGHT_OBS_BROWSER_FEED_URL", DEFAULT_BROWSER_FEED_URL)
+    if feed_url.endswith("/live.html") or "/live.html" in feed_url:
+        ensure_browser_url_source(client, scene_name, source_name, feed_url, width, height)
+        return
+    quoted_feed_url = quote(feed_url, safe="")
+    fit_value = quote(fit)
+    ensure_browser_source(
+        client,
+        scene_name,
+        source_name,
+        OVERLAY_DIR / "live-feed.html",
+        width,
+        height,
+        f"?feed_url={quoted_feed_url}&fit={fit_value}",
+    )
 
 
 def ensure_image_source(
@@ -230,9 +340,12 @@ def create_dashboard_scene(client: Any, width: int, height: int) -> None:
 
 def create_escalation_scene(client: Any, width: int, height: int) -> None:
     scene = "CareSight Hub - Escalation"
+    layout = load_layout().get("escalation", {})
+    feed_rect = layout.get("liveFeed", {"x": 0, "y": 0, "width": width, "height": height})
     ensure_scene(client, scene)
     ensure_placeholder_source(client, scene, "CareSight Escalation Background", width, height)
-    feed_url = quote(os.environ.get("CARESIGHT_OBS_BROWSER_FEED_URL", DEFAULT_BROWSER_FEED_URL), safe="")
+    ensure_live_feed_source(client, scene, "CareSight Escalation Live Feed", width, height, fit="cover")
+    set_transform(client, scene, "CareSight Escalation Live Feed", rect_transform(feed_rect, fit="contain"))
     ensure_browser_source(
         client,
         scene,
@@ -240,16 +353,23 @@ def create_escalation_scene(client: Any, width: int, height: int) -> None:
         OVERLAY_DIR / "escalation.html",
         width,
         height,
-        f"?feed=mjpeg&feed_url={feed_url}",
     )
+    set_scene_item_enabled(client, scene, "CareSight Escalation Main Feed", False)
+    set_scene_item_index(client, scene, "CareSight Escalation Background", 2)
+    set_scene_item_index(client, scene, "CareSight Escalation Live Feed", 1)
+    set_scene_item_index(client, scene, "CareSight Escalation Overlay", 0)
 
 
 def create_facetime_mobile_scene(client: Any, width: int, height: int) -> None:
     scene = "CareSight Hub - FaceTime Mobile"
     mobile_width = 1080
     mobile_height = 1920
+    layout = load_layout().get("facetime", {})
+    feed_rect = layout.get("liveFeed", {"x": 0, "y": 0, "width": mobile_width, "height": mobile_height})
     ensure_scene(client, scene)
     ensure_placeholder_source(client, scene, "CareSight FaceTime Mobile Background", mobile_width, mobile_height)
+    ensure_live_feed_source(client, scene, "CareSight FaceTime Mobile Live Feed", mobile_width, mobile_height, fit="cover")
+    set_transform(client, scene, "CareSight FaceTime Mobile Live Feed", rect_transform(feed_rect, fit="contain"))
     feed_url = quote(os.environ.get("CARESIGHT_OBS_BROWSER_FEED_URL", DEFAULT_BROWSER_FEED_URL), safe="")
     ensure_browser_source(
         client,
@@ -258,8 +378,11 @@ def create_facetime_mobile_scene(client: Any, width: int, height: int) -> None:
         OVERLAY_DIR / "facetime-mobile.html",
         mobile_width,
         mobile_height,
-        f"?feed=mjpeg&feed_url={feed_url}",
+        f"?video=external&feed_url={feed_url}",
     )
+    set_scene_item_index(client, scene, "CareSight FaceTime Mobile Background", 2)
+    set_scene_item_index(client, scene, "CareSight FaceTime Mobile Live Feed", 1)
+    set_scene_item_index(client, scene, "CareSight FaceTime Mobile Overlay", 0)
 
 
 def set_video_output_for_scene(client: Any, scene_name: str, width: int, height: int) -> dict[str, Any]:
@@ -340,7 +463,7 @@ def main() -> int:
         for scene in scenes:
             print(f"- {scene}")
         print("Planned overlay files:")
-        for overlay in ["dashboard.html", "escalation.html", "facetime-mobile.html", "camera-feed.html"]:
+        for overlay in ["dashboard.html", "escalation.html", "facetime-mobile.html", "camera-feed.html", "live-feed.html"]:
             print(f"- {file_url(OVERLAY_DIR / overlay)}")
         return 0
 
@@ -349,16 +472,16 @@ def main() -> int:
         return 2
 
     try:
-        client = ReqClient(host=args.host, port=args.port, password=args.password, timeout=5)
+        client = connect_client(args)
     except Exception as exc:
         print_obs_help(exc)
         return 2
 
-    create_dashboard_scene(client, width, height)
-    create_escalation_scene(client, width, height)
-    create_facetime_mobile_scene(client, width, height)
+    client = run_obs_step(args, client, "dashboard scene setup", lambda active: create_dashboard_scene(active, width, height))
+    client = run_obs_step(args, client, "escalation scene setup", lambda active: create_escalation_scene(active, width, height))
+    client = run_obs_step(args, client, "FaceTime mobile scene setup", lambda active: create_facetime_mobile_scene(active, width, height))
     for camera in cameras:
-        create_camera_scene(client, camera, width, height)
+        client = run_obs_step(args, client, f"camera scene setup {camera['scene']}", lambda active, camera=camera: create_camera_scene(active, camera, width, height))
 
     try:
         client.set_current_program_scene(args.scene)

@@ -21,8 +21,14 @@ def parse_args() -> argparse.Namespace:
     route_parser.add_argument(
         "--hold-after-seconds",
         type=float,
-        default=1.5,
+        default=6.0,
         help="Keep BlackHole selected briefly after playback before restoring devices.",
+    )
+    route_parser.add_argument(
+        "--settle-before-seconds",
+        type=float,
+        default=2.0,
+        help="Wait after switching to BlackHole before starting playback.",
     )
     route_parser.add_argument("route_command", nargs=argparse.REMAINDER)
     return parser.parse_args()
@@ -51,7 +57,11 @@ def main() -> int:
             print("audio_route_failed missing command", file=sys.stderr)
             return 2
         command = args.route_command[1:] if args.route_command[0] == "--" else args.route_command
-        return run_with_blackhole(command, hold_after_seconds=args.hold_after_seconds)
+        return run_with_blackhole(
+            command,
+            hold_after_seconds=args.hold_after_seconds,
+            settle_before_seconds=args.settle_before_seconds,
+        )
     return 2
 
 
@@ -81,7 +91,12 @@ def audio_route_status() -> dict[str, Any]:
     }
 
 
-def run_with_blackhole(command: list[str], *, hold_after_seconds: float = 1.5) -> int:
+def run_with_blackhole(
+    command: list[str],
+    *,
+    hold_after_seconds: float = 6.0,
+    settle_before_seconds: float = 2.0,
+) -> int:
     status = audio_route_status()
     if not status["switchaudio_available"]:
         print("audio_route_failed switchaudio_missing; run install-plan", file=sys.stderr)
@@ -95,6 +110,8 @@ def run_with_blackhole(command: list[str], *, hold_after_seconds: float = 1.5) -
     try:
         set_device("input", BLACKHOLE_DEVICE)
         set_device("output", BLACKHOLE_DEVICE)
+        if settle_before_seconds > 0:
+            __import__("time").sleep(settle_before_seconds)
         returncode = subprocess.run(command, check=False).returncode
         if hold_after_seconds > 0:
             __import__("time").sleep(hold_after_seconds)

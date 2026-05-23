@@ -42,7 +42,7 @@ By default, scene setup preserves the current OBS canvas/output resolution. OBS 
 
 ## Optional Aitum Vertical Canvas
 
-CareSight prefers a dual-output OBS model for live FaceTime tests: the normal OBS canvas stays `1920x1080` for desktop/operator views, while the optional [Aitum Vertical Canvas](https://github.com/Aitum/obs-vertical-canvas) plugin owns the `1080x1920` phone handoff surface.
+CareSight treats Aitum Vertical Canvas as an experimental visual bridge, not the default FaceTime handoff path. The normal OBS canvas stays `1920x1080` for desktop/operator review, while Aitum can still serve a separate `1080x1920` phone handoff surface for investigation.
 
 Install helper:
 
@@ -59,18 +59,39 @@ Check plugin status:
 apps/obs-hub/tools/aitum_vertical.py status
 ```
 
-Operator setup still needs one manual step in OBS: create or rename a vertical scene named `CareSight Hub - FaceTime Mobile` in the Aitum Vertical dock and add the CareSight mobile browser source/overlay there. The Aitum websocket API currently exposes scene switching/status/virtual-camera controls, but not reliable scene/source creation for the vertical canvas. The automation can switch and start the vertical virtual camera once that scene exists.
+Repair the vertical FaceTime scene after manual OBS resizing:
+
+```bash
+apps/obs-hub/tools/normalize_aitum_vertical_scene.py
+apps/obs-hub/tools/aitum_vertical.py switch \
+  --scene "CareSight Hub - FaceTime Mobile Vertical" \
+  --start-virtual-camera
+```
+
+This keeps the vertical canvas at `1080x1920`, places the live detector feed as a 16:9 browser source, clears manual crops/scales, and leaves the desktop/operator scene unchanged.
+
+Operator setup still needs one manual step in OBS if the scene was not created from the local OBS profile config: create or rename a vertical scene named `CareSight Hub - FaceTime Mobile Vertical` in the Aitum Vertical dock and add the CareSight mobile browser source/overlay there. The Aitum websocket API currently exposes scene switching/status/virtual-camera controls, but not reliable scene/source creation for the vertical canvas. The automation can switch and start the vertical virtual camera once that scene exists.
 
 If `apps/obs-hub/tools/aitum_vertical.py status` reports `No vendor was found by that name`, restart OBS after installing the plugin. The plugin can appear in the UI before its websocket vendor API is registered for the current OBS process.
 
-Local env options:
+Local env options for experimental Aitum testing:
 
 ```bash
 export CARESIGHT_AITUM_VERTICAL_MODE="auto"
-export CARESIGHT_AITUM_VERTICAL_SCENE="CareSight Hub - FaceTime Mobile"
+export CARESIGHT_AITUM_VERTICAL_SCENE="CareSight Hub - FaceTime Mobile Vertical"
 ```
 
-`auto` tries Aitum first and falls back to plain OBS portrait output if the plugin is not available. `required` fails closed when the Aitum path is unavailable.
+`off` is the default and recommended hackathon setting. `auto` tries Aitum first and falls back to plain OBS portrait output if the plugin is not available. `required` fails closed when the Aitum path is unavailable.
+
+If macOS FaceTime renders the Aitum vertical camera as a mirrored or stretched landscape tile, use the normal OBS virtual camera for that test:
+
+```bash
+export CARESIGHT_AITUM_VERTICAL_MODE="off"
+export CARESIGHT_OBS_FACETIME_SCENE="CareSight Hub - Escalation"
+export CARESIGHT_OBS_FACETIME_VIDEO_MODE="landscape"
+```
+
+For the stable demo, keep OBS visible locally for operator review and recording, send snapshot evidence by iMessage when needed, and use FaceTime for the reply-gated call plus approved TTS audio rather than as the visual transport.
 
 ## Dynamic Overlay Data
 
@@ -127,33 +148,88 @@ The caregiver UI intentionally displays a shortened event ID so it does not crow
 
 1. Open OBS.
 2. Run `./scripts/setup_obs_scene.sh`.
-3. Start OBS Virtual Camera.
-4. In FaceTime, select OBS Virtual Camera.
-5. Use `CareSight Hub - Dashboard` for overview.
-6. Switch to `CareSight Hub - Escalation` during desktop review.
-7. Use `CareSight Hub - FaceTime Mobile` for phone FaceTime recipients.
-8. Switch to an individual camera scene if the caregiver needs one zone.
+3. Keep OBS visible locally for operator review and demo recording.
+4. Use iMessage alert text and snapshot evidence for caregiver visual context.
+5. Open FaceTime only after a yes-like caregiver reply.
+6. Use FaceTime for the reply-gated call and approved TTS audio handoff.
+7. Keep the OBS-to-FaceTime virtual-camera bridge as an experimental path only.
 
-The live handoff script first tries the optional Aitum Vertical Canvas path. If unavailable, it falls back to switching OBS to `CareSight Hub - FaceTime Mobile` and applying `--video-mode portrait` immediately before opening FaceTime. This scene uses a 1080x1920 browser source and matching OBS video output so phone recipients do not receive a tiny portrait UI embedded in a landscape frame.
+The OBS-to-FaceTime virtual-camera bridge is not a required production-validation gate. On macOS FaceTime it can render a correct OBS/Aitum preview as a mirrored or stretched call tile.
 
-The FaceTime Mobile scene renders the detector feed through the OBS browser overlay. Start the detector with:
+The escalation scene uses separate OBS layers:
+
+1. `CareSight Escalation Background`
+2. `CareSight Escalation Live Feed`
+3. `CareSight Escalation Overlay`
+
+The live feed source renders the detector-owned browser feed behind the transparent overlay. The overlay renders only caregiver UI, event state, and audit labels. This keeps the camera/video layer independently adjustable in OBS.
+
+Scene geometry is file-backed in:
+
+```text
+apps/obs-hub/config/overlay_layout.json
+apps/obs-hub/config/overlay_layout.js
+```
+
+`overlay_layout.json` is used by the OBS setup tool for source transforms. `overlay_layout.js` is loaded by browser overlays so text panels and feed frames line up with the OBS source placement. Edit those files to move the desktop or FaceTime feed/text regions, then rerun:
+
+```bash
+./scripts/setup_obs_scene.sh --scene "CareSight Hub - Escalation"
+```
+
+For the mobile/FaceTime fallback scene, `CareSight FaceTime Mobile Live Feed` is a separate browser source and `CareSight FaceTime Mobile Overlay` runs in `video=external` mode. That makes the overlay transparent over the live feed instead of filling the video slot with black.
+
+During live operation, do not rebuild OBS sources for every event. Run the detector and update only the local overlay state files. The desktop overlay renders a presentation-state model from SQLite:
+
+- `current_event`: the event being reviewed
+- `alert_feed`: event, draft, iMessage, follow-up, reply, FaceTime, and audio handoff milestones when those receipts exist
+- `camera_cards`: active/configured/not-configured camera status cards
+- `handoff_status`: the current handoff phase
+
+The state files are:
+
+```text
+apps/obs-hub/config/current_event.json
+apps/obs-hub/config/current_event.js
+```
+
+Refresh them manually or in watch mode:
+
+```bash
+./scripts/update_obs_overlay.sh --event-id <event_id>
+./scripts/update_obs_overlay.sh --watch
+```
+
+Start the detector with:
 
 ```bash
 apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   apps/caresight-hub/scripts/v0_floor_stay_live.py \
   --camera-id living_room \
+  --no-window \
   --obs-browser-feed
 ```
+
+`--obs-browser-feed` now runs headless by default to keep OBS as the only live visual surface. Use `--show-window` only for local detector debugging.
 
 The detector serves annotated MJPEG locally at:
 
 ```text
+http://127.0.0.1:8766/live.html
 http://127.0.0.1:8766/stream.mjpg
 ```
 
-This is the preferred demo feed because OBS does not need to open the webcam separately while the Python detector owns the camera. The stream includes detector boxes and the floor-zone overlay. No raw video is sent to Gemma or Hermes.
+Use `http://127.0.0.1:8766/live.html` as the OBS Browser Source URL. The page renders the underlying MJPEG stream at `/stream.mjpg`. This is the preferred demo feed because OBS does not need to open the webcam separately while the Python detector owns the camera. The stream includes detector boxes and the floor-zone overlay. No raw video is sent to Gemma or Hermes.
 
 `v0_floor_stay_live.py --obs-live-preview` can also write `apps/obs-hub/config/live_preview.jpg` as a fallback/debug artifact, but the MJPEG browser feed is the primary live path.
+
+After the detector is running, verify that OBS is using the live detector feed instead of a fixture image:
+
+```bash
+apps/obs-hub/tools/check_obs_live_feed.py
+```
+
+The check passes only when `http://127.0.0.1:8766/health` reports a detector frame and the OBS live-feed/browser sources point at the live detector browser page or stream.
 
 ## Camera Sources
 

@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>CareSight Live Detector Feed</title>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #02060b;
+    }
+
+    img {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      object-fit: cover;
+      background: #02060b;
+    }
+  </style>
+</head>
+<body>
+  <img id="feed" alt="" />
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const feed = document.getElementById("feed");
+    feed.src = params.get("feed_url") || "http://127.0.0.1:8766/stream.mjpg";
+    feed.style.objectFit = params.get("fit") || "cover";
+  </script>
+</body>
+</html>

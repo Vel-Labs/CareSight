@@ -17,6 +17,7 @@ DEFAULT_DB_PATH = ROOT_DIR / "data" / "caresight-v0.sqlite3"
 DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.local.json"
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
 DEFAULT_OBS_SCRIPT = REPO_ROOT / "apps" / "obs-hub" / "tools" / "setup_obs_scenes.py"
+DEFAULT_OBS_LIVE_FEED_CHECK = REPO_ROOT / "apps" / "obs-hub" / "tools" / "check_obs_live_feed.py"
 DEFAULT_AITUM_SCRIPT = REPO_ROOT / "apps" / "obs-hub" / "tools" / "aitum_vertical.py"
 DEFAULT_AITUM_INSTALLER = REPO_ROOT / "scripts" / "install_obs_vertical_canvas.sh"
 DEFAULT_LOCAL_ENV_PATH = ROOT_DIR / "config" / "live-demo.local"
@@ -52,6 +53,8 @@ def main() -> None:
         model_file_check("tts_model", Path(args.tts_model), model_id=Path(args.tts_model).name, required=True),
         file_check("obs_live_preview", DEFAULT_OBS_PREVIEW_PATH, required=False),
         obs_dry_run_check(),
+        file_check("obs_live_feed_check", DEFAULT_OBS_LIVE_FEED_CHECK, required=True),
+        obs_mjpeg_health_check(required=False),
         file_check("aitum_vertical_installer", DEFAULT_AITUM_INSTALLER, required=False),
         aitum_vertical_check(local_env),
         executable_check("blackhole_switcher", "SwitchAudioSource", required=False),
@@ -184,6 +187,27 @@ def obs_dry_run_check() -> dict[str, object]:
         "ok": result.returncode == 0,
         "required": True,
         "detail": "dry-run passed" if result.returncode == 0 else (result.stderr or result.stdout).strip()[-300:],
+    }
+
+
+def obs_mjpeg_health_check(*, required: bool) -> dict[str, object]:
+    request = Request("http://127.0.0.1:8766/health", method="GET")
+    try:
+        with urlopen(request, timeout=1) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+            frame_available = bool(payload.get("frame_available"))
+    except Exception:
+        return {
+            "name": "obs_mjpeg_feed",
+            "ok": False,
+            "required": required,
+            "detail": "not running yet; start detector with --obs-browser-feed before live OBS/FaceTime validation",
+        }
+    return {
+        "name": "obs_mjpeg_feed",
+        "ok": frame_available,
+        "required": required,
+        "detail": "running with detector frames" if frame_available else "server reachable but no detector frame yet",
     }
 
 

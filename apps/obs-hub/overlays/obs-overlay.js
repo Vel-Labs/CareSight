@@ -21,10 +21,66 @@ const fallbackData = {
     { time: "6:58 PM", label: "Last movement observed", zone: "Hallway", status: "Logged" },
     { time: "6:15 PM", label: "Evening routine observed", zone: "Bedroom", status: "Reviewed" }
   ],
+  alert_feed: [
+    { type: "event_created", time: "7:41 PM", label: "Possible floor-stay", detail: "Living Room | Human review required", status: "Unreviewed", tone: "attention" },
+    { type: "draft_prepared", time: "7:42 PM", label: "Caregiver alert drafted", detail: "Local Gemma | Validated", status: "Prepared", tone: "cool" },
+    { type: "action_staged", time: "7:42 PM", label: "iMessage caregiver alert", detail: "iMessage | Human-approved lane", status: "Staged", tone: "cool" }
+  ],
+  camera_cards: [
+    { camera_id: "living_room", display_id: "C1", zone: "Living Room", status_label: "Live priority feed", source: "Webcam", icon: "camera-live", tone: "cool" },
+    { camera_id: "kitchen", display_id: "C2", zone: "Kitchen", status_label: "Not configured", source: "No local source", icon: "camera-off", tone: "muted" },
+    { camera_id: "hallway", display_id: "C3", zone: "Hallway", status_label: "Not configured", source: "No local source", icon: "camera-off", tone: "muted" },
+    { camera_id: "bedroom", display_id: "C4", zone: "Bedroom", status_label: "Not configured", source: "No local source", icon: "camera-off", tone: "muted" }
+  ],
+  handoff_status: { label: "Review required", status: "review_required", tone: "attention" },
   constraints: ["Raw video stays local", "Human review required", "No emergency dispatch", "Not a medical device"]
 };
 
 const overlayParams = new URLSearchParams(window.location.search);
+
+const cssVarNames = {
+  brand: { left: "--brand-left", top: "--brand-top" },
+  clock: { right: "--clock-right", top: "--clock-top" },
+  feedFrame: {
+    left: "--feed-left",
+    top: "--feed-top",
+    width: "--feed-width",
+    height: "--feed-height"
+  },
+  thumbs: {
+    left: "--thumbs-left",
+    top: "--thumbs-top",
+    width: "--thumbs-width",
+    height: "--thumbs-height"
+  },
+  eventPanel: {
+    left: "--event-panel-left",
+    right: "--event-panel-right",
+    top: "--event-panel-top",
+    width: "--event-panel-width"
+  },
+  activityStrip: {
+    left: "--activity-left",
+    right: "--activity-right",
+    bottom: "--activity-bottom"
+  },
+  footer: {
+    left: "--footer-left",
+    right: "--footer-right",
+    bottom: "--footer-bottom"
+  },
+  header: {
+    left: "--mobile-header-left",
+    right: "--mobile-header-right",
+    top: "--mobile-header-top"
+  },
+  activityPanel: {
+    left: "--mobile-activity-left",
+    right: "--mobile-activity-right",
+    top: "--mobile-activity-top",
+    bottom: "--mobile-activity-bottom"
+  }
+};
 
 async function loadEventData() {
   const scriptData = await loadScriptEventData();
@@ -61,6 +117,72 @@ function loadScriptEventData() {
   });
 }
 
+function loadOverlayLayout() {
+  return new Promise((resolve) => {
+    if (window.CareSightOverlayLayout) {
+      resolve(window.CareSightOverlayLayout);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = `../config/overlay_layout.js?t=${Date.now()}`;
+    script.async = true;
+    script.onload = () => resolve(window.CareSightOverlayLayout || null);
+    script.onerror = () => resolve(null);
+    document.head.appendChild(script);
+    setTimeout(() => resolve(null), 1200);
+  });
+}
+
+function setLayoutVars(values, mapping) {
+  if (!values || !mapping) {
+    return;
+  }
+  Object.entries(mapping).forEach(([key, cssName]) => {
+    const value = values[key];
+    if (value !== undefined && value !== null) {
+      document.documentElement.style.setProperty(cssName, `${value}px`);
+    }
+  });
+}
+
+function applyLayoutGroup(layout, view) {
+  const config = layout?.[view];
+  if (!config) {
+    return;
+  }
+
+  if (view === "escalation") {
+    setLayoutVars(config.brand, cssVarNames.brand);
+    setLayoutVars(config.clock, cssVarNames.clock);
+    setLayoutVars(config.feedFrame || config.liveFeed, cssVarNames.feedFrame);
+    setLayoutVars(config.thumbs, cssVarNames.thumbs);
+    setLayoutVars(config.eventPanel, cssVarNames.eventPanel);
+    setLayoutVars(config.activityStrip, cssVarNames.activityStrip);
+    setLayoutVars(config.footer, cssVarNames.footer);
+    if (Array.isArray(config.thumbsText)) {
+      document.querySelectorAll(".thumb").forEach((node, index) => {
+        if (config.thumbsText[index]) {
+          node.textContent = config.thumbsText[index];
+        }
+      });
+    }
+    return;
+  }
+
+  if (view === "facetime") {
+    setLayoutVars(config.header, cssVarNames.header);
+    setLayoutVars(config.feedFrame || config.liveFeed, cssVarNames.feedFrame);
+    setLayoutVars(config.eventPanel, cssVarNames.eventPanel);
+    setLayoutVars(config.activityPanel, cssVarNames.activityPanel);
+    setLayoutVars(config.footer, cssVarNames.footer);
+  }
+}
+
+async function applyOverlayLayout(view) {
+  const layout = await loadOverlayLayout();
+  applyLayoutGroup(layout, view);
+}
+
 function formatNow() {
   const now = new Date();
   return {
@@ -87,10 +209,10 @@ function humanizeState(value) {
 
 function statusClass(status) {
   const value = String(status || "").toLowerCase();
-  if (value.includes("unreviewed") || value.includes("attention")) {
+  if (value.includes("unreviewed") || value.includes("attention") || value.includes("waiting")) {
     return "attention";
   }
-  if (value.includes("reviewed") || value.includes("logged")) {
+  if (value.includes("reviewed") || value.includes("logged") || value.includes("ready") || value.includes("complete") || value.includes("live")) {
     return "cool";
   }
   return "";
@@ -123,6 +245,62 @@ function renderActivity(container, items) {
   });
 }
 
+function iconForType(type) {
+  const icons = {
+    event_created: "!",
+    draft_prepared: "M",
+    action_staged: "S",
+    hermes_no_send_preflight_ready: "H",
+    imessage_sent: "i",
+    imessage_no_response_escalation_sent: "+",
+    facetime_open_requested: "F",
+    tts_playback_requested: "A",
+    "camera-live": "C",
+    camera: "C",
+    "camera-off": "-"
+  };
+  return icons[type] || "•";
+}
+
+function renderAlertFeed(container, items) {
+  container.innerHTML = "";
+  items.forEach((item) => {
+    const row = document.createElement("div");
+    const tone = item.tone || statusClass(item.status);
+    row.className = "alert-feed-item";
+    row.innerHTML = `
+      <div class="obs-icon ${tone}">${iconForType(item.type)}</div>
+      <div class="alert-feed-copy">
+        <div class="alert-feed-top">
+          <span class="alert-feed-time">${item.time || ""}</span>
+          <span class="alert-feed-status ${tone}">${item.status || "Logged"}</span>
+        </div>
+        <div class="alert-feed-label">${item.label || "CareSight activity"}</div>
+        <div class="alert-feed-detail">${item.detail || ""}</div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function renderCameraCards(container, cards) {
+  container.innerHTML = "";
+  cards.slice(0, 4).forEach((card) => {
+    const row = document.createElement("div");
+    const tone = card.tone || statusClass(card.status_label);
+    row.className = "camera-card";
+    row.innerHTML = `
+      <div class="obs-icon ${tone}">${iconForType(card.icon)}</div>
+      <div>
+        <div class="camera-card-title">${card.zone || "Camera"}</div>
+        <div class="camera-card-meta">${card.display_id || ""} | ${card.status_label || "Configured"}</div>
+        <div class="camera-card-source">${card.source || "Local source"}</div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
 function setText(id, value) {
   const node = document.getElementById(id);
   if (node) {
@@ -139,6 +317,7 @@ function renderEventPanel(data) {
   setText("escalation", humanizeState(event.escalation_state || "draft_caregiver_alert_prepared"));
   setText("eventId", event.display_id || shortEventId(event.event_id) || "not recorded");
   setText("suggested", event.suggested_next_step || "Review the local record and live feed.");
+  setText("handoffStatus", data.handoff_status?.label || "Review required");
   setText("overlaySource", `Data: ${data.overlay_source || "unknown"}`);
   setText("overlayGeneratedAt", data.generated_at ? `Updated: ${formatObservedAt(data.generated_at)}` : "Updated: fixture");
   setText("mainFeedLabel", `Active feed: ${event.zone || "Living Room"}`);
@@ -159,6 +338,14 @@ async function refreshOverlayData() {
   const activityGrid = document.getElementById("activityGrid");
   if (activityGrid) {
     renderActivity(activityGrid, data.recent_activity || fallbackData.recent_activity);
+  }
+  const alertFeed = document.getElementById("alertFeed");
+  if (alertFeed) {
+    renderAlertFeed(alertFeed, data.alert_feed || fallbackData.alert_feed);
+  }
+  const cameraCards = document.getElementById("cameraCards");
+  if (cameraCards) {
+    renderCameraCards(cameraCards, data.camera_cards || fallbackData.camera_cards);
   }
   return data;
 }

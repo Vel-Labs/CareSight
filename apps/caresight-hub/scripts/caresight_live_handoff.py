@@ -63,8 +63,10 @@ def parse_args() -> argparse.Namespace:
     )
     demo_parser.add_argument("--tts-voice", default="dakota")
     demo_parser.add_argument("--tts-audio-route", choices=["system", "blackhole"], default="system")
-    demo_parser.add_argument("--tts-volume", type=float, default=2.5)
-    demo_parser.add_argument("--tts-after-facetime-delay-seconds", type=float, default=8.0)
+    demo_parser.add_argument("--tts-volume", type=float, default=6.0)
+    demo_parser.add_argument("--tts-repeat-count", type=int, default=2)
+    demo_parser.add_argument("--tts-repeat-delay-seconds", type=float, default=1.5)
+    demo_parser.add_argument("--tts-after-facetime-delay-seconds", type=float, default=16.0)
     demo_parser.add_argument("--post-facetime-hold-seconds", type=float, default=30.0)
     demo_parser.add_argument("--live-approved", action="store_true")
     demo_parser.add_argument("--dry-run", action="store_true")
@@ -159,6 +161,10 @@ def main() -> None:
             args.tts_text,
             "--play-volume",
             str(args.tts_volume),
+            "--play-repeat-count",
+            str(max(1, args.tts_repeat_count)),
+            "--play-repeat-delay-seconds",
+            str(args.tts_repeat_delay_seconds),
             "--play",
         ]
         if args.tts_audio_route == "blackhole":
@@ -166,6 +172,10 @@ def main() -> None:
                 sys.executable,
                 str(ROOT_DIR / "scripts" / "caresight_audio_route.py"),
                 "run-with-blackhole",
+                "--settle-before-seconds",
+                "2.0",
+                "--hold-after-seconds",
+                "10.0",
                 "--",
                 *tts_command,
             ]

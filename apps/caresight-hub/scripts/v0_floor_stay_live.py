@@ -38,6 +38,11 @@ def parse_args():
         help="Configured source_type to select when it resolves to one camera.",
     )
     parser.add_argument("--no-window", action="store_true", help="Run without an OpenCV preview window.")
+    parser.add_argument(
+        "--show-window",
+        action="store_true",
+        help="Force the OpenCV preview window even when --obs-browser-feed is enabled.",
+    )
     parser.add_argument("--max-seconds", type=float, help="Stop after this many seconds.")
     parser.add_argument(
         "--stop-after-event",
@@ -148,11 +153,18 @@ def parse_args():
         ),
     )
     parser.add_argument("--tts-voice", default="dakota")
-    parser.add_argument("--tts-volume", type=float, default=2.5, help="Playback gain passed to local TTS afplay.")
+    parser.add_argument("--tts-volume", type=float, default=6.0, help="Playback gain passed to local TTS afplay.")
+    parser.add_argument("--tts-repeat-count", type=int, default=2, help="Number of times to play the TTS handoff message.")
+    parser.add_argument(
+        "--tts-repeat-delay-seconds",
+        type=float,
+        default=1.5,
+        help="Pause between repeated TTS handoff playback attempts.",
+    )
     parser.add_argument(
         "--tts-after-facetime-delay-seconds",
         type=float,
-        default=8.0,
+        default=16.0,
         help="Wait this long after FaceTime is requested before playing TTS.",
     )
     parser.add_argument(
@@ -279,6 +291,7 @@ class MjpegPreviewServer:
         self._condition = threading.Condition()
         self._jpeg: bytes | None = None
         self._updated_at = ""
+        self._sequence = 0
         self._server = ThreadingHTTPServer((host, port), self._handler())
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
 
@@ -300,17 +313,18 @@ class MjpegPreviewServer:
         with self._condition:
             self._jpeg = encoded.tobytes()
             self._updated_at = utc_now()
+            self._sequence += 1
             self._condition.notify_all()
 
-    def _snapshot(self) -> tuple[bytes | None, str]:
+    def _snapshot(self) -> tuple[bytes | None, str, int]:
         with self._condition:
-            return self._jpeg, self._updated_at
+            return self._jpeg, self._updated_at, self._sequence
 
-    def _wait_for_frame(self, timeout: float = 2.0) -> tuple[bytes | None, str]:
+    def _wait_for_frame(self, last_sequence: int, timeout: float = 2.0) -> tuple[bytes | None, str, int]:
         with self._condition:
-            if self._jpeg is None:
+            if self._jpeg is None or self._sequence <= last_sequence:
                 self._condition.wait(timeout)
-            return self._jpeg, self._updated_at
+            return self._jpeg, self._updated_at, self._sequence
 
     def _handler(self):
         owner = self
@@ -321,7 +335,15 @@ class MjpegPreviewServer:
                     self._write_html()
                     return
                 if self.path == "/health":
-                    self._write_json({"status": "ready", "frame_available": owner._snapshot()[0] is not None})
+                    jpeg, updated_at, sequence = owner._snapshot()
+                    self._write_json(
+                        {
+                            "status": "ready",
+                            "frame_available": jpeg is not None,
+                            "sequence": sequence,
+                            "updated_at": updated_at,
+                        }
+                    )
                     return
                 if self.path == "/snapshot.jpg":
                     self._write_snapshot()
@@ -351,6 +373,7 @@ class MjpegPreviewServer:
 """
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Cache-Control", "no-store")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
@@ -364,7 +387,7 @@ class MjpegPreviewServer:
                 self.wfile.write(body)
 
             def _write_snapshot(self) -> None:
-                jpeg, updated_at = owner._snapshot()
+                jpeg, updated_at, _sequence = owner._snapshot()
                 if jpeg is None:
                     self.send_error(503, "No frame available yet")
                     return
@@ -381,10 +404,14 @@ class MjpegPreviewServer:
                 self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
                 self.send_header("Cache-Control", "no-store")
                 self.end_headers()
+                last_sequence = 0
                 while True:
-                    jpeg, updated_at = owner._wait_for_frame()
+                    jpeg, updated_at, sequence = owner._wait_for_frame(last_sequence)
                     if jpeg is None:
                         continue
+                    if sequence <= last_sequence:
+                        continue
+                    last_sequence = sequence
                     try:
                         self.wfile.write(b"--frame\r\n")
                         self.wfile.write(b"Content-Type: image/jpeg\r\n")
@@ -560,6 +587,8 @@ def run_post_event_agent_live_run(
     tts_voice: str,
     tts_audio_route: str,
     tts_volume: float,
+    tts_repeat_count: int,
+    tts_repeat_delay_seconds: float,
     tts_after_facetime_delay_seconds: float,
     post_facetime_hold_seconds: float,
 ) -> dict:
@@ -583,6 +612,7 @@ def run_post_event_agent_live_run(
         target=live_imessage_target,
         live_approved=live_approved,
     )
+    update_obs_overlay(event_id)
     live_receipt = {
         **receipt,
         "live_attempt_id": live_attempt["attempt_id"],
@@ -612,7 +642,7 @@ def run_post_event_agent_live_run(
     if not reply.get("reply_interpreted_as_yes"):
         if no_response_escalation_seconds > 0 and reply.get("status") == "timeout":
             event = store.get_event(event_id)
-            snapshot_path = event.get("evidence", {}).get("snapshot_path")
+            snapshot_path = escalation_attachment_path(event)
             escalation_attempt = execute_live_imessage(
                 store,
                 request_id=receipt["request_id"],
@@ -624,11 +654,13 @@ def run_post_event_agent_live_run(
                 result_name="imessage_no_response_escalation_sent",
                 live_approved=live_approved,
             )
+            update_obs_overlay(event_id)
             live_receipt["no_response_escalation"] = {
                 "attempt_id": escalation_attempt["attempt_id"],
                 "result": escalation_attempt["result"],
                 "external_action_performed": escalation_attempt["external_action_performed"],
                 "attachment_included": bool(snapshot_path),
+                "attachment_delivery": escalation_attempt.get("payload", {}).get("delivery", {}).get("attachment"),
             }
             remaining_timeout = max(reply_timeout_seconds - first_reply_timeout, 0.0)
             if remaining_timeout > 0:
@@ -664,17 +696,111 @@ def run_post_event_agent_live_run(
         target=facetime_target,
         live_approved=live_approved,
     )
+    update_obs_overlay(event_id)
     live_receipt["facetime_attempt_id"] = facetime_attempt["attempt_id"]
     live_receipt["facetime_started"] = facetime_attempt["external_action_performed"]
     live_receipt["facetime_result"] = facetime_attempt["result"]
     if facetime_attempt["external_action_performed"] and tts_after_facetime_delay_seconds > 0:
         time.sleep(tts_after_facetime_delay_seconds)
     if play_tts_after_facetime:
-        live_receipt["tts_playback"] = play_tts(tts_text, voice=tts_voice, audio_route=tts_audio_route, volume=tts_volume)
+        playback = play_tts(
+            tts_text,
+            voice=tts_voice,
+            audio_route=tts_audio_route,
+            volume=tts_volume,
+            repeat_count=tts_repeat_count,
+            repeat_delay_seconds=tts_repeat_delay_seconds,
+        )
+        live_receipt["tts_playback"] = playback
+        tts_attempt = record_tts_playback_attempt(
+            store,
+            request_id=receipt["request_id"],
+            contact_id=allowed_contact_id,
+            text=tts_text,
+            voice=tts_voice,
+            audio_route=tts_audio_route,
+            playback=playback,
+        )
+        update_obs_overlay(event_id)
+        live_receipt["tts_attempt_id"] = tts_attempt["attempt_id"]
+        live_receipt["tts_result"] = tts_attempt["result"]
     if facetime_attempt["external_action_performed"] and post_facetime_hold_seconds > 0:
         time.sleep(post_facetime_hold_seconds)
         live_receipt["post_facetime_hold_seconds"] = post_facetime_hold_seconds
     return live_receipt
+
+
+def record_tts_playback_attempt(
+    store,
+    *,
+    request_id: str,
+    contact_id: str,
+    text: str,
+    voice: str,
+    audio_route: str,
+    playback: dict,
+) -> dict:
+    request = store.get_agent_action_request(request_id)
+    draft = store.get_agent_draft(request["source_draft_id"])
+    ok = playback.get("status") == "played"
+    payload = {
+        "schema": "care-tts-live-playback",
+        "request_id": request_id,
+        "event_id": request["event_id"],
+        "source_draft_id": draft["draft_id"],
+        "approved_contact_id": contact_id,
+        "execution_state": "executed" if ok else "failed",
+        "live_channel": "tts",
+        "live_message_text": text,
+        "delivery": {
+            "status": playback.get("status"),
+            "voice": voice,
+            "audio_route": audio_route,
+            "volume": playback.get("volume"),
+            "repeat_count": playback.get("repeat_count"),
+            "repeat_delay_seconds": playback.get("repeat_delay_seconds"),
+            "returncode": playback.get("returncode"),
+            "stdout_tail": playback.get("stdout"),
+            "stderr_tail": playback.get("stderr"),
+        },
+        "safety_boundaries": [
+            "human_review_required",
+            "local_tts_only",
+            "no_autonomous_dispatch",
+            "no_medical_diagnosis",
+            "raw_video_stays_local",
+        ],
+    }
+    attempt = {
+        "schema": "agent-execution-attempt",
+        "attempt_id": f"attempt_{uuid4().hex}",
+        "request_id": request_id,
+        "event_id": request["event_id"],
+        "created_at": utc_now(),
+        "harness": "local_macos_live_handoff",
+        "attempt_kind": "live",
+        "execution_state": "executed" if ok else "failed",
+        "result": "tts_playback_requested" if ok else "tts_playback_failed",
+        "error": None if ok else str(playback.get("stderr") or playback.get("stdout") or "tts playback failed")[-500:],
+        "external_action_performed": ok,
+        "payload": payload,
+        "safety_boundaries": payload["safety_boundaries"],
+        "provenance": {
+            "source": "sqlite_action_request_and_operator_live_approval",
+            "source_fields": ["agent_action_requests", "agent_drafts", "agent_execution_attempts"],
+        },
+    }
+    store.insert_agent_execution_attempt(attempt)
+    return attempt
+
+
+def escalation_attachment_path(event: dict) -> str | None:
+    snapshot_path = event.get("evidence", {}).get("snapshot_path")
+    if snapshot_path and Path(snapshot_path).expanduser().exists():
+        return str(snapshot_path)
+    if DEFAULT_OBS_PREVIEW_PATH.exists():
+        return str(DEFAULT_OBS_PREVIEW_PATH)
+    return None
 
 
 def _resolve_live_target_for_channel(contact_id: str, allowlist_config: str, channel: str) -> str:
@@ -688,9 +814,18 @@ def _resolve_live_target_for_channel(contact_id: str, allowlist_config: str, cha
     return target
 
 
-def play_tts(text: str, *, voice: str, audio_route: str = "system", volume: float = 2.5) -> dict:
+def play_tts(
+    text: str,
+    *,
+    voice: str,
+    audio_route: str = "system",
+    volume: float = 6.0,
+    repeat_count: int = 1,
+    repeat_delay_seconds: float = 1.0,
+) -> dict:
     import subprocess
 
+    repeat_count = max(1, int(repeat_count))
     tts_command = [
         sys.executable,
         str(ROOT_DIR / "scripts" / "caresight_tts.py"),
@@ -700,6 +835,10 @@ def play_tts(text: str, *, voice: str, audio_route: str = "system", volume: floa
         text,
         "--play-volume",
         str(volume),
+        "--play-repeat-count",
+        str(repeat_count),
+        "--play-repeat-delay-seconds",
+        str(repeat_delay_seconds),
         "--play",
     ]
     command = tts_command
@@ -708,6 +847,10 @@ def play_tts(text: str, *, voice: str, audio_route: str = "system", volume: floa
             sys.executable,
             str(ROOT_DIR / "scripts" / "caresight_audio_route.py"),
             "run-with-blackhole",
+            "--settle-before-seconds",
+            "2.0",
+            "--hold-after-seconds",
+            "10.0",
             "--",
             *tts_command,
         ]
@@ -718,6 +861,8 @@ def play_tts(text: str, *, voice: str, audio_route: str = "system", volume: floa
         "voice": voice,
         "audio_route": audio_route,
         "volume": volume,
+        "repeat_count": repeat_count,
+        "repeat_delay_seconds": repeat_delay_seconds,
         "stdout": result.stdout.strip()[-500:],
         "stderr": result.stderr.strip()[-500:],
     }
@@ -809,6 +954,16 @@ def format_post_event_agent_live_error_line(event_id: str, error: BaseException)
     return "post_event_agent_live_run_failed " + json.dumps(payload, sort_keys=True)
 
 
+def format_post_event_agent_live_skip_line(event_id: str) -> str:
+    payload = {
+        "event_id": event_id,
+        "external_action_performed": False,
+        "reason": "post_event_agent_live_run_already_in_progress",
+        "status": "post_event_agent_live_run_skipped",
+    }
+    return "post_event_agent_live_run_skipped " + json.dumps(payload, sort_keys=True)
+
+
 def main() -> None:
     args = parse_args()
 
@@ -859,7 +1014,9 @@ def main() -> None:
             + json.dumps({"url": mjpeg_server.url, "stream_url": f"http://{args.obs_browser_feed_host}:{args.obs_browser_feed_port}/stream.mjpg"}, sort_keys=True)
         )
 
-    if not args.no_window:
+    use_preview_window = args.show_window or (not args.no_window and not args.obs_browser_feed)
+
+    if use_preview_window:
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(WINDOW_NAME, config.camera.width, config.camera.height)
 
@@ -870,6 +1027,62 @@ def main() -> None:
     obs_preview_path = resolve_runtime_path(args.obs_live_preview_path)
     last_obs_preview_write_at = 0.0
     last_floor_debug_at = 0.0
+    post_event_threads: list[threading.Thread] = []
+    post_event_live_lock = threading.Lock()
+    post_event_live_running = False
+
+    def run_post_event_live_in_background(event_id: str) -> bool:
+        nonlocal post_event_live_running
+        if args.auto_agent_fail_closed:
+            return False
+        with post_event_live_lock:
+            if post_event_live_running:
+                print(format_post_event_agent_live_skip_line(event_id), flush=True)
+                return True
+            post_event_live_running = True
+
+        def worker() -> None:
+            nonlocal post_event_live_running
+            worker_store = SQLiteStore(database_path)
+            try:
+                receipt = run_post_event_agent_live_run(
+                    store=worker_store,
+                    event_id=event_id,
+                    gemma_base_url=args.gemma_base_url,
+                    gemma_model=args.gemma_model,
+                    allowed_contact_id=args.allowed_contact_id,
+                    allowlist_config=args.allowlist_config,
+                    live_message=args.live_message,
+                    live_imessage_target=args.live_imessage_target,
+                    live_approved=args.live_approved,
+                    auto_facetime_on_reply=args.auto_facetime_on_reply,
+                    reply_timeout_seconds=args.reply_timeout_seconds,
+                    reply_poll_interval_seconds=args.reply_poll_interval_seconds,
+                    no_response_escalation_seconds=args.no_response_escalation_seconds,
+                    no_response_escalation_message=args.no_response_escalation_message,
+                    play_tts_after_facetime=args.play_tts_after_facetime,
+                    tts_text=args.tts_text,
+                    tts_voice=args.tts_voice,
+                    tts_audio_route=args.tts_audio_route,
+                    tts_volume=args.tts_volume,
+                    tts_repeat_count=args.tts_repeat_count,
+                    tts_repeat_delay_seconds=args.tts_repeat_delay_seconds,
+                    tts_after_facetime_delay_seconds=args.tts_after_facetime_delay_seconds,
+                    post_facetime_hold_seconds=args.post_facetime_hold_seconds,
+                )
+                print(format_post_event_agent_live_line(receipt), flush=True)
+            except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
+                print(format_post_event_agent_live_error_line(event_id, exc), file=sys.stderr, flush=True)
+                traceback.print_exc()
+            finally:
+                with post_event_live_lock:
+                    post_event_live_running = False
+
+        thread = threading.Thread(target=worker, name=f"care-agent-live-{event_id[:12]}", daemon=False)
+        thread.start()
+        post_event_threads.append(thread)
+        return True
+
     try:
         while True:
             started_at = time.perf_counter()
@@ -887,7 +1100,7 @@ def main() -> None:
                 last_floor_debug_at = time.monotonic()
 
             annotated_frame = None
-            if args.obs_browser_feed or args.obs_live_preview or not args.no_window:
+            if args.obs_browser_feed or args.obs_live_preview or use_preview_window:
                 annotated_frame = draw_frame(cv2, frame, result, config, fps_values)
             if mjpeg_server is not None and annotated_frame is not None:
                 mjpeg_server.update(cv2, annotated_frame)
@@ -915,36 +1128,39 @@ def main() -> None:
                 event_persisted = True
                 persisted_event_count += 1
                 if args.auto_agent_live_run:
-                    try:
-                        receipt = run_post_event_agent_live_run(
-                            store=store,
-                            event_id=event["event_id"],
-                            gemma_base_url=args.gemma_base_url,
-                            gemma_model=args.gemma_model,
-                            allowed_contact_id=args.allowed_contact_id,
-                            allowlist_config=args.allowlist_config,
-                            live_message=args.live_message,
-                            live_imessage_target=args.live_imessage_target,
-                            live_approved=args.live_approved,
-                            auto_facetime_on_reply=args.auto_facetime_on_reply,
-                            reply_timeout_seconds=args.reply_timeout_seconds,
-                            reply_poll_interval_seconds=args.reply_poll_interval_seconds,
-                            no_response_escalation_seconds=args.no_response_escalation_seconds,
-                            no_response_escalation_message=args.no_response_escalation_message,
-                            play_tts_after_facetime=args.play_tts_after_facetime,
-                            tts_text=args.tts_text,
-                            tts_voice=args.tts_voice,
-                            tts_audio_route=args.tts_audio_route,
-                            tts_volume=args.tts_volume,
-                            tts_after_facetime_delay_seconds=args.tts_after_facetime_delay_seconds,
-                            post_facetime_hold_seconds=args.post_facetime_hold_seconds,
-                        )
-                        print(format_post_event_agent_live_line(receipt))
-                    except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
-                        print(format_post_event_agent_live_error_line(event["event_id"], exc), file=sys.stderr)
-                        traceback.print_exc()
-                        if args.auto_agent_fail_closed:
-                            raise
+                    if not run_post_event_live_in_background(event["event_id"]):
+                        try:
+                            receipt = run_post_event_agent_live_run(
+                                store=store,
+                                event_id=event["event_id"],
+                                gemma_base_url=args.gemma_base_url,
+                                gemma_model=args.gemma_model,
+                                allowed_contact_id=args.allowed_contact_id,
+                                allowlist_config=args.allowlist_config,
+                                live_message=args.live_message,
+                                live_imessage_target=args.live_imessage_target,
+                                live_approved=args.live_approved,
+                                auto_facetime_on_reply=args.auto_facetime_on_reply,
+                                reply_timeout_seconds=args.reply_timeout_seconds,
+                                reply_poll_interval_seconds=args.reply_poll_interval_seconds,
+                                no_response_escalation_seconds=args.no_response_escalation_seconds,
+                                no_response_escalation_message=args.no_response_escalation_message,
+                                play_tts_after_facetime=args.play_tts_after_facetime,
+                                tts_text=args.tts_text,
+                                tts_voice=args.tts_voice,
+                                tts_audio_route=args.tts_audio_route,
+                                tts_volume=args.tts_volume,
+                                tts_repeat_count=args.tts_repeat_count,
+                                tts_repeat_delay_seconds=args.tts_repeat_delay_seconds,
+                                tts_after_facetime_delay_seconds=args.tts_after_facetime_delay_seconds,
+                                post_facetime_hold_seconds=args.post_facetime_hold_seconds,
+                            )
+                            print(format_post_event_agent_live_line(receipt))
+                        except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
+                            print(format_post_event_agent_live_error_line(event["event_id"], exc), file=sys.stderr)
+                            traceback.print_exc()
+                            if args.auto_agent_fail_closed:
+                                raise
                 elif args.auto_agent_dry_run:
                     try:
                         receipt = run_post_event_agent_dry_run(
@@ -974,13 +1190,16 @@ def main() -> None:
             ):
                 break
 
-            if not args.no_window and annotated_frame is not None:
+            if use_preview_window and annotated_frame is not None:
                 cv2.imshow(WINDOW_NAME, annotated_frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     break
     finally:
         if mjpeg_server is not None:
             mjpeg_server.stop()
+        for thread in post_event_threads:
+            if thread.is_alive():
+                thread.join()
 
     elapsed_seconds = time.monotonic() - loop_started_at
     if frame_count > 0 and persisted_event_count == 0:

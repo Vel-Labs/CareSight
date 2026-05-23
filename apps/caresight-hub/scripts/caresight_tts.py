@@ -29,7 +29,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-tokens", type=int, default=96)
     parser.add_argument("--audio-format", default="wav")
     parser.add_argument("--play", action="store_true", help="Play audio locally after generation. Requires human approval.")
-    parser.add_argument("--play-volume", type=float, default=2.5, help="afplay playback gain used with --play.")
+    parser.add_argument("--play-volume", type=float, default=6.0, help="afplay playback gain used with --play.")
+    parser.add_argument("--play-repeat-count", type=int, default=1, help="Number of times to play the generated audio.")
+    parser.add_argument(
+        "--play-repeat-delay-seconds",
+        type=float,
+        default=1.0,
+        help="Pause between repeated playback attempts.",
+    )
     return parser.parse_args()
 
 
@@ -77,14 +84,19 @@ def main() -> int:
         if generated_path is None:
             print("tts_failed generated_audio_not_found", file=sys.stderr)
             return 2
-        playback = subprocess.run(["afplay", "-v", str(args.play_volume), str(generated_path)], check=False)
-        if playback.returncode != 0:
-            print(f"tts_playback_failed returncode={playback.returncode}", file=sys.stderr)
-            return playback.returncode
+        repeat_count = max(1, args.play_repeat_count)
+        for index in range(repeat_count):
+            playback = subprocess.run(["afplay", "-v", str(args.play_volume), str(generated_path)], check=False)
+            if playback.returncode != 0:
+                print(f"tts_playback_failed repeat={index + 1} returncode={playback.returncode}", file=sys.stderr)
+                return playback.returncode
+            if index + 1 < repeat_count and args.play_repeat_delay_seconds > 0:
+                __import__("time").sleep(args.play_repeat_delay_seconds)
 
     print(
         f"tts_generated output_dir={args.output_dir} voice={args.voice} "
         f"played={str(args.play).lower()} play_volume={args.play_volume} "
+        f"play_repeat_count={max(1, args.play_repeat_count)} "
         f"audio_path={generated_path or 'unknown'} model={args.model}"
     )
     return 0

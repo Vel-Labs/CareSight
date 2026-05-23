@@ -22,10 +22,11 @@ except Exception:  # pragma: no cover - operator environment dependent.
 
 
 VENDOR_NAME = "aitum-vertical-canvas"
-DEFAULT_SCENE = "CareSight Hub - FaceTime Mobile"
+DEFAULT_SCENE = "CareSight Hub - FaceTime Mobile Vertical"
 DEFAULT_WIDTH = 1080
 DEFAULT_HEIGHT = 1920
 LOCAL_DEMO_ENV = ROOT / "apps" / "caresight-hub" / "config" / "live-demo.local"
+AITUM_CONFIG = Path.home() / "Library" / "Application Support" / "obs-studio" / "plugin_config" / "vertical-canvas" / "config.json"
 
 
 def load_local_env() -> None:
@@ -44,12 +45,14 @@ def load_local_env() -> None:
 
 
 def parse_args() -> argparse.Namespace:
+    load_local_env()
+    default_width, default_height = configured_canvas_default()
     parser = argparse.ArgumentParser(description="Inspect or control the optional Aitum Vertical Canvas OBS plugin.")
     parser.add_argument("--host", default=os.environ.get("OBS_WEBSOCKET_HOST", "127.0.0.1"))
     parser.add_argument("--port", type=int, default=int(os.environ.get("OBS_WEBSOCKET_PORT", "4455")))
     parser.add_argument("--password", default=os.environ.get("OBS_WEBSOCKET_PASSWORD", ""))
-    parser.add_argument("--width", type=int, default=int(os.environ.get("CARESIGHT_AITUM_VERTICAL_WIDTH", str(DEFAULT_WIDTH))))
-    parser.add_argument("--height", type=int, default=int(os.environ.get("CARESIGHT_AITUM_VERTICAL_HEIGHT", str(DEFAULT_HEIGHT))))
+    parser.add_argument("--width", type=int, default=int(os.environ.get("CARESIGHT_AITUM_VERTICAL_WIDTH", str(default_width))))
+    parser.add_argument("--height", type=int, default=int(os.environ.get("CARESIGHT_AITUM_VERTICAL_HEIGHT", str(default_height))))
 
     subparsers = parser.add_subparsers(dest="command", required=True)
     status_parser = subparsers.add_parser("status")
@@ -65,6 +68,26 @@ def parse_args() -> argparse.Namespace:
     stop_parser = subparsers.add_parser("stop-virtual-camera")
     stop_parser.add_argument("--json", action="store_true")
     return parser.parse_args()
+
+
+def configured_canvas_default() -> tuple[int, int]:
+    if os.environ.get("CARESIGHT_AITUM_VERTICAL_WIDTH") and os.environ.get("CARESIGHT_AITUM_VERTICAL_HEIGHT"):
+        return DEFAULT_WIDTH, DEFAULT_HEIGHT
+    if not AITUM_CONFIG.exists():
+        return DEFAULT_WIDTH, DEFAULT_HEIGHT
+    try:
+        payload = json.loads(AITUM_CONFIG.read_text(encoding="utf-8"))
+    except Exception:
+        return DEFAULT_WIDTH, DEFAULT_HEIGHT
+    canvases = payload.get("canvas", []) if isinstance(payload, dict) else []
+    for canvas in canvases:
+        if not isinstance(canvas, dict):
+            continue
+        width = int(canvas.get("width", 0) or 0)
+        height = int(canvas.get("height", 0) or 0)
+        if width > 0 and height > width:
+            return width, height
+    return DEFAULT_WIDTH, DEFAULT_HEIGHT
 
 
 def call_vendor(client: Any, request_type: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -105,7 +128,7 @@ def vertical_state(client: Any, width: int, height: int) -> dict[str, Any]:
 
 
 def scene_config_state(width: int, height: int) -> dict[str, Any]:
-    config_path = Path.home() / "Library" / "Application Support" / "obs-studio" / "plugin_config" / "vertical-canvas" / "config.json"
+    config_path = AITUM_CONFIG
     if not config_path.exists():
         return {"config_path": str(config_path), "configured": False}
     try:
@@ -149,7 +172,6 @@ def print_human(payload: dict[str, Any]) -> None:
 
 def main() -> int:
     logging.disable(logging.CRITICAL)
-    load_local_env()
     args = parse_args()
     try:
         client = connect(args)
@@ -159,6 +181,8 @@ def main() -> int:
             "status": "failed",
             "error_type": type(exc).__name__,
             "error": str(exc),
+            "canvas": {"width": args.width, "height": args.height},
+            "local_config": scene_config_state(args.width, args.height),
             "hint": "Open OBS, enable OBS websocket, and verify OBS_WEBSOCKET_PASSWORD.",
         }
         if args.json:

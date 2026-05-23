@@ -6,10 +6,17 @@ export OBS_WEBSOCKET_PORT="4455"
 export OBS_WEBSOCKET_PASSWORD="replace-with-local-obs-websocket-password"
 
 export CARESIGHT_CONTACT_ALLOWLIST_PATH="apps/caresight-hub/config/hermes/allowlisted-contacts.local.json"
-export CARESIGHT_OBS_BROWSER_FEED_URL="http://127.0.0.1:8766/stream.mjpg"
+export CARESIGHT_OBS_BROWSER_FEED_URL="http://127.0.0.1:8766/live.html"
 
-# Optional preferred FaceTime path when Aitum Vertical Canvas is installed.
-# "auto" tries Aitum first and falls back to plain OBS portrait output.
-# Use "required" when you want the live handoff to fail instead of falling back.
-export CARESIGHT_AITUM_VERTICAL_MODE="auto"
-export CARESIGHT_AITUM_VERTICAL_SCENE="CareSight Hub - FaceTime Mobile"
+# Optional experimental FaceTime video path when Aitum Vertical Canvas is installed.
+# Keep this off for the default hackathon flow: macOS FaceTime can stretch or mirror
+# OBS/Aitum virtual camera output even when the OBS vertical scene is correct.
+# Use "auto" only when deliberately testing the experimental visual bridge.
+export CARESIGHT_AITUM_VERTICAL_MODE="off"
+export CARESIGHT_AITUM_VERTICAL_SCENE="CareSight Hub - FaceTime Mobile Vertical"
+
+# Default FaceTime-safe path: do not rely on FaceTime receiving OBS/Aitum video.
+# Keep OBS visible locally for operator review and recording; use FaceTime for
+# the reply-gated call and approved TTS audio handoff.
+export CARESIGHT_OBS_FACETIME_SCENE="CareSight Hub - Escalation"
+export CARESIGHT_OBS_FACETIME_VIDEO_MODE="landscape"

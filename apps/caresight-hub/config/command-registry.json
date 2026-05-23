@@ -90,7 +90,7 @@
     },
     {
       "id": "live_reply_facetime_tts",
-      "command": "python3 apps/caresight-hub/scripts/caresight_live_handoff.py wait-reply-facetime-tts <request_id> --since-unix-seconds <timestamp> --live-approved --tts-audio-route blackhole --tts-volume 2.5",
+      "command": "python3 apps/caresight-hub/scripts/caresight_live_handoff.py wait-reply-facetime-tts <request_id> --since-unix-seconds <timestamp> --live-approved --tts-audio-route blackhole --tts-volume 6.0 --tts-repeat-count 2",
       "safety_class": "human-review-required",
       "description": "Watch local Messages for a yes-like reply, switch OBS to the FaceTime Mobile scene, open FaceTime, then play approved Dakota TTS.",
       "external_network": false,
@@ -122,7 +122,7 @@
     },
     {
       "id": "tts_play",
-      "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text <approved_text> --play --play-volume 2.5",
+      "command": "python3 apps/caresight-hub/scripts/caresight_tts.py --text <approved_text> --play --play-volume 6.0 --play-repeat-count 2",
       "safety_class": "human-review-required",
       "description": "Play approved local TTS audio for human validation.",
       "external_network": false,
@@ -153,8 +153,16 @@
       "live_action": false
     },
     {
+      "id": "obs_normalize_aitum_vertical",
+      "command": "apps/obs-hub/tools/normalize_aitum_vertical_scene.py",
+      "safety_class": "manual-operator",
+      "description": "Reset the Aitum FaceTime vertical scene to a 1080x1920 canvas with a 16:9 live detector source and transparent overlay.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
       "id": "v0_auto_agent_live_run",
-      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --obs-browser-feed --obs-live-preview --auto-agent-live-run --live-approved --auto-facetime-on-reply --play-tts-after-facetime --tts-audio-route blackhole",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room --obs-browser-feed --obs-live-preview --auto-agent-live-run --live-approved --auto-facetime-on-reply --play-tts-after-facetime --tts-audio-route blackhole --tts-repeat-count 2",
       "safety_class": "human-review-required",
       "description": "After a persisted event, serve the local OBS browser feed, update OBS, draft locally, stage the action, send the approved iMessage, wait for yes-like reply, open FaceTime, and play approved TTS.",
       "external_network": false,

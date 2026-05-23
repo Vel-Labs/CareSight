@@ -1,0 +1,84 @@
+window.CareSightOverlayLayout = {
+  "escalation": {
+    "brand": {
+      "left": 42,
+      "top": 34
+    },
+    "clock": {
+      "right": 46,
+      "top": 40
+    },
+    "liveFeed": {
+      "x": 48,
+      "y": 165,
+      "width": 1071,
+      "height": 616
+    },
+    "feedFrame": {
+      "left": 48,
+      "top": 165,
+      "width": 1071,
+      "height": 616
+    },
+    "thumbs": {
+      "left": 1138,
+      "top": 165,
+      "width": 300,
+      "height": 616
+    },
+    "eventPanel": {
+      "right": 38,
+      "top": 196,
+      "width": 378
+    },
+    "activityStrip": {
+      "left": 34,
+      "right": 450,
+      "bottom": 56
+    },
+    "footer": {
+      "right": 50,
+      "bottom": 40
+    },
+    "thumbsText": [
+      "Kitchen | Placeholder",
+      "Hallway | Last movement logged",
+      "Bedroom | Evening routine reviewed"
+    ]
+  },
+  "facetime": {
+    "header": {
+      "left": 44,
+      "right": 44,
+      "top": 42
+    },
+    "liveFeed": {
+      "x": 0,
+      "y": 168,
+      "width": 1080,
+      "height": 608
+    },
+    "feedFrame": {
+      "left": 0,
+      "top": 168,
+      "width": 1080,
+      "height": 608
+    },
+    "eventPanel": {
+      "left": 44,
+      "right": 44,
+      "top": 808
+    },
+    "activityPanel": {
+      "left": 44,
+      "right": 44,
+      "top": 1108,
+      "bottom": 86
+    },
+    "footer": {
+      "left": 44,
+      "right": 44,
+      "bottom": 34
+    }
+  }
+};

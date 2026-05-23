@@ -172,7 +172,10 @@ def switch_obs_to_facetime_scene() -> dict[str, Any]:
         python = Path(shutil.which("python3") or "python3")
     if not script.exists():
         return {"status": "blocked", "reason": "setup_obs_scenes_missing", "scene": scene}
-    command = [str(python), str(script), "--scene", scene, "--video-mode", "portrait", "--refresh-overlays"]
+    video_mode = os.environ.get("CARESIGHT_OBS_FACETIME_VIDEO_MODE", "").strip().lower()
+    if not video_mode:
+        video_mode = "portrait" if scene == "CareSight Hub - FaceTime Mobile" else "landscape"
+    command = [str(python), str(script), "--scene", scene, "--video-mode", video_mode, "--refresh-overlays"]
     result = subprocess.run(command, cwd=repo_root, capture_output=True, check=False, text=True, timeout=10)
     if result.returncode != 0:
         return {
@@ -182,11 +185,11 @@ def switch_obs_to_facetime_scene() -> dict[str, Any]:
             "returncode": result.returncode,
             "stderr": result.stderr.strip()[-500:],
         }
-    return {"status": "scene_requested", "scene": scene, "preferred_path": aitum_result}
+    return {"status": "scene_requested", "scene": scene, "video_mode": video_mode, "preferred_path": aitum_result}
 
 
 def switch_aitum_vertical_scene(repo_root: Path, scene: str) -> dict[str, Any]:
-    mode = os.environ.get("CARESIGHT_AITUM_VERTICAL_MODE", "auto").strip().lower()
+    mode = os.environ.get("CARESIGHT_AITUM_VERTICAL_MODE", "off").strip().lower()
     if mode in {"0", "off", "false", "disabled"}:
         return {"status": "not_requested", "path": "aitum_vertical"}
     script = repo_root / "apps" / "obs-hub" / "tools" / "aitum_vertical.py"
@@ -619,7 +622,8 @@ on run argv
     set targetBuddy to buddy targetHandle of targetService
     send messageText to targetBuddy
     if attachmentPath is not "" then
-      set attachmentFile to POSIX file attachmentPath
+      delay 1
+      set attachmentFile to POSIX file attachmentPath as alias
       send attachmentFile to targetBuddy
     end if
   end tell

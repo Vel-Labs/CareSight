@@ -188,8 +188,10 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --no-response-escalation-seconds 90 \
   --play-tts-after-facetime \
   --tts-audio-route blackhole \
-  --tts-volume 2.5 \
-  --tts-after-facetime-delay-seconds 8 \
+  --tts-volume 6.0 \
+  --tts-repeat-count 2 \
+  --tts-repeat-delay-seconds 1.5 \
+  --tts-after-facetime-delay-seconds 16 \
   --post-facetime-hold-seconds 30
 ```
 
@@ -199,7 +201,17 @@ Inputs: same private iMessage/FaceTime handles as the live iMessage test, `imsg`
 
 Outputs: `post_event_agent_live_run` with reply-watch status, FaceTime attempt ID if opened, and TTS playback status if attempted.
 
-Before opening FaceTime, the live handoff first tries Aitum Vertical Canvas when available. This keeps the desktop/operator OBS canvas stable while the phone recipient sees a dedicated vertical scene. If Aitum is unavailable, the fallback switches OBS to `CareSight Hub - FaceTime Mobile` and applies portrait OBS output. Run `./scripts/setup_obs_scene.sh --scene "CareSight Hub - FaceTime Mobile"` after pulling this change so the fallback scene exists; ordinary setup preserves the current OBS output resolution.
+The default live handoff does not depend on FaceTime receiving the OBS video feed. OBS remains the local operator/review surface, iMessage carries the alert and optional snapshot evidence, and FaceTime is used for the reply-gated call plus approved TTS audio. This avoids macOS FaceTime stretching or mirroring OBS/Aitum virtual-camera output during the demo.
+
+To keep that stable default explicit:
+
+```bash
+export CARESIGHT_AITUM_VERTICAL_MODE="off"
+export CARESIGHT_OBS_FACETIME_SCENE="CareSight Hub - Escalation"
+export CARESIGHT_OBS_FACETIME_VIDEO_MODE="landscape"
+```
+
+The experimental Aitum portrait bridge is still available for investigation by setting `CARESIGHT_AITUM_VERTICAL_MODE=auto`, but it is not a production-validation gate for this sprint.
 
 OBS video resolution is profile-global, not scene-local. If you need to preview phone output manually, use:
 
@@ -223,15 +235,19 @@ This is CareSight Hub escalation. We have not heard back, but there is an event 
 
 This is a no-response follow-up only. A negative reply does not trigger FaceTime or the follow-up escalation.
 
+The attachment source is the event `evidence.snapshot_path`; if that file is unavailable, CareSight falls back to `apps/obs-hub/config/live_preview.jpg` when present. Execution receipts record `attachment_included` and a redacted attachment name, not the private local path.
+
 Default TTS readout:
 
 ```text
 This is an automated CareSight message. A possible floor stay was observed in the Living Room. Please review the live feed. CareSight will keep this handoff open briefly for review.
 ```
 
-`--obs-browser-feed` serves the annotated detector feed as local MJPEG at `http://127.0.0.1:8766/stream.mjpg`. OBS renders that stream inside its browser-source overlay, so the caregiver sees the boxed detector view without OBS competing for the webcam.
+`--obs-browser-feed` serves the annotated detector feed at `http://127.0.0.1:8766/live.html`, backed by local MJPEG at `http://127.0.0.1:8766/stream.mjpg`. OBS should use the `/live.html` page as the Browser Source URL, so the caregiver sees the boxed detector view without OBS competing for the webcam. Browser-feed mode suppresses the OpenCV preview window by default; add `--show-window` only for local detector debugging.
 
 `--obs-live-preview` still writes `apps/obs-hub/config/live_preview.jpg` as a fallback/snapshot-style local artifact. It is not the primary live video path.
+
+`--tts-repeat-count 2` plays the approved Dakota handoff message twice after the FaceTime call is requested. The BlackHole audio route now holds the temporary route briefly after playback so the route is not restored mid-message.
 
 Agent safety: `human-review-required`. This prefers `imsg` when installed, otherwise reads only the local Messages database for the configured contact target after the alert is sent. If macOS blocks database access, it fails closed with setup instructions; it does not bypass Full Disk Access, dispatch help, diagnose, or send raw video to an agent.
 
@@ -279,6 +295,25 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
 Purpose: print one `floor_stay_debug` JSON line per second showing the observed person boxes, whether each bottom-center is inside the configured floor zone, whether the box passes low-posture shape checks, and the current dwell seconds.
 
 Use this when a live test appears not to trigger. A valid possible-floor-stay event requires a person detection that is both inside the floor zone and low-posture for the configured dwell window.
+
+OBS live-feed verification:
+
+```bash
+apps/obs-hub/tools/check_obs_live_feed.py
+```
+
+Purpose: prove the detector-owned MJPEG server is running and OBS live-feed/browser sources are pointed at `http://127.0.0.1:8766/live.html` or its underlying stream, not a fixture image or stale local preview. In the escalation scene, the source named `CareSight Escalation Live Feed` should sit behind `CareSight Escalation Overlay`.
+
+Run this in a second terminal after starting `v0_floor_stay_live.py --obs-browser-feed`. If it reports `detector_mjpeg_health` as blocked, the detector is not serving frames yet. If it reports an OBS source as blocked, rerun `./scripts/setup_obs_scene.sh` after confirming OBS websocket is enabled.
+
+The desktop and mobile feed/text positions are controlled by:
+
+```text
+apps/obs-hub/config/overlay_layout.json
+apps/obs-hub/config/overlay_layout.js
+```
+
+`overlay_layout.json` drives OBS source transforms; `overlay_layout.js` lets browser overlays align labels and panels with those source transforms. The FaceTime fallback scene uses a separate `CareSight FaceTime Mobile Live Feed` source plus a transparent `CareSight FaceTime Mobile Overlay` in `video=external` mode.
 
 Optional audio route check:
 
@@ -810,9 +845,19 @@ Switch the vertical canvas and start the Aitum vertical virtual camera:
 
 ```bash
 apps/obs-hub/tools/aitum_vertical.py switch \
-  --scene "CareSight Hub - FaceTime Mobile" \
+  --scene "CareSight Hub - FaceTime Mobile Vertical" \
   --start-virtual-camera
 ```
+
+Normalize the CareSight vertical scene after manual OBS resizing:
+
+```bash
+apps/obs-hub/tools/normalize_aitum_vertical_scene.py
+```
+
+Purpose: reset the Aitum FaceTime scene to a portrait `1080x1920` canvas with a separate 16:9 live detector browser source under a full-canvas transparent overlay. This clears stale manual crops/scales that can make FaceTime look stretched or too small.
+
+Validation: run `apps/obs-hub/tools/normalize_aitum_vertical_scene.py --dry-run` to inspect the planned geometry, then run `apps/obs-hub/tools/aitum_vertical.py status` to confirm the vertical scene and virtual camera are active.
 
 Agent safety: `manual-operator`. This may start the Aitum vertical virtual camera, so it belongs only in the operator-approved FaceTime handoff path. It does not send messages, open FaceTime, play TTS, or change event lifecycle state.
 
@@ -831,6 +876,13 @@ Purpose: refresh the local browser-overlay state file from SQLite so OBS scenes 
 Inputs: optional `--db <path>`, optional `--event-id <event_id>`, optional `--sample`, optional `--dry-run`, optional `--watch`, optional `--interval-seconds <seconds>`, and local files under `apps/obs-hub/config/`.
 
 Outputs: `apps/obs-hub/config/current_event.json` and `apps/obs-hub/config/current_event.js` by default. Browser overlays prefer the JavaScript state file because OBS Browser Source can load local scripts more reliably than JSON fetches from `file://` URLs.
+
+The overlay state includes a richer presentation model, not just the event row:
+
+- `current_event`: event label, room, review state, display ID, and suggested next step.
+- `alert_feed`: lifecycle milestones from SQLite receipts, including event creation, Gemma draft readiness, staged action request, Hermes preflight, iMessage send, no-response follow-up, and FaceTime handoff when present.
+- `camera_cards`: active/configured/not-configured camera cards for the desktop right rail.
+- `handoff_status`: current bounded handoff phase for the event.
 
 Validation: `./scripts/update_obs_overlay.sh --sample --dry-run` prints bounded fixture overlay JSON. `./scripts/update_obs_overlay.sh --event-id <event_id> --dry-run` prints SQLite-derived overlay JSON without writing. The tool rejects unsafe display wording such as detected-fall or dispatch language.
 
@@ -897,6 +949,45 @@ Outputs: running Gemma endpoint plus Hermes readiness marker.
 Validation: starts Gemma with a chat-completions pulse check, then verifies Hermes with `--require-gemma`.
 
 Agent safety: `manual-operator`. This starts/verifies local services only; it does not execute live caregiver actions.
+
+## CareSight Demo Terminal Launcher
+
+Command:
+
+```bash
+./scripts/open_demo_terminals.sh
+```
+
+Purpose: open a named macOS Terminal tab set for the live demo from one command.
+
+Use explicit modes:
+
+```bash
+./scripts/open_demo_terminals.sh --terminal
+./scripts/open_demo_terminals.sh --tabs
+./scripts/open_demo_terminals.sh --windows
+./scripts/open_demo_terminals.sh --print
+```
+
+`--tabs` is the default and opens named macOS Terminal tabs to keep the demo surface compact. `--windows` and `--terminal` open separate Terminal windows as a fallback if macOS UI automation blocks tab creation. `--print` prints the same names and commands for manual use in VS Code integrated terminals or any other terminal app. The script does not automate VS Code tabs because that requires brittle UI automation and can unexpectedly focus/open VS Code windows.
+
+Tabs:
+
+- `CareSight Stack`: starts Gemma/Hermes readiness.
+- `OBS Overlay Watch`: keeps `current_event.js/json` refreshed from SQLite.
+- `OBS Feed Check`: runs the live-feed/OBS sanity check once and leaves a shell open.
+- `Live Detector + Handoff`: waits for Enter before starting the camera, approved iMessage, reply-gated FaceTime, and TTS path.
+- `CareSight Status Board`: renders a clean status dashboard and curated event feed from local status files and `current_event.json`.
+
+Inputs: macOS Terminal, local `apps/caresight-hub/config/live-demo.local` when present, and the same runtime prerequisites as the individual commands.
+
+Validation: `bash -n scripts/open_demo_terminals.sh` and `bash -n scripts/demo_status_dashboard.sh`.
+
+Agent safety: `manual-operator`. The launcher opens the live detector terminal but pauses before executing the live caregiver flow. macOS may ask for Automation/Accessibility permission when `--tabs` is used.
+
+The launcher spaces tab startup by about one second. The OBS/feed check waits and retries while Terminal 4 is still waiting to start the detector, so the status board should show `Waiting` instead of immediately marking the feed check blocked.
+
+During the live detector run, the post-event caregiver chain runs in a background worker unless `--auto-agent-fail-closed` is set. This keeps the OBS browser feed moving while CareSight waits for a reply, sends the optional no-response follow-up, opens FaceTime, or plays TTS. If another event is persisted while a live caregiver chain is still running, the detector logs `post_event_agent_live_run_skipped` instead of sending duplicate caregiver messages.
 
 ## CareSight Stack Stop
 

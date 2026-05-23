@@ -642,14 +642,14 @@ class CareConsoleTest(unittest.TestCase):
             env_path = Path(tmpdir) / "live-demo.local"
             env_path.write_text(
                 'export OBS_WEBSOCKET_PASSWORD="local-secret"\n'
-                "export CARESIGHT_OBS_BROWSER_FEED_URL='http://127.0.0.1:8766/stream.mjpg'\n",
+                "export CARESIGHT_OBS_BROWSER_FEED_URL='http://127.0.0.1:8766/live.html'\n",
                 encoding="utf-8",
             )
 
             values = preflight_module.read_local_env(env_path)
 
             self.assertEqual(values["OBS_WEBSOCKET_PASSWORD"], "local-secret")
-            self.assertEqual(values["CARESIGHT_OBS_BROWSER_FEED_URL"], "http://127.0.0.1:8766/stream.mjpg")
+            self.assertEqual(values["CARESIGHT_OBS_BROWSER_FEED_URL"], "http://127.0.0.1:8766/live.html")
 
     def test_preflight_model_check_names_actual_model(self) -> None:
         model_path = preflight_module.REPO_ROOT / "apps" / "caresight-hub" / "models" / "reasoning" / "gemma" / "gemma-4-e2b-it-4bit"

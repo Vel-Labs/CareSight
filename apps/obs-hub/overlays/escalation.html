@@ -7,7 +7,6 @@
 </head>
 <body>
   <main class="camera-overlay">
-    <img class="live-preview-image" id="livePreviewImage" alt="" />
     <section class="brand">
       <div class="brand-title">CareSight Hub - Escalation</div>
       <div class="brand-subtitle">Human review handoff | Raw video stays local <span class="badge">LIVE</span></div>
@@ -21,10 +20,8 @@
 
     <section class="escalation-grid">
       <div class="main-feed-label" id="mainFeedLabel">Active feed: Living Room</div>
-      <div class="thumbs">
-        <div class="thumb">Kitchen | Placeholder</div>
-        <div class="thumb">Hallway | Last movement logged</div>
-        <div class="thumb">Bedroom | Evening routine reviewed</div>
+      <div class="camera-cards" id="cameraCards">
+        <div class="camera-card">Camera status loading</div>
       </div>
     </section>
 
@@ -36,6 +33,7 @@
       <div class="kv"><div class="key">Subject</div><div class="value" id="subject">Resident</div></div>
       <div class="kv"><div class="key">Review Status</div><div class="value attention" id="reviewStatus">Unreviewed</div></div>
       <div class="kv"><div class="key">Escalation</div><div class="value attention" id="escalation">Draft caregiver alert prepared</div></div>
+      <div class="kv"><div class="key">Handoff</div><div class="value attention" id="handoffStatus">Review required</div></div>
       <div class="kv"><div class="key">Event ID</div><div class="value compact-id" id="eventId">EVT-0042</div></div>
       <div class="divider"></div>
       <div class="suggested">
@@ -45,8 +43,8 @@
     </section>
 
     <section class="panel activity-strip">
-      <div class="activity-title">Recent Activity</div>
-      <div class="activity-grid" id="activityGrid"></div>
+      <div class="activity-title">Alert Feed</div>
+      <div class="alert-feed-grid" id="alertFeed"></div>
     </section>
 
     <div class="footer-note">Caregiver handoff surface | Human review required | <span id="overlaySource">Data: loading</span> | <span id="overlayGeneratedAt">Updated: loading</span></div>
@@ -54,10 +52,10 @@
 
   <script src="./obs-overlay.js"></script>
   <script>
+    applyOverlayLayout("escalation");
     refreshOverlayData();
     setInterval(refreshOverlayData, 10000);
     setInterval(updateClock, 10000);
-    setInterval(refreshLivePreviewOnly, 250);
   </script>
 </body>
 </html>

@@ -42,6 +42,79 @@
       "status": "Reviewed"
     }
   ],
+  "alert_feed": [
+    {
+      "type": "event_created",
+      "time": "7:41 PM",
+      "label": "Possible floor-stay",
+      "detail": "Living Room | Human review required",
+      "status": "Unreviewed",
+      "tone": "attention"
+    },
+    {
+      "type": "draft_prepared",
+      "time": "7:42 PM",
+      "label": "Caregiver alert drafted",
+      "detail": "Local Gemma | Validated",
+      "status": "Prepared",
+      "tone": "cool"
+    },
+    {
+      "type": "imessage_sent",
+      "time": "7:43 PM",
+      "label": "Caregiver alert sent",
+      "detail": "iMessage | Waiting for reply",
+      "status": "Sent",
+      "tone": "cool"
+    }
+  ],
+  "camera_cards": [
+    {
+      "camera_id": "living_room",
+      "display_id": "C1",
+      "zone": "Living Room",
+      "status": "active",
+      "status_label": "Live priority feed",
+      "source": "Webcam",
+      "icon": "camera-live",
+      "tone": "cool"
+    },
+    {
+      "camera_id": "kitchen",
+      "display_id": "C2",
+      "zone": "Kitchen",
+      "status": "not_configured",
+      "status_label": "Not configured",
+      "source": "No local source",
+      "icon": "camera-off",
+      "tone": "muted"
+    },
+    {
+      "camera_id": "hallway",
+      "display_id": "C3",
+      "zone": "Hallway",
+      "status": "not_configured",
+      "status_label": "Not configured",
+      "source": "No local source",
+      "icon": "camera-off",
+      "tone": "muted"
+    },
+    {
+      "camera_id": "bedroom",
+      "display_id": "C4",
+      "zone": "Bedroom",
+      "status": "not_configured",
+      "status_label": "Not configured",
+      "source": "No local source",
+      "icon": "camera-off",
+      "tone": "muted"
+    }
+  ],
+  "handoff_status": {
+    "label": "Caregiver alert sent",
+    "status": "waiting_for_reply",
+    "tone": "attention"
+  },
   "constraints": [
     "Raw video stays local",
     "Human review required",

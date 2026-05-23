@@ -35,6 +35,28 @@
 - Added a dedicated OBS `CareSight FaceTime Live Detector Preview` source and overlay fallback for `live_preview.jpg` so the FaceTime scene has an explicit detector-feed source instead of relying only on event JSON.
 - Added a detector-owned local MJPEG browser feed for OBS escalation and FaceTime Mobile overlays, keeping `live_preview.jpg` as fallback/debug evidence instead of the primary live-video path.
 - Added an optional Aitum Vertical Canvas integration path so FaceTime can use a dedicated vertical OBS canvas/virtual camera while the desktop/operator OBS output stays landscape, with plain OBS portrait output retained as fallback.
+- Clarified that Aitum vertical output is independent from the main OBS Program scene and expanded the FaceTime mobile overlay to use the full 1080x1920 browser canvas instead of a narrow phone mock.
+- Added an OBS live-feed verification command that checks the detector MJPEG health endpoint and confirms OBS browser sources point at the live stream instead of fixture media.
+- Split the OBS escalation scene into a dedicated full-canvas live-feed source behind a UI-only overlay so the camera layer can be positioned independently.
+- Switched OBS browser-feed setup toward the detector `/live.html` page and changed the mobile handoff feed slot to embed that page instead of the raw MJPEG image URL.
+- Added a file-backed OBS overlay layout config and external-video mobile overlay mode so desktop and FaceTime scenes can reposition live-feed/text regions without editing HTML or blocking the video layer with black overlay fill.
+- Added an OBS presentation-state layer with alert-feed lifecycle items, handoff status, and camera cards derived from SQLite drafts/action requests/execution attempts instead of static overlay fixtures.
+- Made detector browser-feed mode headless by default, with `--show-window` as the explicit OpenCV preview override, so OBS remains the only live visual surface during handoff tests.
+- Added a one-command demo terminal launcher that opens named macOS Terminal tabs for stack startup, OBS overlay watch, feed checks, the live detector/handoff path with a preflight pause, and a clean status-board tab.
+- Added a print-only mode for the demo terminal launcher so VS Code users can copy the named tab commands without opening/focusing VS Code through UI automation.
+- Added pacing and retry behavior to the demo terminal launcher so the OBS/feed check waits for the detector feed before reporting a blocked state.
+- Moved the live post-event caregiver chain onto a background worker during detector runs so reply waiting, no-response follow-up, FaceTime, and TTS do not pause the OBS camera feed loop.
+- Added no-response escalation attachment diagnostics and a local preview fallback if the event snapshot path is missing.
+- Raised the default Dakota TTS handoff playback gain and extended the BlackHole post-playback hold so FaceTime recipients can hear the message more clearly without the audio route restoring mid-utterance.
+- Fixed the detector-owned MJPEG stream so OBS/FaceTime browser sources wait for fresh frame sequences instead of repeatedly receiving the first available JPEG.
+- Restored Terminal-tab-first demo launching and added a BlackHole pre-playback settle delay plus a longer FaceTime-to-TTS wait to reduce call-audio cutoffs.
+- Updated the Aitum Vertical Canvas helper to load local demo env before parsing, default to the `CareSight Hub - FaceTime Mobile Vertical` scene, and target the installed vertical canvas size from Aitum config.
+- Added a SQLite execution-attempt receipt for post-FaceTime TTS playback so the OBS handoff feed and audit chain show whether CareSight audio played or failed.
+- Added an Aitum vertical-scene normalization tool that clears manual crop/scale drift, keeps the detector feed in a 16:9 browser-source region, and leaves the desktop OBS canvas unchanged.
+- Added repeat-count controls for approved TTS playback and defaulted the live FaceTime handoff to play the Dakota message twice with a longer BlackHole post-playback hold.
+- Added a FaceTime-safe landscape fallback mode so macOS FaceTime tests can use the normal `1920x1080` OBS virtual camera when Aitum portrait output is stretched or mirrored by FaceTime.
+- Moved Aitum/OBS-to-FaceTime video bridging behind an explicit opt-in because macOS FaceTime can distort the virtual-camera output; the stable demo path now treats FaceTime as reply-gated audio/TTS while OBS remains the local visual review surface.
+- Tightened no-response iMessage snapshot escalation by sending the attachment as an AppleScript alias after a short delay and documenting the receipt fields that prove an attachment was requested.
 - Added an ignored caregiver contact config initializer, live-demo preflight checker, and event-scoped escalation receipt command linking drafts, requests, execution attempts, OBS state, and preview evidence.
 - Added install/setup wrappers for the local runtime, Gemma/Holler models, OBS, full prerequisite install, fixture setup, and a machine-readable command registry.
 - Added SQLite execution-attempt logging for dry-run external-action receipts before any Hermes/iMessage/FaceTime/TTS live path is enabled.

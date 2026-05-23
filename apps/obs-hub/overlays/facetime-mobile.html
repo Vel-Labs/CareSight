@@ -20,7 +20,7 @@
       </header>
 
       <section class="facetime-feed">
-        <img class="facetime-preview-image" id="livePreviewImage" alt="" />
+        <iframe class="facetime-preview-frame" id="livePreviewFrame" title="CareSight live detector feed"></iframe>
         <div class="facetime-feed-label" id="mainFeedLabel">Living Room</div>
       </section>
 
@@ -43,8 +43,8 @@
       </section>
 
       <section class="facetime-activity panel">
-        <div class="activity-title">Recent Activity</div>
-        <div class="facetime-activity-list" id="activityGrid"></div>
+        <div class="activity-title">Handoff Feed</div>
+        <div class="facetime-activity-list" id="alertFeed"></div>
       </section>
 
       <footer class="facetime-footer">
@@ -55,10 +55,20 @@
 
   <script src="./obs-overlay.js"></script>
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const externalVideo = params.get("video") === "external";
+    const livePreviewFrame = document.getElementById("livePreviewFrame");
+    document.body.classList.toggle("external-video", externalVideo);
+    if (externalVideo) {
+      livePreviewFrame.remove();
+    } else {
+      livePreviewFrame.src = params.get("feed_url") || "http://127.0.0.1:8766/live.html";
+    }
+
+    applyOverlayLayout("facetime");
     refreshOverlayData();
     setInterval(refreshOverlayData, 10000);
     setInterval(updateClock, 10000);
-    setInterval(refreshLivePreviewOnly, 250);
   </script>
 </body>
 </html>

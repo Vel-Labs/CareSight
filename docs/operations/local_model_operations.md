@@ -220,7 +220,7 @@ export OBS_WEBSOCKET_PASSWORD="your-obs-password"
 
 If OBS websocket is unavailable, enable it in OBS under `Tools > WebSocket Server Settings`, set port `4455`, set/copy the password, and rerun the setup command.
 
-Optional preferred phone output with [Aitum Vertical Canvas](https://github.com/Aitum/obs-vertical-canvas):
+Optional experimental phone output with [Aitum Vertical Canvas](https://github.com/Aitum/obs-vertical-canvas):
 
 ```bash
 ./scripts/install_obs_vertical_canvas.sh
@@ -233,7 +233,7 @@ Restart OBS after installing Aitum Vertical Canvas, then check:
 apps/obs-hub/tools/aitum_vertical.py status
 ```
 
-The Aitum path lets CareSight keep the desktop OBS canvas at `1920x1080` while FaceTime can use a purpose-built `1080x1920` vertical canvas. Create a vertical scene named `CareSight Hub - FaceTime Mobile` in the Aitum Vertical dock and set `CARESIGHT_AITUM_VERTICAL_MODE=auto` in `apps/caresight-hub/config/live-demo.local`.
+The Aitum path lets CareSight keep the desktop OBS canvas at `1920x1080` while testing a purpose-built `1080x1920` vertical canvas. It is not the default live demo path because macOS FaceTime can stretch or mirror OBS/Aitum virtual-camera output even when the OBS vertical preview is correct. Keep `CARESIGHT_AITUM_VERTICAL_MODE=off` for the stable hackathon flow.
 
 If status reports `No vendor was found by that name`, restart OBS after installing the plugin. Current Aitum websocket support covers switching/status/virtual-camera control, but vertical scene/source creation still requires the Aitum dock UI.
 
@@ -342,22 +342,25 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --no-response-escalation-seconds 90 \
   --play-tts-after-facetime \
   --tts-audio-route blackhole \
-  --tts-volume 2.5 \
-  --tts-after-facetime-delay-seconds 8 \
+  --tts-volume 6.0 \
+  --tts-repeat-count 2 \
+  --tts-repeat-delay-seconds 1.5 \
+  --tts-after-facetime-delay-seconds 16 \
   --post-facetime-hold-seconds 30
 ```
 
 This prefers `imsg` for a yes-like reply after the alert send, then falls back to the scoped SQLite reader. `imsg` and the fallback both need macOS Full Disk Access to read Messages. If access is blocked, the command fails closed and no FaceTime/TTS step runs automatically. After FaceTime is requested, the command waits briefly before TTS playback and then keeps running for a bounded review window so the OBS feed does not disappear immediately.
 
-The handoff first tries Aitum Vertical Canvas when available, switching the vertical canvas to `CareSight Hub - FaceTime Mobile` and starting the Aitum vertical virtual camera before opening FaceTime. If Aitum is unavailable, it falls back to plain OBS by switching OBS to `CareSight Hub - FaceTime Mobile` and applying portrait output immediately before opening FaceTime. OBS video resolution is profile-global, not scene-local, so ordinary setup preserves the current output resolution unless `--video-mode portrait` or `--video-mode landscape` is explicitly requested.
+The stable handoff path does not rely on FaceTime receiving OBS video. OBS remains the local operator/review surface, iMessage carries the alert and optional snapshot evidence, and FaceTime is used for the reply-gated call plus approved TTS audio. The experimental Aitum portrait bridge can be enabled with `CARESIGHT_AITUM_VERTICAL_MODE=auto`, but it is not required for sprint validation because FaceTime may distort that virtual-camera output.
 
 The mobile scene uses a local browser-rendered detector feed. The live detector serves annotated MJPEG at:
 
 ```text
+http://127.0.0.1:8766/live.html
 http://127.0.0.1:8766/stream.mjpg
 ```
 
-OBS renders that stream inside the escalation and FaceTime browser-source overlays. Python owns the camera and draws the boxes/zone overlay; OBS does not open the webcam separately. `apps/obs-hub/config/live_preview.jpg` remains a fallback artifact when `--obs-live-preview` is enabled, not the primary live feed.
+OBS should use the `/live.html` page as a Browser Source URL. That page renders the underlying MJPEG stream. Python owns the camera and draws the boxes/zone overlay; OBS does not open the webcam separately. `apps/obs-hub/config/live_preview.jpg` remains a fallback artifact when `--obs-live-preview` is enabled, not the primary live feed.
 
 If no reply is observed before the no-response escalation window, the command sends one follow-up iMessage with the local event snapshot attached:
 
