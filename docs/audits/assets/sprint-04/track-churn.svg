@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Track churn reference">
+  <rect width="960" height="540" fill="#f7f7f2"/>
+  <rect y="360" width="960" height="180" fill="#dce8d5"/>
+  <text x="32" y="48" font-family="Arial, sans-serif" font-size="26" fill="#1f2933">track churn</text>
+  <text x="32" y="82" font-family="Arial, sans-serif" font-size="18" fill="#46515f">A new shifted track cannot inherit dwell from an earlier track.</text>
+  <rect x="150" y="378" width="230" height="78" rx="8" fill="none" stroke="#2563eb" stroke-width="6"/>
+  <text x="196" y="492" font-family="Arial, sans-serif" font-size="18" fill="#1f2933">track A</text>
+  <path d="M410 418 C470 368 540 368 602 418" fill="none" stroke="#64748b" stroke-width="4" stroke-dasharray="8 8"/>
+  <path d="M590 400 L626 420 L590 440" fill="none" stroke="#64748b" stroke-width="4"/>
+  <rect x="620" y="382" width="220" height="76" rx="8" fill="none" stroke="#b45309" stroke-width="6"/>
+  <text x="668" y="492" font-family="Arial, sans-serif" font-size="18" fill="#1f2933">track B</text>
+</svg>

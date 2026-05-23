@@ -10,12 +10,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from caresight.runtime.appearance import (
     AppearanceProfile,
+    appearance_region_receipt,
+    build_yolo_appearance_review,
     extract_appearance_descriptor,
     match_profile_continuity,
     render_appearance_summary,
     score_appearance_sample,
     summarize_appearance_samples,
+    write_appearance_annotation,
 )
+from caresight.runtime.inference.types import BoundingBox, Detection
 
 
 class AppearanceDescriptorTest(unittest.TestCase):
@@ -46,6 +50,103 @@ class AppearanceDescriptorTest(unittest.TestCase):
             self.assertEqual(descriptor.snapshot_path, str(image_path))
             self.assertEqual(descriptor.event_id, "evt_generated")
             self.assertEqual(descriptor.observation_id, "obs_generated")
+
+    def test_visual_receipt_exposes_person_bbox_and_descriptor_subregions(self) -> None:
+        receipt = appearance_region_receipt(
+            bbox_xyxy=(20, 20, 80, 90),
+            frame_width=100,
+            frame_height=100,
+        )
+
+        self.assertEqual(receipt["person_bbox_xyxy"], [20, 20, 80, 90])
+        self.assertEqual(
+            [region["region"] for region in receipt["descriptor_regions"]],
+            ["headwear", "upper_body_color", "lower_body_color", "footwear"],
+        )
+        self.assertTrue(all(region["bbox_xyxy"] for region in receipt["descriptor_regions"]))
+
+    def test_write_appearance_annotation_creates_review_image_with_regions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            image_path = Path(tmpdir) / "person.ppm"
+            output_path = Path(tmpdir) / "annotated.png"
+            write_ppm(
+                image_path,
+                width=100,
+                height=100,
+                fills=[
+                    ((20, 20, 80, 65), (45, 45, 45)),
+                    ((20, 65, 80, 90), (42, 96, 180)),
+                ],
+            )
+            descriptor = extract_appearance_descriptor(
+                snapshot_path=str(image_path),
+                bbox_xyxy=(20, 20, 80, 90),
+            )
+
+            receipt = write_appearance_annotation(
+                snapshot_path=str(image_path),
+                output_path=str(output_path),
+                bbox_xyxy=(20, 20, 80, 90),
+                descriptor=descriptor,
+                label="person 1",
+            )
+
+            self.assertTrue(output_path.exists())
+            self.assertEqual(receipt["annotated_image_path"], str(output_path))
+            self.assertEqual(receipt["annotation_boundary"], "visual_review_only")
+
+    def test_yolo_appearance_review_keeps_each_person_candidate_separate(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            image_path = Path(tmpdir) / "two-people.ppm"
+            output_dir = Path(tmpdir) / "review"
+            write_ppm(
+                image_path,
+                width=160,
+                height=120,
+                fills=[
+                    ((10, 10, 70, 100), (42, 96, 180)),
+                    ((90, 20, 150, 105), (45, 45, 45)),
+                ],
+            )
+            detections = [
+                Detection(
+                    detection_id="det_left",
+                    model_id="yolo26n",
+                    class_id=0,
+                    label="person",
+                    confidence=0.91,
+                    bbox=BoundingBox(10, 10, 70, 100),
+                    frame_width=160,
+                    frame_height=120,
+                    camera_id="living_room",
+                    captured_at="2026-05-23T12:00:00Z",
+                    raw_index=0,
+                ),
+                Detection(
+                    detection_id="det_right",
+                    model_id="yolo26n",
+                    class_id=0,
+                    label="person",
+                    confidence=0.84,
+                    bbox=BoundingBox(90, 20, 150, 105),
+                    frame_width=160,
+                    frame_height=120,
+                    camera_id="living_room",
+                    captured_at="2026-05-23T12:00:00Z",
+                    raw_index=1,
+                ),
+            ]
+
+            receipt = build_yolo_appearance_review(
+                snapshot_path=str(image_path),
+                detections=detections,
+                output_dir=str(output_dir),
+            )
+
+            self.assertEqual(receipt["person_count"], 2)
+            self.assertEqual([person["detection_id"] for person in receipt["people"]], ["det_left", "det_right"])
+            self.assertTrue(Path(receipt["people"][0]["visual_evidence"]["annotated_image_path"]).exists())
+            self.assertTrue(Path(receipt["people"][1]["visual_evidence"]["annotated_image_path"]).exists())
 
     def test_generated_images_prove_descriptor_is_not_hard_coded(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -109,9 +210,9 @@ class AppearanceDescriptorTest(unittest.TestCase):
                 bbox_xyxy=(0, 28, 94, 72),
             )
 
-            self.assertEqual(descriptor.descriptor_status, "available")
-            self.assertEqual(descriptor.upper_body_color.value, "blue")
-            self.assertEqual(descriptor.lower_body_color.value, "unknown")
+            self.assertEqual(descriptor.descriptor_status, "posture_limited")
+            self.assertEqual(descriptor.upper_body_color.value, "black")
+            self.assertEqual(descriptor.lower_body_color.value, "light gray")
 
     def test_wide_prone_bottom_truncated_bbox_returns_no_hallucinated_descriptor(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -135,6 +236,43 @@ class AppearanceDescriptorTest(unittest.TestCase):
             self.assertEqual(descriptor.descriptor_status, "unavailable")
             self.assertEqual(descriptor.upper_body_color.value, "unknown")
             self.assertEqual(descriptor.lower_body_color.value, "unknown")
+
+    def test_horizontal_low_posture_bbox_uses_body_axis_regions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            image_path = Path(tmpdir) / "horizontal.ppm"
+            write_ppm(
+                image_path,
+                width=180,
+                height=120,
+                fills=[
+                    ((10, 0, 180, 120), (90, 84, 78)),
+                    ((20, 78, 74, 104), (220, 210, 190)),
+                    ((74, 70, 126, 100), (40, 120, 190)),
+                    ((126, 72, 170, 104), (190, 160, 130)),
+                ],
+            )
+
+            descriptor = extract_appearance_descriptor(
+                snapshot_path=str(image_path),
+                bbox_xyxy=(20, 66, 170, 108),
+            )
+            receipt = appearance_region_receipt(
+                bbox_xyxy=(20, 66, 170, 108),
+                frame_width=180,
+                frame_height=120,
+            )
+
+            self.assertEqual(descriptor.descriptor_status, "posture_limited")
+            self.assertEqual(descriptor.upper_body_color.value, "blue")
+            self.assertEqual(descriptor.lower_body_color.value, "cream")
+            self.assertEqual(descriptor.headwear.value, "unknown")
+            self.assertEqual(descriptor.footwear.value, "unknown")
+            self.assertEqual(receipt["posture_hint"], "horizontal_low_posture")
+            regions = {region["region"]: region for region in receipt["descriptor_regions"]}
+            self.assertIsNotNone(regions["headwear"]["bbox_xyxy"])
+            self.assertIsNotNone(regions["lower_body_color"]["bbox_xyxy"])
+            self.assertIsNotNone(regions["footwear"]["bbox_xyxy"])
+            self.assertIsNotNone(regions["upper_body_color"]["bbox_xyxy"])
 
     def test_missing_or_unreadable_image_returns_no_hallucinated_descriptor(self) -> None:
         descriptor = extract_appearance_descriptor(

@@ -31,6 +31,7 @@ class DemoSurfaceTest(unittest.TestCase):
             self.assertEqual(packet["event_id"], seed.event_id)
             self.assertEqual(packet["review_state"]["review_count"], 0)
             self.assertEqual(packet["evidence"]["track_ids"], [seed.track_id])
+            self.assertEqual(packet["evidence"]["escalation_stage"], "early_concern")
             self.assertEqual(packet["available_human_actions"], ["confirm", "dismiss", "needs_followup"])
             self.assertIn("autonomous_emergency_dispatch", packet["blocked_actions"])
             self.assertEqual(packet["provenance"]["source"], "sqlite_audit_chain")
@@ -88,8 +89,10 @@ class DemoSurfaceTest(unittest.TestCase):
             self.assertIn("Suggested Next Step", packet_markdown)
             self.assertIn("CareSight did not dispatch emergency services", packet_markdown)
             self.assertIn("SQLite is source of truth", packet_markdown)
+            self.assertIn("Escalation stage: early_concern", packet_markdown)
             self.assertIn("Proof Chain", receipt_markdown)
             self.assertIn("CareSight has a local record", receipt_markdown)
+            self.assertIn("Escalation stage: early_concern", receipt_markdown)
             self.assertIn("CareSight did not dispatch emergency services", receipt_markdown)
             self.assertIn("SQLite is source of truth", receipt_markdown)
 

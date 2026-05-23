@@ -633,11 +633,11 @@ class CareConsoleTest(unittest.TestCase):
             payload = json.loads(result.stdout)
             self.assertEqual(payload["schema"], "appearance-profile-derivation")
             self.assertEqual(payload["descriptor_source"], "runtime_observation")
-            self.assertEqual(payload["descriptor_status"], "available")
+            self.assertEqual(payload["descriptor_status"], "posture_limited")
             self.assertEqual(payload["profile"]["descriptor_source"], "runtime_observation")
             self.assertEqual(payload["profile"]["source_event_id"], seed.event_id)
             self.assertEqual(payload["profile"]["attributes"]["upper_body_color"]["value"], "blue")
-            self.assertEqual(payload["profile"]["attributes"]["lower_body_color"]["value"], "blue")
+            self.assertEqual(payload["profile"]["attributes"]["lower_body_color"]["value"], "cream")
             self.assertNotIn("identity", payload["summary"].casefold())
 
             shown = subprocess.run(
@@ -663,6 +663,7 @@ class CareConsoleTest(unittest.TestCase):
     def test_appearance_profile_cli_describes_still_image_without_writing_profile(self) -> None:
         with seeded_review_service() as seed:
             image_path = Path(seed.tmpdir.name) / "still-accessories.ppm"
+            annotation_path = Path(seed.tmpdir.name) / "still-accessories.annotated.png"
             write_ppm(
                 image_path,
                 width=100,
@@ -686,6 +687,8 @@ class CareConsoleTest(unittest.TestCase):
                     str(image_path),
                     "--bbox",
                     "20,20,80,90",
+                    "--visual-output",
+                    str(annotation_path),
                 ],
                 capture_output=True,
                 check=False,
@@ -701,6 +704,8 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(payload["attributes"]["lower_body_color"]["value"], "white")
             self.assertEqual(payload["attributes"]["headwear"]["value"], "black")
             self.assertEqual(payload["attributes"]["footwear"]["value"], "white")
+            self.assertEqual(payload["visual_evidence"]["annotated_image_path"], str(annotation_path))
+            self.assertTrue(annotation_path.exists())
             self.assertEqual(seed.store.list_active_appearance_profiles(active_date="2026-05-22"), [])
 
     def test_appearance_profile_cli_summarizes_daily_sample_support(self) -> None:
@@ -895,8 +900,9 @@ class Seed:
             width=1280,
             height=720,
             fills=[
-                ((200, 470, 1080, 570), (45, 45, 45)),
-                ((200, 570, 1080, 710), (42, 96, 180)),
+                ((200, 430, 1080, 715), (80, 80, 80)),
+                ((270, 504, 508, 652), (220, 210, 190)),
+                ((622, 444, 922, 550), (42, 96, 180)),
             ],
         )
         event["evidence"]["snapshot_path"] = str(self.snapshot_path)

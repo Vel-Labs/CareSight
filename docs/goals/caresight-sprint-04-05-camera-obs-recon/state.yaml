@@ -1,0 +1,783 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "CareSight Sprint 04/05 Camera and OBS Recon"
+  slug: "caresight-sprint-04-05-camera-obs-recon"
+  kind: existing_plan
+  tranche: "Validate the supplied Sprint 04/05 plan, implement Sprint 04, implement Sprint 05, then run cross-sprint review and deterministic validation for Sprint 02 runtime handoff gates and Sprint 03 still-image visual cases."
+  status: done
+  oracle:
+    signal: "npm run check plus targeted Python/CLI/browser/OBS-safe deterministic checks, sourced-image test records, no-send/no-call handoff receipts, and final sprint audit mapping all sprint items to evidence."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Final Judge/PM audit records full_outcome_complete: true with receipts for Sprint 04, Sprint 05, Sprint 02 FaceTime/OBS/TTS gates, Sprint 03 clothing/accessory/footwear image validation, docs updates, changed files, commands, and remaining blockers."
+  intake:
+    original_request: "Do sprint 04, sprint 05, then review sprint items including Sprint 02 FaceTime x OBS virtual camera/TTS and Sprint 03 image testing; proceed autonomously with detailed validation and no overnight FaceTime calling."
+    interpreted_outcome: "CareSight has Sprint 04/05 work executed from the supplied plan and cross-sprint runtime/vision validation recorded with bounded local-first receipts."
+    input_shape: existing_plan
+    audience: "CareSight hackathon owner and local demo operator"
+    authority: approved
+    proof_type: test
+    completion_proof: "All required sprint work is completed or precisely blocked with evidence; validation commands and artifacts are recorded; final audit proves the whole owner outcome rather than one slice."
+    likely_misfire: "Treating plan creation, human-review waiting, or a single OBS fix as completion while Sprint 04/05 execution and Sprint 02/03 validation remain unproven."
+    blind_spots_considered:
+      - "OBS virtual camera may be blocked by macOS camera-extension permission rather than CareSight code."
+      - "FaceTime can be prepared and no-call tested, but overnight live calling must not be engaged."
+      - "Human review is an operator task; deterministic local work should proceed around it."
+      - "Internet still images need source tracking and bounded claims for hats, outfits, tops, bottoms, shoes, and footwear."
+      - "MJPEG/browser-feed may be demo-appropriate without being a production-video architecture claim."
+    existing_plan_facts:
+      - "Primary scope file: docs/superpowers/plans/2026-05-23-sprint-04-05-camera-obs-recon.md"
+      - "Required order: Sprint 04, then Sprint 05, then cross-sprint review."
+      - "Cross-sprint review must include Sprint 02 FaceTime x OBS virtual camera, TTS, and Sprint 03 still-image validation."
+      - "Follow AGENTS.md CareSight safety, CLI, architecture, and Definition of Done rules."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/caresight-sprint-04-05-camera-obs-recon/"
+    command: "npx goalbuddy board docs/goals/caresight-sprint-04-05-camera-obs-recon"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Read the required CareSight context and supplied Sprint 04/05 plan, then map current sprint state, implementation targets, validation commands, and hard blockers."
+    inputs:
+      - "AGENTS.md"
+      - "README.md"
+      - "ROADMAP.md"
+      - "REPO_PROFILE.json"
+      - "docs/project/PROJECT_BRIEF.md"
+      - "docs/architecture/ARCHITECTURE.md"
+      - "docs/architecture/REPO_BOUNDARIES.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/hackathon/hackathon_roadmap.md"
+      - "contracts/README.md"
+      - "docs/superpowers/plans/2026-05-23-sprint-04-05-camera-obs-recon.md"
+      - "docs/goals/caresight-sprint-01-02-production-validation/goal.md"
+      - "docs/cli/COMMANDS.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    constraints:
+      - "Read-only."
+      - "Do not implement."
+      - "Preserve the user-specified order: Sprint 04, Sprint 05, then cross-sprint review."
+      - "Flag human-review-only steps as operator tasks, not blocking PM progress."
+      - "Do not engage FaceTime calling functionality."
+    expected_output:
+      - "Plan and repo evidence map with file paths."
+      - "Sprint 04 Worker package recommendation."
+      - "Sprint 05 Worker package recommendation."
+      - "Sprint 02 runtime blockers and safe no-call verification plan."
+      - "Sprint 03 sourced still-image validation plan."
+      - "Validation command inventory."
+      - "Docs/changelog/decision update requirements."
+    receipt:
+      result: done
+      summary: "Required context and Sprint 04/05 plan reviewed read-only. Current repo already has deterministic tracking, configured single-source camera selection, OBS overlay/MJPEG pieces, TTS/FaceTime harnesses, and Sprint 03 appearance foundations. The next safe package is Sprint 04 tracking reliability: add stage-aware floor-stay evidence, tighten same-track/occlusion/dedupe semantics, bound missing-off-camera wording, add examples/review-surface wording, and create Sprint 04 audit/docs receipts."
+      evidence:
+        - "AGENTS.md, README.md, ROADMAP.md, REPO_PROFILE.json, project brief, architecture, repo boundaries, current-state roadmap, hackathon roadmap, contracts README, CLI docs, CHANGELOG, and DECISIONS were read for safety and architecture boundaries."
+        - "docs/superpowers/plans/2026-05-23-sprint-04-05-camera-obs-recon.md requires Sprint 04 first, Sprint 05 second, then OBS/FaceTime/TTS recon."
+        - "npm run py:check passed: 133 unittest tests OK."
+        - "pytest is not installed in python3 or apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python, so pytest-shaped plan commands currently need either unittest equivalents or dependency setup."
+        - "GoalBuddy update checker script was not present under the installed goalbuddy skill cache path."
+      sprint_04_worker_recommendation: "Execute Phase 1 Tasks 1-6 as one bounded tracking reliability package covering FloorStayDetector, TrackState, MissingOffCameraDetector, demo-surface wording, contract examples, Sprint 04 audit receipt, CLI docs, CURRENT_STATE_AND_NEXT, and CHANGELOG."
+      sprint_05_worker_recommendation: "After Sprint 04 passes, execute explicit local/network camera support around source config, redacted RTSP/Tapo probe, multi-camera frame metadata, SQLite-derived narrative receipt, and live-camera proof or blocker receipt."
+      sprint_02_no_call_plan: "Use dry-run/no-send receipts, OBS checks, TTS generation without live FaceTime calling, escalation receipts, and execution-attempt inspection. Do not run facetime-if-yes or auto live FaceTime paths overnight."
+      sprint_03_plan: "Use sourced/operator-supplied still images with source records and the existing appearance-profile harness; keep descriptors non-biometric and require human role assignment before caregiver-facing role claims."
+      validation_inventory:
+        - "npm run py:check"
+        - "npm run check"
+        - "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+        - "apps/obs-hub/tools/check_obs_live_feed.py"
+        - "./scripts/setup_obs_scene.sh --dry-run"
+        - "./scripts/update_obs_overlay.sh --event-id <event_id> --dry-run"
+        - "python3 apps/caresight-hub/scripts/care_console.py escalation-receipt <event_id> --format markdown"
+
+  - id: T002
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Approve the largest safe Sprint 04 Worker package from T001, including exact scope, allowed files, validation commands, and stop conditions."
+    inputs:
+      - "T001 receipt"
+      - "docs/superpowers/plans/2026-05-23-sprint-04-05-camera-obs-recon.md"
+    constraints:
+      - "Do not implement."
+      - "Reject a tiny task if a larger bounded Sprint 04 vertical slice is safe."
+      - "Do not include live FaceTime calling."
+    expected_output:
+      - "Decision: approved | rejected | needs_more_scouting"
+      - "Exact Sprint 04 Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+    receipt:
+      decision: approved
+      summary: "Approve one bounded Sprint 04 tracking reliability Worker package rather than splitting into tiny helpers. The repo already has the relevant runtime/test surfaces and `npm run py:check` passes, so the next safe slice is to implement stage-aware floor-stay evidence, stronger track/occlusion/dedupe behavior, bounded missing-off-camera evidence/copy, review/receipt wording, contract examples, and Sprint 04 docs/audit updates."
+      exact_worker_objective: "Complete Sprint 04 Phase 1 Tasks 1-6 from the plan: baseline receipt, stage-aware floor-stay evidence, track churn/occlusion/dedupe hardening, missing-off-camera bounded semantics, contract examples plus review-surface wording, and Sprint 04 human validation/audit docs."
+      allowed_files:
+        - "apps/caresight-hub/caresight/runtime/config.py"
+        - "apps/caresight-hub/caresight/runtime/tracking/state.py"
+        - "apps/caresight-hub/caresight/events/floor_stay.py"
+        - "apps/caresight-hub/caresight/events/missing_off_camera.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/review_packet.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/blackbox_receipt.py"
+        - "apps/caresight-hub/tests/test_tracking_state.py"
+        - "apps/caresight-hub/tests/test_floor_stay.py"
+        - "apps/caresight-hub/tests/test_missing_off_camera.py"
+        - "apps/caresight-hub/tests/test_demo_surface.py"
+        - "contracts/examples/valid/possible-floor-stay.tracking-reliability.event.json"
+        - "contracts/examples/valid/missing-off-camera.tracking-reliability.event.json"
+        - "contracts/examples/invalid/floor-stay-emergency-dispatch.event.json"
+        - "contracts/examples/invalid/missing-off-camera-named-identity.event.json"
+        - "contracts/examples/invalid/floor-stay-fall-confirmed-without-human.event.json"
+        - "tests/contracts/contract-corpus.test.ts"
+        - "docs/audits/2026-05-23-sprint-04-tracking-baseline.md"
+        - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+        - "DECISIONS.md"
+      verify:
+        - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_tracking_state.py'"
+        - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+        - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+        - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_demo_surface.py'"
+        - "npm run py:check"
+        - "npm run validate:contracts"
+        - "npm run check"
+      stop_if:
+        - "Need files outside allowed_files."
+        - "The care-event schema needs an authority/contract change beyond examples and evidence fields."
+        - "Runtime changes would confirm/dismiss an event or engage external handoff behavior."
+        - "Scope drifts into Sprint 05 camera config, RTSP/Tapo probing, multi-camera frame management, OBS scene work, TTS routing, iMessage send, or live FaceTime calling."
+        - "Verification fails twice for the same unexplained reason."
+
+  - id: T003
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Complete Sprint 04 tracking reliability: baseline receipt, stage-aware floor-stay evidence, track churn/occlusion/dedupe hardening, bounded missing-off-camera semantics, review/receipt wording, contract examples, CLI/docs/changelog updates, and deterministic verification."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/config.py"
+      - "apps/caresight-hub/caresight/runtime/tracking/state.py"
+      - "apps/caresight-hub/caresight/events/floor_stay.py"
+      - "apps/caresight-hub/caresight/events/missing_off_camera.py"
+      - "apps/caresight-hub/caresight/runtime/demo_surface/review_packet.py"
+      - "apps/caresight-hub/caresight/runtime/demo_surface/blackbox_receipt.py"
+      - "apps/caresight-hub/tests/test_tracking_state.py"
+      - "apps/caresight-hub/tests/test_floor_stay.py"
+      - "apps/caresight-hub/tests/test_missing_off_camera.py"
+      - "apps/caresight-hub/tests/test_demo_surface.py"
+      - "contracts/examples/valid/possible-floor-stay.tracking-reliability.event.json"
+      - "contracts/examples/valid/missing-off-camera.tracking-reliability.event.json"
+      - "contracts/examples/invalid/floor-stay-emergency-dispatch.event.json"
+      - "contracts/examples/invalid/missing-off-camera-named-identity.event.json"
+      - "contracts/examples/invalid/floor-stay-fall-confirmed-without-human.event.json"
+      - "tests/contracts/contract-corpus.test.ts"
+      - "docs/audits/2026-05-23-sprint-04-tracking-baseline.md"
+      - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+      - "DECISIONS.md"
+    verify:
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_tracking_state.py'"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_demo_surface.py'"
+      - "npm run py:check"
+      - "npm run validate:contracts"
+      - "npm run check"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Plan evidence contradicts the assigned scope."
+      - "Verification fails twice for the same unexplained reason."
+      - "Task would engage live FaceTime calling overnight."
+    receipt:
+      result: done
+      summary: "Completed Sprint 04 tracking reliability as a deterministic local slice. Floor-stay events now carry escalation stage, same-track dwell, occlusion/dedupe policy fields, policy version, and explicit not-claimed boundaries. Same-track dwell is required so a new track cannot inherit dwell. Missing-off-camera now has observe/check-in/attention/urgent-handoff stages with bounded language. Review packet and blackbox receipt Markdown display escalation stage. Added tracking-reliability contract examples, audit receipts, CLI docs, roadmap/changelog notes, and regenerated FILE_TREE."
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/config.py"
+        - "apps/caresight-hub/caresight/events/floor_stay.py"
+        - "apps/caresight-hub/caresight/events/missing_off_camera.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/review_packet.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/blackbox_receipt.py"
+        - "apps/caresight-hub/tests/test_floor_stay.py"
+        - "apps/caresight-hub/tests/test_missing_off_camera.py"
+        - "apps/caresight-hub/tests/test_demo_surface.py"
+        - "contracts/examples/valid/possible-floor-stay.tracking-reliability.event.json"
+        - "contracts/examples/valid/missing-off-camera.tracking-reliability.event.json"
+        - "contracts/examples/invalid/floor-stay-emergency-dispatch.event.json"
+        - "contracts/examples/invalid/missing-off-camera-named-identity.event.json"
+        - "contracts/examples/invalid/floor-stay-fall-confirmed-without-human.event.json"
+        - "tests/contracts/contract-corpus.test.ts"
+        - "docs/audits/2026-05-23-sprint-04-tracking-baseline.md"
+        - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+      verification:
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_tracking_state.py'"
+          result: "passed, 2 tests OK"
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+          result: "passed, 9 tests OK"
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+          result: "passed, 5 tests OK"
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_demo_surface.py'"
+          result: "passed, 4 tests OK"
+        - command: "python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --help"
+          result: "passed, help rendered without camera/model runtime startup"
+        - command: "npm run validate:contracts"
+          result: "passed, 15 schemas, 20 valid examples, 21 invalid examples"
+        - command: "npm run py:check"
+          result: "passed, 137 tests OK"
+        - command: "npm run check"
+          result: "passed"
+      boundaries:
+        - "No FaceTime, iMessage, TTS playback, OBS live handoff, event confirmation, event dismissal, emergency dispatch, or raw-video cloud path was engaged."
+        - "No new architecture decision was required; the audit records that the change stays inside existing deterministic tracking, SQLite-canonical, and human-review boundaries."
+        - "The v0 demo default remains 8 seconds for existing fast proof fixtures; Sprint 04 staged 30/90/180 thresholds are configurable and tested explicitly."
+
+  - id: T004
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review Sprint 04 receipts and approve the largest safe Sprint 05 Worker package."
+    inputs:
+      - "T001 receipt"
+      - "T003 receipt"
+      - "Current diff and verification results"
+    constraints:
+      - "Do not implement."
+      - "Require docs/tests/changelog coverage for behavior changes."
+      - "Do not include live FaceTime calling."
+    expected_output:
+      - "Sprint 04 acceptance decision"
+      - "Exact Sprint 05 Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+      - "Any Sprint 04 follow-up that must be handled before Sprint 05"
+    receipt:
+      decision: approved
+      sprint_04_acceptance: "accepted for deterministic implementation; not production/live-camera validated"
+      summary: "Sprint 04 receipts and verification are sufficient to advance. Approve one Sprint 05 Worker package focused on missing explicit local/network camera support: robust redacted camera config/probe, sequential multi-camera frame manager, metadata preservation helpers, SQLite-derived narrative receipt, docs/audits, and deterministic tests. Do not include OBS/TTS/FaceTime recon in this Worker."
+      exact_worker_objective: "Complete Sprint 05 Phase 2 Tasks 7-12 except live Tapo proof when credentials/hardware are unavailable: source config contract/example, redacted Tapo/local RTSP probe, sequential multi-camera manager, camera/room metadata preservation checks, SQLite-derived narrative CLI, and live-camera proof-or-blocker audit receipt."
+      allowed_files:
+        - "apps/caresight-hub/caresight/runtime/cameras/sources.py"
+        - "apps/caresight-hub/caresight/runtime/cameras/multi_camera.py"
+        - "apps/caresight-hub/caresight/runtime/cameras/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/config.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/multi_camera_narrative.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/__init__.py"
+        - "apps/caresight-hub/scripts/caresight_camera_probe.py"
+        - "apps/caresight-hub/scripts/care_console.py"
+        - "apps/caresight-hub/tests/test_multi_camera_sources.py"
+        - "apps/caresight-hub/tests/test_multi_camera_narrative.py"
+        - "apps/caresight-hub/tests/test_v0_config.py"
+        - "apps/caresight-hub/tests/test_v0_floor_stay_live.py"
+        - "apps/caresight-hub/tests/test_inference_harness.py"
+        - "apps/caresight-hub/config/cameras.example.json"
+        - "apps/caresight-hub/config/tapo.local.example.json"
+        - "docs/architecture/camera_integration_strategy.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "docs/audits/2026-05-23-sprint-05-camera-support.md"
+        - "docs/audits/2026-05-23-tapo-rtsp-validation.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+      verify:
+        - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_multi_camera_sources.py'"
+        - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_multi_camera_narrative.py'"
+        - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_v0_config.py'"
+        - "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+        - "python3 apps/caresight-hub/scripts/care_console.py --help"
+        - "npm run py:check"
+        - "npm run check"
+      stop_if:
+        - "Need files outside allowed_files."
+        - "Need real camera credentials/IPs or household network details; record a blocker receipt instead."
+        - "Implementation would add cloud camera providers, ONVIF discovery, LAN scanning, port forwarding, Ring/Nest, Home Assistant cloud, or credential-bearing committed files."
+        - "Task drifts into OBS scene work, TTS routing, iMessage send, or live FaceTime calling."
+        - "Verification fails twice for the same unexplained reason."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Complete Sprint 05 explicit local/network camera support: source config/example, redacted Tapo/local RTSP probe, sequential multi-camera frame manager, metadata preservation checks, SQLite-derived narrative CLI, and proof-or-blocker audit docs."
+    allowed_files:
+      - "apps/caresight-hub/caresight/runtime/cameras/sources.py"
+      - "apps/caresight-hub/caresight/runtime/cameras/multi_camera.py"
+      - "apps/caresight-hub/caresight/runtime/cameras/__init__.py"
+      - "apps/caresight-hub/caresight/runtime/config.py"
+      - "apps/caresight-hub/caresight/runtime/demo_surface/multi_camera_narrative.py"
+      - "apps/caresight-hub/caresight/runtime/demo_surface/__init__.py"
+      - "apps/caresight-hub/scripts/caresight_camera_probe.py"
+      - "apps/caresight-hub/scripts/care_console.py"
+      - "apps/caresight-hub/tests/test_multi_camera_sources.py"
+      - "apps/caresight-hub/tests/test_multi_camera_narrative.py"
+      - "apps/caresight-hub/tests/test_v0_config.py"
+      - "apps/caresight-hub/tests/test_v0_floor_stay_live.py"
+      - "apps/caresight-hub/tests/test_inference_harness.py"
+      - "apps/caresight-hub/config/cameras.example.json"
+      - "apps/caresight-hub/config/tapo.local.example.json"
+      - "docs/architecture/camera_integration_strategy.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/audits/2026-05-23-sprint-05-camera-support.md"
+      - "docs/audits/2026-05-23-tapo-rtsp-validation.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+    verify:
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_multi_camera_sources.py'"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_multi_camera_narrative.py'"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_v0_config.py'"
+      - "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+      - "python3 apps/caresight-hub/scripts/care_console.py --help"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unexplained reason."
+      - "Task would engage live FaceTime calling overnight."
+      - "Task requires confirming or dismissing a care event without explicit human instruction."
+    receipt:
+      result: done
+      summary: "Completed Sprint 05 explicit local/network camera support as a deterministic local slice. Added local camera examples with privacy metadata, redacted Tapo/RTSP probe receipts, sequential MultiCameraFrameManager with camera/room metadata and health blockers, SQLite-derived multi-camera narrative CLI, docs, audit receipts, and file-tree regeneration."
+      changed_files:
+        - "apps/caresight-hub/caresight/runtime/config.py"
+        - "apps/caresight-hub/caresight/runtime/cameras/sources.py"
+        - "apps/caresight-hub/caresight/runtime/cameras/multi_camera.py"
+        - "apps/caresight-hub/caresight/runtime/cameras/__init__.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/multi_camera_narrative.py"
+        - "apps/caresight-hub/caresight/runtime/demo_surface/__init__.py"
+        - "apps/caresight-hub/scripts/caresight_camera_probe.py"
+        - "apps/caresight-hub/scripts/care_console.py"
+        - "apps/caresight-hub/tests/test_multi_camera_sources.py"
+        - "apps/caresight-hub/tests/test_multi_camera_narrative.py"
+        - "apps/caresight-hub/config/cameras.example.json"
+        - "apps/caresight-hub/config/tapo.local.example.json"
+        - "docs/architecture/camera_integration_strategy.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "docs/audits/2026-05-23-sprint-05-camera-support.md"
+        - "docs/audits/2026-05-23-tapo-rtsp-validation.md"
+        - "docs/FILE_TREE.md"
+        - "CHANGELOG.md"
+      verification:
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_multi_camera_sources.py'"
+          result: "passed, 6 tests OK"
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_multi_camera_narrative.py'"
+          result: "passed, 2 tests OK"
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_v0_config.py'"
+          result: "passed, 4 tests OK"
+        - command: "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+          result: "passed, redacted placeholder RTSP credentials and did not attempt stream open"
+        - command: "python3 apps/caresight-hub/scripts/care_console.py --help"
+          result: "passed, narrative command listed"
+        - command: "npm run py:check"
+          result: "passed, 145 tests OK"
+        - command: "npm run check"
+          result: "passed"
+      blockers:
+        - "Live Tapo validation remains operator-blocked until an ignored local config has real same-LAN camera IP/account credentials."
+      boundaries:
+        - "No real camera credentials, household IPs, private images, raw video, or household network details were committed."
+        - "No ONVIF discovery, LAN scanning, port forwarding, cloud camera provider, OBS, TTS, iMessage, or FaceTime behavior was added."
+
+  - id: T006
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Audit Sprint 02 runtime handoff status for FaceTime x OBS virtual camera, TTS, Hermes/iMessage dry-run boundaries, and execution-attempt logging without engaging live calls."
+    inputs:
+      - "T001 receipt"
+      - "T003 receipt"
+      - "T005 receipt"
+      - "docs/cli/COMMANDS.md"
+      - "docs/operations/local_model_operations.md"
+      - "apps/caresight-hub/scripts"
+      - "apps/obs-hub"
+    constraints:
+      - "Read-only unless the PM converts findings into a Worker task."
+      - "Do not engage FaceTime calling functionality."
+      - "Separate macOS/OBS permission blockers from CareSight code defects."
+    expected_output:
+      - "Sprint 02 runtime status matrix."
+      - "Safe no-call/no-send verification commands."
+      - "Exact blockers and proposed fixes."
+      - "Candidate Worker task if a local fix is safe."
+    receipt:
+      result: done
+      summary: "Audited Sprint 02 runtime handoff status without engaging live calls, sends, OBS scene mutation, or TTS playback. Local demo preflight reports ready; Gemma endpoint is reachable; TTS generation completed with Dakota and played=false; BlackHole/SwitchAudioSource are available; live handoff CLI help renders. OBS live-feed check is blocked because detector MJPEG and OBS websocket are not currently running."
+      commands:
+        - command: "python3 apps/caresight-hub/scripts/caresight_demo_preflight.py --json"
+          result: "ready=true; sqlite, allowlist, local demo env, YOLO runtime/model, Gemma model, TTS model, OBS tooling, BlackHole switcher, Gemma endpoint, and OBS password present; obs_mjpeg_feed=false optional; Aitum plugin not reachable optional"
+        - command: "python3 apps/caresight-hub/scripts/caresight_audio_route.py check"
+          result: "BlackHole 2ch input/output available; SwitchAudioSource available; current devices remain MacBook Pro microphone/speakers"
+        - command: "apps/obs-hub/tools/check_obs_live_feed.py"
+          result: "blocked: detector MJPEG health connection refused; OBS websocket connection refused"
+        - command: "python3 apps/caresight-hub/scripts/caresight_tts.py --voice dakota --text 'CareSight alert. Possible floor stay observed in the Living Room. Needs review.'"
+          result: "generated local WAV at apps/caresight-hub/data/tts/caresight_tts_000.wav; played=false"
+        - command: "python3 apps/caresight-hub/scripts/care_console.py list-execution-attempts --help"
+          result: "passed"
+        - command: "python3 apps/caresight-hub/scripts/caresight_live_handoff.py --help"
+          result: "passed; no subcommand executed"
+      blockers:
+        - "OBS live feed cannot be validated until the detector is started with --obs-browser-feed."
+        - "OBS websocket cannot be validated until OBS is running and websocket access is reachable."
+        - "TTS playback/audibility remains human-validation only; this audit generated audio but did not play it."
+        - "FaceTime calling was intentionally not engaged."
+      candidate_worker:
+        objective: "Record the Sprint 02 no-call runtime audit as a durable receipt and update docs/changelog/FILE_TREE without changing live behavior."
+        allowed_files:
+          - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md"
+          - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+          - "CHANGELOG.md"
+          - "docs/FILE_TREE.md"
+        verify:
+          - "npm run check"
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Record the Sprint 02 no-call runtime audit as a durable receipt and update docs/changelog/FILE_TREE without engaging live behavior."
+    allowed_files:
+      - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Fix requires live FaceTime calling."
+      - "Fix requires credentials, production access, or destructive OS-level changes."
+      - "Verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Recorded Sprint 02 no-call runtime audit as a durable receipt, updated current-state roadmap and changelog, regenerated FILE_TREE, and passed the full repo gate."
+      changed_files:
+        - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      verification:
+        - command: "npm run check"
+          result: "passed"
+      boundaries:
+        - "No live iMessage, FaceTime, TTS playback, OBS mutation, event confirmation, event dismissal, or dispatch action was performed."
+
+  - id: T008
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: medium
+    objective: "Build the Sprint 03 still-image validation set from internet sources for hats, tops, bottoms, outfits, shoes, and footwear, with source URLs and bounded test expectations."
+    inputs:
+      - "T001 receipt"
+      - "Sprint 03 plan and current vision harness files identified by T001"
+    constraints:
+      - "Read-only unless PM creates a Worker task."
+      - "Use source-backed image records."
+      - "Avoid medical, identity, or protected-attribute claims."
+      - "Keep claims at likely observed or possible event unless authorized human confirmation exists."
+    expected_output:
+      - "Sourced image matrix covering hats, tops, bottoms, full outfits, shoes, and footwear."
+      - "Recommended local fixture/artifact location."
+      - "Targeted validation commands."
+      - "Candidate Worker task for harness/test additions."
+    receipt:
+      result: done
+      summary: "Built a source-backed Sprint 03 still-image validation matrix from Wikimedia Commons category/file listings for hats, tops, bottoms, full outfits, shoes, and boots/footwear. No images were downloaded or committed. Recommended Worker should add a durable source matrix and validation receipt, with operator/local download instructions and bounded expectations for the existing appearance-profile still-image harness."
+      sources:
+        - category: "hats/headwear"
+          source: "https://commons.wikimedia.org/wiki/Category:People_wearing_hats"
+          candidate_file: "HK people boy wearing hat September 2024 R12S 01.jpg"
+          evidence: "Category page lists this file at lines 327-328."
+        - category: "full outfit / street fashion"
+          source: "https://commons.wikimedia.org/wiki/Category:People_wearing_hats"
+          candidate_file: "Harajuku Fashion Street Snap (2018-01-08 18.42.04 by Dick Thomas Johnson).jpg"
+          evidence: "Category page lists this file at lines 308-310."
+        - category: "top / red shirt"
+          source: "https://commons.wikimedia.org/wiki/Category:People_wearing_red_shirts"
+          candidate_file: "Red shirt in Bangkok.JPG"
+          evidence: "Category page lists this file at lines 169-170."
+        - category: "bottoms / jeans"
+          source: "https://commons.wikimedia.org/wiki/Category:People_wearing_jeans"
+          candidate_file: "Baggy jeans guy 1.jpg"
+          evidence: "Category page lists this file at lines 171-172."
+        - category: "shoes / sneakers"
+          source: "https://commons.wikimedia.org/wiki/Category:Male_people_with_sneakers"
+          candidate_file: "Man in sneakers at beach (Unsplash).jpg"
+          evidence: "Category page lists this file in the media list."
+        - category: "boots / footwear"
+          source: "https://commons.wikimedia.org/wiki/Category:People_wearing_boots"
+          candidate_file: "Brisbane, winter female street fashion in 2019; t-shirt, shorts and boots.jpg"
+          evidence: "Category page lists this file at lines 285-287."
+      candidate_worker:
+        objective: "Add a Sprint 03 sourced still-image validation matrix and audit receipt for the existing appearance-profile still-image harness without downloading or committing media."
+        allowed_files:
+          - "apps/caresight-hub/config/appearance-still-image-sources.example.json"
+          - "docs/audits/2026-05-23-sprint-03-sourced-still-image-validation.md"
+          - "docs/cli/COMMANDS.md"
+          - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+          - "CHANGELOG.md"
+          - "docs/FILE_TREE.md"
+        verify:
+          - "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-sources.example.json >/dev/null"
+          - "npm run check"
+
+  - id: T009
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Add a Sprint 03 sourced still-image validation matrix and audit receipt for the existing appearance-profile still-image harness without downloading or committing media."
+    allowed_files:
+      - "apps/caresight-hub/config/appearance-still-image-sources.example.json"
+      - "docs/audits/2026-05-23-sprint-03-sourced-still-image-validation.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+    verify:
+      - "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-sources.example.json >/dev/null"
+      - "npm run check"
+    stop_if:
+      - "Need files outside allowed_files."
+      - "Image licensing or sourcing is unclear."
+      - "Verification would require unsupported medical or identity claims."
+      - "Verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Added a Sprint 03 sourced still-image validation matrix and audit receipt without downloading or committing media. The matrix records Wikimedia Commons source URLs, observed licenses, attribution notes, local storage policy, expected checks, and forbidden claims for hats/headwear, full outfits, tops, bottoms, sneakers, and boots. CLI docs and current-state/changelog notes now route operators to the existing read-only `appearance-profile describe-image` harness."
+      changed_files:
+        - "apps/caresight-hub/config/appearance-still-image-sources.example.json"
+        - "docs/audits/2026-05-23-sprint-03-sourced-still-image-validation.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      verification:
+        - command: "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-sources.example.json >/dev/null"
+          result: "passed"
+        - command: "npm run check"
+          result: "passed"
+      boundaries:
+        - "No third-party images were downloaded, committed, cropped, or redistributed."
+        - "Still-image validation remains non-biometric descriptor coverage only, not identity, medical, fall, dispatch, or caregiver-message proof."
+
+  - id: T010
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Review all Sprint 02/03/04/05 receipts and decide whether any additional local Worker package is required before final audit."
+    inputs:
+      - "T003 receipt"
+      - "T005 receipt"
+      - "T006 receipt"
+      - "T007 receipt"
+      - "T008 receipt"
+      - "T009 receipt"
+      - "Current diff and latest verification"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if docs, CLI references, changelog, decisions, or tests are stale."
+      - "Reject completion if unresolved blockers lack research, documentation, or proposed solutions."
+    expected_output:
+      - "Decision: ready_for_final_audit | needs_worker | needs_more_scouting"
+      - "Missing evidence"
+      - "Exact next Worker task if needed"
+      - "Research/documentation requirements for unresolved blockers"
+    receipt:
+      decision: ready_for_final_audit
+      summary: "Sprint 04, Sprint 05, Sprint 02 no-call runtime gates, and Sprint 03 sourced still-image validation all have durable receipts and the full repo gate passed after the latest docs/source-matrix update. No additional local Worker package is required before final audit."
+      evidence_map:
+        sprint_02:
+          receipts:
+            - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md"
+          status: "No-call deterministic audit recorded preflight, Gemma endpoint, BlackHole/SwitchAudioSource, and Dakota TTS generation readiness. OBS live-feed/websocket and live FaceTime/TTS playback remain explicitly blocked/operator-owned."
+        sprint_03:
+          receipts:
+            - "apps/caresight-hub/config/appearance-still-image-sources.example.json"
+            - "docs/audits/2026-05-23-sprint-03-sourced-still-image-validation.md"
+          status: "Source-backed still-image matrix exists for descriptor coverage without committed media; existing `appearance-profile describe-image` harness remains read-only and non-biometric."
+        sprint_04:
+          receipts:
+            - "docs/audits/2026-05-23-sprint-04-tracking-baseline.md"
+            - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md"
+          status: "Tracking reliability implementation and deterministic tests are complete; live-camera production validation remains an operator gate."
+        sprint_05:
+          receipts:
+            - "docs/audits/2026-05-23-sprint-05-camera-support.md"
+            - "docs/audits/2026-05-23-tapo-rtsp-validation.md"
+          status: "Explicit camera support, redacted RTSP dry-run probe, frame manager, and SQLite-derived narrative receipt are complete; live Tapo proof remains blocked on credentials/same-LAN access."
+      latest_verification:
+        - command: "npm run check"
+          result: "passed"
+      missing_evidence:
+        - "No missing deterministic repo evidence before final audit."
+        - "Production/live evidence gaps are documented as operator-owned blockers, not silent completion claims."
+      next_worker: "not_required"
+
+  - id: T011
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Execute the final local fix, documentation, or research package selected by T010 if required."
+    allowed_files: []
+    verify: []
+    stop_if:
+      - "T010 did not approve a concrete Worker package."
+      - "Need files outside allowed_files."
+      - "Verification fails twice for the same unexplained reason."
+      - "Task would engage live FaceTime calling overnight."
+    receipt:
+      result: "not_required"
+      summary: "T010 approved final audit with no additional Worker package."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether Sprint 04, Sprint 05, Sprint 02 runtime gates, Sprint 03 still-image validation, docs, changelog, decisions, and remaining blocker research satisfy the original owner outcome."
+    inputs:
+      - "All done task receipts"
+      - "Latest npm/Python/CLI/browser/OBS-safe verification"
+      - "Current dirty diff"
+      - "docs/superpowers/plans/2026-05-23-sprint-04-05-camera-obs-recon.md"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any required Worker remains queued or active."
+      - "Reject completion if FaceTime was engaged contrary to the overnight no-call constraint."
+      - "Reject completion if unresolved solution gaps lack research and proposed next steps."
+      - "Reject completion if claims exceed local-first caregiver-awareness boundaries."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence map by sprint"
+      - "Commands and artifact receipts"
+      - "Remaining blockers and proposed solutions"
+      - "Next task if not complete"
+    receipt:
+      result: complete
+      full_outcome_complete: true
+      summary: "The original owner outcome is satisfied for deterministic/local work: Sprint 04 and Sprint 05 are implemented with audit receipts, Sprint 02 no-call runtime gates are audited without engaging FaceTime or TTS playback, Sprint 03 still-image validation has a source-backed matrix and receipt, docs/changelog/file tree are updated, and remaining live-production blockers are explicit operator tasks rather than hidden completion claims."
+      evidence_map:
+        sprint_04:
+          implementation:
+            - "apps/caresight-hub/caresight/events/floor_stay.py"
+            - "apps/caresight-hub/caresight/events/missing_off_camera.py"
+            - "apps/caresight-hub/caresight/runtime/config.py"
+            - "apps/caresight-hub/caresight/runtime/demo_surface/review_packet.py"
+            - "apps/caresight-hub/caresight/runtime/demo_surface/blackbox_receipt.py"
+          tests:
+            - "apps/caresight-hub/tests/test_floor_stay.py"
+            - "apps/caresight-hub/tests/test_missing_off_camera.py"
+            - "apps/caresight-hub/tests/test_demo_surface.py"
+          receipts:
+            - "docs/audits/2026-05-23-sprint-04-tracking-baseline.md"
+            - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md"
+          proof: "Same-track dwell, occlusion grace, dedupe window, escalation stages, missing-off-camera staged language, review/receipt display, and contract examples are implemented and tested."
+        sprint_05:
+          implementation:
+            - "apps/caresight-hub/caresight/runtime/cameras/multi_camera.py"
+            - "apps/caresight-hub/caresight/runtime/demo_surface/multi_camera_narrative.py"
+            - "apps/caresight-hub/scripts/caresight_camera_probe.py"
+            - "apps/caresight-hub/config/cameras.example.json"
+            - "apps/caresight-hub/config/tapo.local.example.json"
+          tests:
+            - "apps/caresight-hub/tests/test_multi_camera_sources.py"
+            - "apps/caresight-hub/tests/test_multi_camera_narrative.py"
+          receipts:
+            - "docs/audits/2026-05-23-sprint-05-camera-support.md"
+            - "docs/audits/2026-05-23-tapo-rtsp-validation.md"
+          proof: "Explicit local camera examples, redacted RTSP dry-run probe, multi-camera frame health, and SQLite-derived narrative CLI are implemented and tested."
+        sprint_02_runtime:
+          receipts:
+            - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md"
+          proof: "No-call audit records ready local preflight, reachable Gemma endpoint, available audio route tools, generated Dakota TTS WAV with `played=false`, and blocked OBS live-feed/websocket state."
+        sprint_03_still_images:
+          artifacts:
+            - "apps/caresight-hub/config/appearance-still-image-sources.example.json"
+            - "docs/audits/2026-05-23-sprint-03-sourced-still-image-validation.md"
+          proof: "Source-backed still-image records cover hats/headwear, full outfits, tops, bottoms, sneakers, and boots without committing third-party media; local validation is routed through read-only `appearance-profile describe-image`."
+        docs_and_governance:
+          updated:
+            - "docs/cli/COMMANDS.md"
+            - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+            - "docs/architecture/camera_integration_strategy.md"
+            - "docs/FILE_TREE.md"
+            - "CHANGELOG.md"
+          decisions: "No new architectural authority decision was required; changes stayed within existing contract/core/runtime/docs boundaries."
+      commands:
+        - "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-sources.example.json >/dev/null"
+        - "npm run check"
+      remaining_blockers:
+        - "Sprint 02 OBS live-feed validation remains blocked until the detector MJPEG server and OBS websocket are running/reachable."
+        - "Sprint 02 live FaceTime and TTS playback remain human-approved operator actions and were intentionally not run under the no-call boundary."
+        - "Sprint 03 production validation still needs operator-collected appearance samples and human role assignment before role language is caregiver-facing."
+        - "Sprint 04 live-camera production validation still needs an operator bounded floor-stay run."
+        - "Sprint 05 live Tapo/multi-camera proof still needs ignored local credentials and same-LAN camera access."
+      boundary_audit:
+        - "No medical-device, HIPAA, autonomous dispatch, medication-confirmation, named-identity, face-recognition, or live-provider claim was added."
+        - "No live iMessage, FaceTime call, TTS playback, event confirmation, event dismissal, emergency dispatch, image download, or third-party media commit was performed."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: passed
+    task: T999
+    commands:
+      - "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-sources.example.json >/dev/null"
+      - "npm run check"

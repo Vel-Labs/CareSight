@@ -1,0 +1,29 @@
+{
+  "schema": "care-event",
+  "event_id": "evt_possible_floor_stay_tracking_reliability",
+  "event_type": "possible_floor_stay",
+  "occurred_at": "2026-05-23T08:00:31Z",
+  "camera_id": "living_room",
+  "zone_id": "floor_zone",
+  "severity": "high",
+  "confidence": "high",
+  "status": "awaiting_human_confirmation",
+  "requires_human_confirmation": true,
+  "allowed_actions": ["journal_entry", "caregiver_alert", "facetime_handoff"],
+  "blocked_actions": ["autonomous_emergency_dispatch", "medical_diagnosis"],
+  "evidence": {
+    "raw_video_stays_local": true,
+    "dwell_seconds": 31,
+    "same_track_dwell_seconds": 31,
+    "escalation_stage": "early_concern",
+    "occlusion_grace_seconds": 5,
+    "dedupe_window_seconds": 90,
+    "policy_version": "floor_stay_v1_tracking_reliability",
+    "not_claimed": ["fall_confirmed", "injury_detected", "medical_emergency"],
+    "track_id": "track_1",
+    "model": "yolo26n-mlx",
+    "camera_id": "living_room",
+    "room_id": "living_room",
+    "room_name": "Living Room"
+  }
+}

@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Improved horizontal low-posture appearance sampling to keep body-axis subregions for laid-down people, reduce shadow-driven color errors, and recognize cream clothing descriptors.
+- Expanded camera discovery beyond RTSP/ONVIF to common camera/web candidate ports, excluded the local Mac from candidates, and included ARP-visible hosts in scan receipts.
+- Corrected Sprint 03 appearance annotation for horizontal low-posture people so CareSight no longer applies upright head-to-toe subregions to floor-stay boxes; generated annotated review images for all local Sprint 03 matrix rows.
+- Improved owner-authorized subnet camera discovery with concurrent scans, progress output, scan timeout controls, and concrete zero-candidate receipts.
+- Recorded a Frigate-inspired camera architecture decision covering local restreaming, low-latency live view, optional MQTT, event-scoped recording clips, detector workers, and visible attribute annotations while preserving the caregiver-review boundary.
+- Added YOLO26 still-image appearance review annotations that keep each detected person as a separate candidate and draw the person bbox plus descriptor subregions for Sprint 03 audit review.
+- Added explicit owner-authorized subnet camera discovery behind `--allow-lan-scan`, plus command-registry entries for camera discovery and YOLO26 appearance review.
+- Added an owner-specified camera discovery helper that checks RTSP/ONVIF ports, writes ignored local RTSP config templates, and documents Frigate-inspired camera architecture lessons without adding LAN scans.
+- Added a Sprint 03/04 human visual-reference matrix with difficulty labels, people counts, clothing descriptor confidence, notes, absolute local snapshot/source links, and Sprint 04 scenario diagrams.
+- Added the Sprint 02-05 validation recovery closeout receipt mapping each corrected user note to concrete artifacts, verification, and remaining gates.
+- Added a Sprint 02 FaceTime/OBS/TTS resolution ladder with source-backed virtual-camera/audio findings, no-call checks, OBS feed blockers, BlackHole status, and Dakota TTS generation proof without playback.
+- Added a Sprint 05 camera proof recovery receipt that separates source-backed Tapo/RTSP assumptions, redacted dry-run proof, live camera prerequisites, and exact blocker outcomes.
+- Added Sprint 04 complexity-graded deterministic recovery tests for far/small low-posture detection, multi-person floor-candidate selection, and far standing false-positive rejection.
+- Added a Sprint 03 expanded still-image validation recovery receipt with ten actual local snapshot descriptor runs, one uncommitted source-backed crowded-image run, difficulty labels, and confidence/status summaries.
+- Added Sprint 04 tracking reliability evidence for possible floor-stay and missing-off-camera events: escalation stages, same-track dwell, occlusion/dedupe policy fields, explicit `not_claimed` boundaries, bounded missing-off-camera copy, review-packet/blackbox display, contract examples, and audit receipts.
+- Added Sprint 05 explicit local/network camera support foundations: camera privacy metadata, local source examples, redacted RTSP/Tapo probe receipts, sequential multi-camera frame health manager, and SQLite-derived multi-camera narrative CLI.
+- Recorded a Sprint 02 no-call runtime audit showing ready local preflight/Gemma/TTS-generation/audio-route surfaces, blocked OBS live-feed/websocket state, and preserved no FaceTime/TTS playback boundary.
+- Added a Sprint 03 sourced still-image validation matrix and audit receipt for hats/headwear, full outfits, tops, bottoms, sneakers, and boots without downloading or committing third-party media.
 - Added Sprint 03 Daily Appearance Profile contracts, SQLite persistence, runtime descriptor extraction for clothing/headwear/footwear, capped quality-gated appearance sampling, CLI still-image/derive/list/show/sample-summary/assign-role commands, dashboard/agent read context, and dynamic proof from real local snapshots instead of seeded fixtures.
 - Added a Sprint 03 validation checklist that separates merge readiness from remaining human review and dynamic proof gates.
 - Added CareSight OBS Hub scene setup with browser-source overlays, local websocket-driven scene creation, dry-run planning, and FaceTime/OBS Virtual Camera operator docs.

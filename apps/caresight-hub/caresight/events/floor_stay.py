@@ -46,11 +46,15 @@ class FloorStayDetector:
 
         if person.track_id not in self._entered_at_by_track:
             self._entered_at_by_track[person.track_id] = now
-        if self._floor_candidate_entered_at is None:
+        if self._floor_candidate_entered_at is None or self.config.tracking.same_track_required:
             self._floor_candidate_entered_at = now
         self._floor_candidate_last_seen_at = now
 
-        entered_at = self._floor_candidate_entered_at
+        entered_at = (
+            self._entered_at_by_track.get(person.track_id)
+            if self.config.tracking.same_track_required
+            else self._floor_candidate_entered_at
+        )
         if entered_at is None:
             self._last_diagnostic = self._build_diagnostic(tracked_people, person, now)
             return None
@@ -59,7 +63,11 @@ class FloorStayDetector:
         self._last_diagnostic = self._build_diagnostic(tracked_people, person, now)
         if dwell_seconds < self.config.floor_stay.dwell_seconds:
             return None
-        if self._last_floor_event_at is not None and now - self._last_floor_event_at < self.config.tracking.dedupe_seconds:
+        last_event_at = self._last_event_at_by_track.get(person.track_id)
+        if (
+            last_event_at is not None
+            and now - last_event_at < self.config.tracking.dedupe_window_seconds
+        ):
             return None
 
         self._last_floor_event_at = now
@@ -83,6 +91,7 @@ class FloorStayDetector:
             track
             for track in detections
             if track.detection.is_person()
+            and track.detection.confidence >= self.config.tracking.min_person_confidence
             and self.config.floor_zone.contains_normalized_point(
                 *track.detection.bottom_center_normalized
             )
@@ -111,7 +120,11 @@ class FloorStayDetector:
             low_posture = _looks_like_low_posture(detection)
             entered_at = self._entered_at_by_track.get(track.track_id)
             if selected is not None and track.track_id == selected.track_id:
-                entered_at = self._floor_candidate_entered_at
+                entered_at = (
+                    self._entered_at_by_track.get(track.track_id)
+                    if self.config.tracking.same_track_required
+                    else self._floor_candidate_entered_at
+                )
             dwell_seconds = 0.0 if entered_at is None else max(0.0, now - entered_at)
             people.append(
                 {
@@ -159,6 +172,12 @@ class FloorStayDetector:
             "evidence": {
                 "raw_video_stays_local": True,
                 "dwell_seconds": round(dwell_seconds, 2),
+                "same_track_dwell_seconds": round(dwell_seconds, 2),
+                "escalation_stage": _escalation_stage(self.config, dwell_seconds),
+                "occlusion_grace_seconds": self.config.tracking.occlusion_grace_seconds,
+                "dedupe_window_seconds": self.config.tracking.dedupe_window_seconds,
+                "policy_version": "floor_stay_v1_tracking_reliability",
+                "not_claimed": ["fall_confirmed", "injury_detected", "medical_emergency"],
                 "track_id": track.track_id,
                 "model": "yolo26n-mlx",
                 "detection_confidence": round(detection.confidence, 4),
@@ -179,3 +198,11 @@ def _looks_like_low_posture(detection: Detection) -> bool:
     center_y = ((y1 + y2) / 2.0) / detection.frame_height
 
     return aspect_ratio >= 2.0 and center_y >= 0.60
+
+
+def _escalation_stage(config: CareSightConfig, dwell_seconds: float) -> str:
+    if dwell_seconds >= config.floor_stay.critical_dwell_seconds:
+        return "critical_attention"
+    if dwell_seconds >= config.floor_stay.prolonged_dwell_seconds:
+        return "prolonged_concern"
+    return "early_concern"

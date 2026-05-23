@@ -41,6 +41,30 @@
       "live_action": false
     },
     {
+      "id": "camera_discover_owner_host",
+      "command": "python3 apps/caresight-hub/scripts/caresight_camera_discover.py --host <camera_ip> --camera-id <camera_id> --write-config apps/caresight-hub/config/<camera_id>.local.json",
+      "safety_class": "manual-operator",
+      "description": "Check an owner-specified local camera host for expected RTSP/ONVIF ports and write an ignored local RTSP config template.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "camera_discover_owner_subnet",
+      "command": "python3 apps/caresight-hub/scripts/caresight_camera_discover.py --subnet <local_subnet_cidr> --allow-lan-scan --scan-timeout-seconds 0.08 --progress-every 32",
+      "safety_class": "manual-operator",
+      "description": "Scan an explicitly authorized local subnet for RTSP/ONVIF port candidates without credentials or stream opens.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "yolo26_appearance_review",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/caresight_yolo26_appearance_review.py <image_path> --output-dir apps/caresight-hub/data/appearance-validation/annotated",
+      "safety_class": "manual-operator",
+      "description": "Run YOLO26 MLX on a local still image and write per-person appearance descriptor annotations with person boxes and sampled subregions.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
       "id": "contacts_config_init",
       "command": "python3 apps/caresight-hub/scripts/caresight_contacts_config.py --imessage <private-handle>",
       "safety_class": "manual-operator",

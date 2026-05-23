@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Standing false positive reference">
+  <rect width="960" height="540" fill="#f7f7f2"/>
+  <rect y="360" width="960" height="180" fill="#dce8d5"/>
+  <text x="32" y="48" font-family="Arial, sans-serif" font-size="26" fill="#1f2933">standing false positive guard</text>
+  <text x="32" y="82" font-family="Arial, sans-serif" font-size="18" fill="#46515f">Tall upright box overlaps the floor zone but remains a non-event posture.</text>
+  <rect x="420" y="130" width="118" height="325" rx="8" fill="none" stroke="#b45309" stroke-width="6"/>
+  <line x1="405" y1="468" x2="555" y2="468" stroke="#b45309" stroke-width="4"/>
+  <text x="374" y="504" font-family="Arial, sans-serif" font-size="18" fill="#1f2933">upright posture, no floor-stay event</text>
+</svg>

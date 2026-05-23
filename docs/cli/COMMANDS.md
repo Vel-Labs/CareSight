@@ -70,9 +70,70 @@ python3 apps/caresight-hub/scripts/v0_floor_stay_live.py --camera-id living_room
 
 Purpose: select one configured local camera source from `config.cameras` while preserving `camera_id`, `source_type`, and room label in runtime config and SQLite-backed event provenance.
 
-Supported source types: `webcam`, `usb`, `continuity_camera`, and local `rtsp`. Ring, Nest, Home Assistant, ONVIF discovery, LAN scanning, cloud-camera APIs, and credential handling remain out of scope.
+Supported source types: `webcam`, `usb`, `continuity_camera`, and local `rtsp`. Ring, Nest, Home Assistant, automatic ONVIF enumeration, cloud-camera APIs, and credential handling remain out of scope. LAN scanning is limited to explicit owner-authorized subnet probes.
 
 Validation: `test_v0_config.py` verifies deterministic source selection and cloud/provider rejection without opening a camera.
+
+## Camera Probe
+
+Discovery-assisted local config:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_camera_discover.py \
+  --host 192.168.1.50 \
+  --camera-id tapo_living_room \
+  --name "Tapo Living Room" \
+  --room-id living_room \
+  --room-label "Living Room" \
+  --write-config apps/caresight-hub/config/tapo.local.json
+```
+
+Purpose: check an owner-specified local camera host for expected RTSP/ONVIF and service ports, classify the host as `rtsp_ready`, `onvif_only`, `service_only`, or `no_checked_ports_reachable`, and write an ignored local RTSP config template with redacted receipt output. A `service_only` host means a web service responded, but CareSight has not proven a camera stream.
+
+Agent safety: `manual-operator`. The command does not scan a network range, guess credentials, or open a video stream. It only checks the host provided by the operator and writes a local config when requested.
+
+Owner-authorized LAN discovery:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_camera_discover.py \
+  --subnet 10.0.0.0/24 \
+  --allow-lan-scan \
+  --scan-timeout-seconds 0.08 \
+  --progress-every 32
+```
+
+Purpose: scan an explicitly provided local subnet for hosts with configured camera-candidate ports open, print progress to stderr, include ARP-visible hosts in the receipt, then print candidate next commands. Default candidate ports are `554,2020,8554,80,443,8080,8000,5000,8899`. If no camera-candidate ports are open, ARP-visible devices appear as `unclassified_arp_hosts` with owner-specified follow-up commands, but they are not treated as confirmed cameras. It does not try credentials, open streams, identify camera brands, or write configs by itself.
+
+Agent safety: `manual-operator`. Do not run this unless the operator confirms the subnet is owned/authorized. The script refuses `--subnet` unless `--allow-lan-scan` is also present.
+
+If the scan prints zero candidates but `arp_hosts` lists other devices, the Mac can see some LAN peers but none are exposing the checked camera/service ports. Check that the laptop and camera are on the same subnet, RTSP/ONVIF are enabled in the camera app, the camera is not on guest Wi-Fi/VLAN isolation, and the expected ports are correct.
+
+Command:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_camera_probe.py \
+  --config apps/caresight-hub/config/tapo.local.json
+```
+
+Dry-run example:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_camera_probe.py \
+  --config apps/caresight-hub/config/tapo.local.example.json \
+  --dry-run
+```
+
+Purpose: probe one explicit local RTSP camera config and print a redacted health receipt. The probe reports `reachable`, `stream_opened`, `first_frame_received`, dimensions, FPS, and a blocker classification when available.
+
+Inputs: an ignored local JSON config copied from `apps/caresight-hub/config/tapo.local.example.json`. The config may contain private RTSP credentials locally, but output must redact them.
+
+Outputs: JSON receipt only. It does not create care events.
+
+Validation: `test_multi_camera_sources.py` verifies dry-run redaction and no credential leakage.
+
+Agent safety: `manual-operator`. Agents may run `--dry-run` against committed examples. Live probing requires local network/camera credentials and should be operator-owned.
+
+Recovery proof boundary: `--dry-run` proves config parsing and URI redaction only. A live camera claim requires an ignored local config plus an operator-authorized probe that either receives a first frame or records a precise redacted blocker.
 
 Bounded audit run:
 
@@ -190,6 +251,8 @@ Validation: `test_agent_assist.py` verifies yes/no reply interpretation, target 
 
 Agent safety: `human-review-required`. This is an operator-mediated handoff. It does not start emergency dispatch, diagnose, or expose raw video to an agent. OBS Virtual Camera must be selected/configured by the operator.
 
+Resolution ladder: before a visual FaceTime proof, start the detector with `--obs-browser-feed`, verify `apps/obs-hub/tools/check_obs_live_feed.py`, confirm FaceTime's selected camera/microphone in the Video menu, and only then test OBS Virtual Camera. If the virtual-camera feed is stretched or unreliable, keep OBS as the local visual review surface and use FaceTime for reply-gated audio/TTS only.
+
 Automatic reply-gated demo:
 
 ```bash
@@ -299,6 +362,22 @@ Validation: `test_care_console.py` verifies the receipt includes action requests
 
 Agent safety: `agent-safe-read`. The command reads SQLite and local OBS evidence paths only.
 
+Multi-camera narrative receipt:
+
+```bash
+python3 apps/caresight-hub/scripts/care_console.py \
+  narrative <event_id> \
+  --format markdown
+```
+
+Purpose: render a SQLite-derived narrative for the selected event with camera, room, observation, and track context.
+
+Outputs: JSON or Markdown. The claim boundary is `likely_continuity_not_identity`, and the receipt explicitly does not claim named identity, biometric match, confirmed fall, or medical emergency.
+
+Validation: `test_multi_camera_narrative.py` verifies JSON/Markdown behavior and the CLI path.
+
+Agent safety: `agent-safe-read`. The command reads local SQLite only and does not review, message, call, or dispatch.
+
 Floor-stay detector diagnostics:
 
 ```bash
@@ -314,7 +393,23 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
 
 Purpose: print one `floor_stay_debug` JSON line per second showing the observed person boxes, whether each bottom-center is inside the configured floor zone, whether the box passes low-posture shape checks, and the current dwell seconds.
 
-Use this when a live test appears not to trigger. A valid possible-floor-stay event requires a person detection that is both inside the floor zone and low-posture for the configured dwell window.
+Use this when a live test appears not to trigger. A valid possible-floor-stay event requires a same tracked person detection that is both inside the floor zone and low-posture for the configured dwell window. Sprint 04 tracking-reliability evidence adds `escalation_stage`, `same_track_dwell_seconds`, `occlusion_grace_seconds`, `dedupe_window_seconds`, `policy_version`, and `not_claimed` to the event evidence while keeping the event type bounded as `possible_floor_stay`.
+
+Sprint 04 bounded validation run:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --debug-floor-stay \
+  --max-seconds 90 \
+  --stop-after-event \
+  --no-window
+```
+
+Purpose: let an operator collect one bounded floor-stay proof or a no-event receipt while inspecting same-track dwell and rejection reasons.
+
+Agent safety: `manual-operator`. This reads a local camera and may write local SQLite/snapshot evidence. It does not confirm, dismiss, dispatch, message, call, or play TTS.
 
 OBS live-feed verification:
 
@@ -516,6 +611,38 @@ Purpose: inspect or derive local non-biometric, same-day appearance profiles fro
 Inputs: optional `--db <path>` for all subcommands; `list` and `summarize-today` accept `--active-date YYYY-MM-DD`; `show` and `list-samples` accept an `appearance_profile_id`; `describe-image` accepts a local image path and `--bbox x1,y1,x2,y2`; `derive-from-event` accepts an `event_id` and optional bounded `--role`; `assign-role` accepts an `appearance_profile_id`, required bounded `--role`, and required human `--reviewer`.
 
 Outputs: JSON receipts with `identity_boundary: non_biometric_daily_appearance_only`, `descriptor_source`, `descriptor_status`, same-day profile metadata, event/observation/sample provenance, bounded role assignment, and forbidden claims. `describe-image` is read-only and supports still-image checks for upper clothing, lower clothing, headwear, and footwear descriptors. `derive-from-event` reads the real event row, observation row, and local `snapshot_path`; it does not create a seeded fixture. `summarize-today` aggregates retained quality-gated samples into support ratios without claiming identity.
+
+Sourced still-image validation matrix:
+
+```bash
+python3 -m json.tool apps/caresight-hub/config/appearance-still-image-sources.example.json >/dev/null
+python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image apps/caresight-hub/data/appearance-validation/local-person-image.jpg --bbox 120,80,420,720
+```
+
+Purpose: keep internet-sourced still-image validation inputs as source records instead of committed media. The example matrix covers headwear, full outfits, upper clothing, lower clothing, sneakers, and boots, with source URLs, observed licenses, local storage policy, expected descriptor checks, and forbidden claims. Operators may download images locally into ignored storage after reviewing source/license terms, then run `describe-image` against a manual bounding box.
+
+YOLO26 still-image appearance review:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/caresight_yolo26_appearance_review.py \
+  apps/caresight-hub/data/snapshots/<snapshot>.jpg \
+  --output-dir apps/caresight-hub/data/appearance-validation/annotated
+```
+
+Purpose: run YOLO26 MLX on a local still image, keep each detected person as a separate candidate, and write local annotated review images showing the selected person box plus sampled descriptor regions. Horizontal low-posture boxes are posture-limited: CareSight samples a bounded torso/body color region and leaves headwear, lower-body, and footwear unknown unless a later pose-aware/attribute-aware model can justify those regions.
+
+Manual bbox visual evidence:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/care_console.py appearance-profile describe-image \
+  apps/caresight-hub/data/snapshots/<snapshot>.jpg \
+  --bbox X1,Y1,X2,Y2 \
+  --visual-output apps/caresight-hub/data/appearance-validation/annotated/<case>.png
+```
+
+Purpose: create a local visual receipt when the bbox already comes from an event, prior YOLO run, or operator review. This is visual-review evidence only; it does not identify a person.
 
 Validation: `test_appearance_profiles.py`, `test_sqlite_store.py`, and `test_care_console.py` verify contract-safe descriptors, fail-closed unreadable/invalid image handling, SQLite profile/observation persistence, still-image descriptor checks, CLI derivation from event snapshots, and dashboard bounded context.
 

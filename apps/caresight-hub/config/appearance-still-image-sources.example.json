@@ -1,0 +1,148 @@
+{
+  "schema": "caresight-appearance-still-image-source-matrix",
+  "version": 1,
+  "created_at": "2026-05-23",
+  "purpose": "Operator-owned Sprint 03 still-image validation inputs for non-biometric appearance descriptors.",
+  "storage_policy": {
+    "commit_media": false,
+    "recommended_local_directory": "apps/caresight-hub/data/appearance-validation/",
+    "source_records_only": true,
+    "notes": [
+      "Download media only for local validation when license and attribution requirements are acceptable to the operator.",
+      "Do not commit downloaded images, cropped people, or derived personal media.",
+      "Record local paths and command output in an audit receipt if a validation run is performed."
+    ]
+  },
+  "identity_boundary": "non_biometric_daily_appearance_only",
+  "forbidden_claims": [
+    "named_identity",
+    "face_recognition",
+    "biometric_match",
+    "cross_day_identity",
+    "fall_confirmed",
+    "medical_emergency",
+    "autonomous_emergency_dispatch"
+  ],
+  "validation_command_template": "python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image LOCAL_IMAGE_PATH --bbox X1,Y1,X2,Y2",
+  "bbox_guidance": [
+    "Use a manually selected person bounding box around the visible person for local still-image validation.",
+    "Prefer full-body boxes when checking headwear, lower clothing, and footwear.",
+    "If an image is cropped, occluded, blurry, or not suitable for the descriptor being checked, record it as unsuitable instead of forcing a descriptor."
+  ],
+  "sources": [
+    {
+      "id": "headwear_hat_hk_2024",
+      "coverage": ["headwear", "upper_clothing"],
+      "candidate_file": "HK people boy wearing hat September 2024 R12S 01.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:HK_people_boy_wearing_hat_September_2024_R12S_01.jpg",
+      "category_url": "https://commons.wikimedia.org/wiki/Category:People_wearing_hats",
+      "license_observed": "CC0 1.0",
+      "source_attribution": "JamezKinaLoon V802, Wikimedia Commons",
+      "expected_checks": [
+        "descriptor_status is available or image-quality-limited",
+        "headwear is not forced to unknown when the hat region is visible",
+        "upper clothing color remains coarse and non-identifying"
+      ],
+      "not_expected": [
+        "named-person identification",
+        "age or protected-class claims",
+        "cross-image identity continuity"
+      ]
+    },
+    {
+      "id": "full_outfit_harajuku_2018",
+      "coverage": ["full_outfit", "upper_clothing", "lower_clothing", "footwear"],
+      "candidate_file": "Harajuku Fashion Street Snap (2018-01-08 18.18.29 by Dick Thomas Johnson).jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Harajuku_Fashion_Street_Snap_(2018-01-08_18.18.29_by_Dick_Thomas_Johnson).jpg",
+      "category_url": "https://commons.wikimedia.org/wiki/Category:Street_fashion",
+      "license_observed": "CC BY 2.0",
+      "source_attribution": "Dick Thomas Johnson, Wikimedia Commons/Flickr",
+      "expected_checks": [
+        "descriptor_status is available when the full person box is usable",
+        "upper and lower clothing colors are coarse descriptors",
+        "footwear is reported only when the foot region is visible enough"
+      ],
+      "not_expected": [
+        "fashion-brand identification",
+        "gender or identity claims",
+        "medical or safety conclusions"
+      ]
+    },
+    {
+      "id": "red_top_bangkok_2010",
+      "coverage": ["upper_clothing"],
+      "candidate_file": "Red shirt in Bangkok.JPG",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Red_shirt_in_Bangkok.JPG",
+      "category_url": "https://commons.wikimedia.org/wiki/Category:People_wearing_red_shirts",
+      "license_observed": "CC BY-SA 2.0",
+      "source_attribution": "K.rol2007, Wikimedia Commons/Flickr",
+      "expected_checks": [
+        "upper clothing color can report red when the torso region is visible",
+        "lower clothing may remain unknown when not visible",
+        "descriptor output remains a still-image descriptor, not a care event"
+      ],
+      "not_expected": [
+        "political affiliation claims",
+        "identity claims",
+        "caregiver alert generation"
+      ]
+    },
+    {
+      "id": "jeans_bottoms_2022",
+      "coverage": ["lower_clothing"],
+      "candidate_file": "Baggy jeans guy 1.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Baggy_jeans_guy_1.jpg",
+      "category_url": "https://commons.wikimedia.org/wiki/Category:People_wearing_jeans",
+      "license_observed": "CC BY-SA 4.0",
+      "source_attribution": "Schreckgespenst, Wikimedia Commons",
+      "expected_checks": [
+        "lower clothing color can report blue when the leg region is visible",
+        "upper clothing and headwear are bounded by image visibility",
+        "continuity confidence is not inferred from a standalone source image"
+      ],
+      "not_expected": [
+        "named-person identification",
+        "body-shape inference",
+        "cross-camera continuity"
+      ]
+    },
+    {
+      "id": "sneakers_beach_unsplash_2015",
+      "coverage": ["footwear"],
+      "candidate_file": "Man in sneakers at beach (Unsplash).jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Man_in_sneakers_at_beach_(Unsplash).jpg",
+      "category_url": "https://commons.wikimedia.org/wiki/Category:Male_people_with_sneakers",
+      "license_observed": "CC0 1.0",
+      "source_attribution": "Trent Yarnell, Wikimedia Commons/Unsplash",
+      "expected_checks": [
+        "footwear reports a coarse color only if the shoe region is inside the bbox",
+        "upper and lower clothing may remain unknown when the crop emphasizes shoes",
+        "the output does not infer walking safety or gait"
+      ],
+      "not_expected": [
+        "gait recognition",
+        "identity continuity",
+        "fall or wandering conclusion"
+      ]
+    },
+    {
+      "id": "boots_brisbane_2019",
+      "coverage": ["footwear", "lower_clothing", "upper_clothing"],
+      "candidate_file": "Brisbane, winter female street fashion in 2019; t-shirt, shorts and boots.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Brisbane,_winter_female_street_fashion_in_2019;_t-shirt,_shorts_and_boots.jpg",
+      "category_url": "https://commons.wikimedia.org/wiki/Category:People_wearing_boots",
+      "license_observed": "CC BY-SA 4.0",
+      "source_attribution": "Kgbo, Wikimedia Commons",
+      "expected_checks": [
+        "footwear descriptor can report a coarse dark color when boots are visible",
+        "upper and lower clothing descriptors remain color-only",
+        "unsuitable boxes are recorded as unavailable rather than hallucinated"
+      ],
+      "not_expected": [
+        "identity or demographic claims",
+        "brand or material claims",
+        "medical or emergency interpretation"
+      ]
+    }
+  ]
+}

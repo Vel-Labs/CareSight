@@ -164,6 +164,14 @@ CareSight stores dry-run external-action attempts in `agent_execution_attempts` 
 
 Rationale: Sprint 02 needs inspectable service-wrapper receipts without letting a payload render become an implicit send/call/write. Persisting attempts separately preserves the bounded control loop and creates a durable audit layer for later human-approved live actions.
 
+## 2026-05-23: Use Frigate-Inspired Camera Architecture Without Becoming an NVR
+
+CareSight should willingly borrow camera-system patterns from Frigate where they strengthen local-first caregiver review: local RTSP ingest, restreaming to avoid multiple camera connections, low-latency browser review surfaces, optional local MQTT/state bus integration, event-scoped local recording clips with retention policy, separate detector worker processes, and visible object/attribute annotation receipts.
+
+Rationale: Frigate has already solved many practical camera operations problems that CareSight needs for credible local operation. CareSight's adaptation remains narrower: selected observations become bounded caregiver review records. CareSight must not become an autonomous dispatch system, a cloud camera platform, or a generic NVR in the hackathon lane.
+
+Event-triggered clips are allowed as local evidence when configured, but a recording clip does not confirm a fall, injury, medical state, identity, or emergency. MQTT, restreaming, and live-view features should default to local/private operation and preserve the human-review boundary.
+
 ## 2026-05-21: Use Redacted Contact IDs for Live-Contact Staging
 
 CareSight iMessage and FaceTime staging validates requested contact IDs against a redacted local allowlist. Git-tracked examples may include stable IDs, roles, display labels, and redacted channel references, but not phone numbers, addresses, passwords, tokens, or BlueBubbles credentials.

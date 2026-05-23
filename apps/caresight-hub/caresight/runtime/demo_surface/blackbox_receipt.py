@@ -41,6 +41,7 @@ def build_blackbox_receipt(
             "zone_id": event.get("zone_id"),
             "severity": event["severity"],
             "confidence": event["confidence"],
+            "escalation_stage": event["evidence"].get("escalation_stage"),
         },
         "counts": {
             "observations": len(observations),
@@ -97,6 +98,7 @@ def render_blackbox_receipt_markdown(receipt: dict[str, Any]) -> str:
         f"- Zone: {event.get('zone_id') or 'unknown'}",
         f"- Severity: {event['severity']}",
         f"- Confidence: {event['confidence']}",
+        f"- Escalation stage: {event.get('escalation_stage') or 'not recorded'}",
         f"- Track IDs: {', '.join(receipt.get('track_ids') or ['none'])}",
         f"- Observations: {counts['observations']}",
     ]

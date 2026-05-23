@@ -414,6 +414,8 @@ python3 apps/caresight-hub/scripts/caresight_audio_route.py check
 
 The temporary BlackHole route is intended for the TTS moment only; it is not a permanent microphone change.
 
+Recovery note: `docs/audits/2026-05-23-sprint-02-facetime-obs-tts-resolution-ladder.md` is the current no-call troubleshooting ladder. It treats OBS as the stable local visual surface, FaceTime as an operator-approved audio/TTS handoff, and OBS/Aitum virtual-camera-to-FaceTime video as optional until a human validates the actual macOS output.
+
 Before live testing, run:
 
 ```bash

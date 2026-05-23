@@ -1,0 +1,484 @@
+{
+  "schema": "caresight-appearance-still-image-validation-runs",
+  "generated_at": "2026-05-23T00:00:00Z",
+  "purpose": "Sprint 03 recovery receipt for actual local still-image descriptor runs against existing CareSight snapshot evidence.",
+  "source_policy": {
+    "source_kind": "local_caresight_snapshots",
+    "media_committed": false,
+    "third_party_media_committed": false,
+    "raw_media_paths_are_local_only": true,
+    "source_of_truth": "SQLite events plus local snapshot_path files"
+  },
+  "command_template": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image LOCAL_IMAGE_PATH --bbox X1,Y1,X2,Y2 --visual-output LOCAL_ANNOTATION_PATH",
+  "claim_boundary": [
+    "non_biometric_daily_appearance_only",
+    "descriptor_coverage_only",
+    "no_named_person_identity",
+    "no_face_recognition",
+    "no_cross_day_identity",
+    "no_fall_confirmation",
+    "no_medical_emergency",
+    "no_autonomous_dispatch"
+  ],
+  "runs": [
+    {
+      "case_id": "s03-local-001",
+      "coverage": [
+        "full_person_box",
+        "near",
+        "high_confidence",
+        "bottom_truncated"
+      ],
+      "difficulty": "medium",
+      "difficulty_reason": "Large local floor-stay box reaches the bottom edge, so lower clothing and footwear are expected to be unavailable.",
+      "event_id": "evt_27e7a68759ce4a8cb7f8327a6adeb9f8",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_27e7a68759ce4a8cb7f8327a6adeb9f8.jpg",
+      "bbox_xyxy": [
+        83.20919799804688,
+        234.16729736328125,
+        1058.266845703125,
+        719.55029296875
+      ],
+      "detection_confidence": 0.955,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0.62,
+          "value": "white"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "orange"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "white"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-001.png"
+    },
+    {
+      "case_id": "s03-local-002",
+      "coverage": [
+        "partial_body",
+        "mid_distance",
+        "bottom_truncated"
+      ],
+      "difficulty": "medium",
+      "difficulty_reason": "Only the upper descriptor is reliable because the person box is cut off at the lower frame edge.",
+      "event_id": "evt_4bc591a7e04244b8ba42f7b69a11af71",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_4bc591a7e04244b8ba42f7b69a11af71.jpg",
+      "bbox_xyxy": [
+        282.1242980957031,
+        397.6619567871094,
+        941.9208984375,
+        719.2801513671875
+      ],
+      "detection_confidence": 0.8758,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "brown"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "cream"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-002.png"
+    },
+    {
+      "case_id": "s03-local-003",
+      "coverage": [
+        "cropped",
+        "low_quality",
+        "low_confidence",
+        "bottom_truncated"
+      ],
+      "difficulty": "hard",
+      "difficulty_reason": "The box is low and wide at the bottom edge; the descriptor correctly fails closed.",
+      "event_id": "evt_8099564fa0354603adcbbbe0373e5da1",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_8099564fa0354603adcbbbe0373e5da1.jpg",
+      "bbox_xyxy": [
+        405.3388366699219,
+        562.5245971679688,
+        840.951171875,
+        720
+      ],
+      "detection_confidence": 0.4986,
+      "descriptor_status": "unavailable",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "lower_body_color": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "upper_body_color": {
+          "confidence": 0,
+          "value": "unknown"
+        }
+      },
+      "descriptor_assessment": "safe_failure",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-003.png"
+    },
+    {
+      "case_id": "s03-local-004",
+      "coverage": [
+        "full_body",
+        "near",
+        "footwear_visible"
+      ],
+      "difficulty": "medium",
+      "difficulty_reason": "Large full person crop preserves lower and footwear regions but has edge contact on the right side.",
+      "event_id": "evt_65d6ef11826a40898a0fa4f3acb34aba",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_65d6ef11826a40898a0fa4f3acb34aba.jpg",
+      "bbox_xyxy": [
+        304.3154296875,
+        277.5692138671875,
+        1280,
+        712.9835205078125
+      ],
+      "detection_confidence": 0.8627,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "blue"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "blue"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-004.png"
+    },
+    {
+      "case_id": "s03-local-005",
+      "coverage": [
+        "partial_body",
+        "headwear_region_visible",
+        "low_confidence"
+      ],
+      "difficulty": "hard",
+      "difficulty_reason": "Low confidence and bottom truncation limit lower-body descriptors, but upper and headwear regions still produce bounded outputs.",
+      "event_id": "evt_18ce548221654542a7bcde8c528f4221",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_18ce548221654542a7bcde8c528f4221.jpg",
+      "bbox_xyxy": [
+        470.4521484375,
+        502.10772705078125,
+        918.7578125,
+        720
+      ],
+      "detection_confidence": 0.4288,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0.62,
+          "value": "red"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "orange"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "gray"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-005.png"
+    },
+    {
+      "case_id": "s03-local-006",
+      "coverage": [
+        "full_body",
+        "mid_distance",
+        "footwear_visible",
+        "occluded_or_dark"
+      ],
+      "difficulty": "hard",
+      "difficulty_reason": "YOLO26 selects the horizontal floor-stay person, but posture-aware sampling remains geometry-based and visual-review-only for accessory regions.",
+      "event_id": "evt_7cb67a46193e4b4f8420ca0f428e3635",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_7cb67a46193e4b4f8420ca0f428e3635.jpg",
+      "bbox_xyxy": [
+        352.1524658203125,
+        471.404296875,
+        1222.10595703125,
+        713.4765625
+      ],
+      "detection_confidence": 0.5882,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "cream"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "blue"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-006.png",
+      "yolo26_visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-006/person-01-living_room_2026-05-23T17:30:56.396185Z_0.png",
+      "notes": "YOLO26 selected the horizontal floor-stay person. Posture-aware body-axis sampling now reports blue upper body and cream lower body, while headwear/footwear remain unknown and visual-review-only."
+    },
+    {
+      "case_id": "s03-local-007",
+      "coverage": [
+        "cropped_left",
+        "near",
+        "bottom_truncated"
+      ],
+      "difficulty": "hard",
+      "difficulty_reason": "The box starts at the frame edge and reaches the bottom edge, so only upper body color should be trusted.",
+      "event_id": "evt_67f81ae3d0df49fd92832766b94be216",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_67f81ae3d0df49fd92832766b94be216.jpg",
+      "bbox_xyxy": [
+        3.8507080078125,
+        279.71124267578125,
+        945.1854248046875,
+        720
+      ],
+      "detection_confidence": 0.9008,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0.62,
+          "value": "white"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "cream"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "white"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-007.png"
+    },
+    {
+      "case_id": "s03-local-008",
+      "coverage": [
+        "far_or_small_box",
+        "footwear_visible",
+        "low_posture"
+      ],
+      "difficulty": "hard",
+      "difficulty_reason": "Small low-posture box still returns coarse lower and footwear descriptors, but these should be treated as tentative.",
+      "event_id": "evt_a118afce416b489fad02ea651a8e9600",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_a118afce416b489fad02ea651a8e9600.jpg",
+      "bbox_xyxy": [
+        456.90869140625,
+        562.2093505859375,
+        969.221923828125,
+        716.6475830078125
+      ],
+      "detection_confidence": 0.7728,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "brown"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "orange"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-008.png"
+    },
+    {
+      "case_id": "s03-local-009",
+      "coverage": [
+        "full_body",
+        "far",
+        "footwear_visible"
+      ],
+      "difficulty": "medium",
+      "difficulty_reason": "Full box with feet visible returns all body-region descriptors except headwear.",
+      "event_id": "evt_1a4cb9cfdac141aca550daa643a0f635",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_1a4cb9cfdac141aca550daa643a0f635.jpg",
+      "bbox_xyxy": [
+        482.1037292480469,
+        299.995361328125,
+        1249.686279296875,
+        630.9063110351562
+      ],
+      "detection_confidence": 0.9229,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "brown"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "cream"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-009.png"
+    },
+    {
+      "case_id": "s03-local-010",
+      "coverage": [
+        "far_or_small_box",
+        "low_confidence",
+        "bottom_truncated"
+      ],
+      "difficulty": "hard",
+      "difficulty_reason": "Low-confidence smaller box near the bottom edge produces only an upper-body descriptor.",
+      "event_id": "evt_053bd6f0e86346868d6dcca40d07353b",
+      "snapshot_path": "apps/caresight-hub/data/snapshots/evt_053bd6f0e86346868d6dcca40d07353b.jpg",
+      "bbox_xyxy": [
+        587.324462890625,
+        475.67108154296875,
+        1076.4417724609375,
+        719.6671752929688
+      ],
+      "detection_confidence": 0.308,
+      "descriptor_status": "posture_limited",
+      "attributes": {
+        "footwear": {
+          "confidence": 0,
+          "value": "unknown"
+        },
+        "headwear": {
+          "confidence": 0.62,
+          "value": "cream"
+        },
+        "lower_body_color": {
+          "confidence": 0.78,
+          "value": "purple"
+        },
+        "upper_body_color": {
+          "confidence": 0.78,
+          "value": "orange"
+        }
+      },
+      "descriptor_assessment": "posture_limited_visual_review_required",
+      "visual_evidence_path": "apps/caresight-hub/data/appearance-validation/annotated/s03-local-010.png"
+    },
+    {
+      "case_id": "s03-source-011",
+      "coverage": [
+        "multi_person",
+        "crowded",
+        "source_backed",
+        "full_frame_manual_bbox"
+      ],
+      "difficulty": "hard",
+      "difficulty_reason": "Crowded street source image contains multiple people; the manually selected broad bbox is suitable only for coarse descriptor stress testing, not continuity or identity.",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Street_Crowd.jpg",
+      "downloaded_to": "/private/tmp/caresight-street-crowd.jpg",
+      "license_observed": "CC0 1.0",
+      "media_committed": false,
+      "bbox_xyxy": [
+        220,
+        120,
+        920,
+        840
+      ],
+      "descriptor_status": "available",
+      "attributes": {
+        "upper_body_color": {
+          "value": "blue",
+          "confidence": 0.78
+        },
+        "lower_body_color": {
+          "value": "blue",
+          "confidence": 0.78
+        },
+        "headwear": {
+          "value": "dark gray",
+          "confidence": 0.62
+        },
+        "footwear": {
+          "value": "gray",
+          "confidence": 0.78
+        }
+      },
+      "descriptor_assessment": "stress_case_only"
+    }
+  ],
+  "coverage_summary": {
+    "run_count": 11,
+    "full_body_or_usable_large_box": 3,
+    "partial_or_cropped": 5,
+    "bottom_truncated": 6,
+    "low_quality_or_safe_failure": 1,
+    "near_mid_far_variety": true,
+    "headwear_visible_or_checked": 2,
+    "footwear_visible_or_checked": 4,
+    "multi_person_or_crowded": true,
+    "posture_limited_visual_reviews": 9
+  },
+  "remaining_gap": "Most local floor-stay snapshots are horizontal or low-posture cases. Descriptor validation is now posture-limited for those cases: body-axis upper/lower clothing can be inspected with visual boxes, but headwear and footwear should remain unknown unless a pose-aware or attribute-aware model can justify them. Broader internet-media validation remains operator-owned if more source variety is needed."
+}

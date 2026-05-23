@@ -1,0 +1,24 @@
+{
+  "camera": {
+    "camera_id": "tapo_living_room",
+    "name": "Tapo Living Room",
+    "source_type": "rtsp",
+    "source_uri": "rtsp://camera-user:camera-password@192.0.2.55:554/stream1",
+    "room_id": "living_room",
+    "room_label": "Living Room",
+    "width": 1280,
+    "height": 720,
+    "fps": 15,
+    "privacy": {
+      "raw_video_storage": "local_only",
+      "cloud_upload_default": false
+    }
+  },
+  "notes": {
+    "runtime": "Copy this file to tapo.local.json, keep it ignored, and replace the TEST-NET address and placeholder camera account.",
+    "stream1": "high quality",
+    "stream2": "standard quality",
+    "rtsp_port": 554,
+    "onvif_port": 2020
+  }
+}

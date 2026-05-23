@@ -1,0 +1,621 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "CareSight Sprint 02-05 Validation Recovery"
+  slug: "caresight-sprint-02-05-validation-recovery"
+  kind: recovery
+  tranche: "Recover the prior premature Sprint 02/03/04/05 completion claim by executing complexity-graded validation, camera proof, FaceTime/OBS/TTS resolution research, corrected docs, and a skeptical final audit."
+  status: done
+  oracle:
+    signal: "Complexity-graded Sprint 03/04 result matrices, Sprint 05 end-to-end camera receipts, Sprint 02 researched/tested resolution ladder, updated docs/changelog/audits, npm run check, and final Judge receipt with full_outcome_complete true only if the corrected target is met."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Final Judge maps every user correction to concrete artifacts, commands, source-backed research, result summaries, remaining blockers, and fresh verification."
+  intake:
+    original_request: "Add my notes and your additional notes into a full update on what needs to happen next; make a new goal-prep."
+    interpreted_outcome: "Create a new GoalBuddy recovery board that corrects the prior shallow completion claim and drives real validation/resolution work across Sprint 02/03/04/05."
+    input_shape: recovery
+    audience: "CareSight hackathon owner and future /goal PM"
+    authority: approved
+    proof_type: "test + source_backed_answer + artifact + review"
+    completion_proof: "Repo-native receipts show complexity-graded validation and resolution attempts across 02/03/04/05, docs reflect corrected status, and final Judge accepts only with fresh verification."
+    likely_misfire: "Calling the goal complete after another audit or source list without real runs, difficulty grading, resolution research, or corrected proof artifacts."
+    blind_spots_considered:
+      - "Using live-camera validation as a catch-all excuse would avoid deterministic Sprint 04 complexity testing."
+      - "Using only category-level appearance examples would miss distance, body coverage, occlusion, quality, and multi-person cases."
+      - "Researching default camera credentials must stay within owner-authorized setup guidance and never become unauthorized access or LAN scanning."
+      - "FaceTime/OBS/TTS needs technical resolution research and alternatives, not another note that it is blocked."
+      - "Downloaded test media must stay ignored/local or temporary; only source records and result summaries should be committed."
+      - "Final status must distinguish implemented, tested, attempted, blocked, and production-validated."
+    existing_plan_facts:
+      - "Prior goal path: docs/goals/caresight-sprint-04-05-camera-obs-recon/goal.md"
+      - "Prior final audit overclaimed deterministic/audit completion relative to the user's intended target."
+      - "User explicitly requires expanded remaining plan before any new completion claim."
+      - "CareSight AGENTS constraints remain binding."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 1
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: bundled_not_installed
+  worker: bundled_not_installed
+  judge: bundled_not_installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/caresight-sprint-02-05-validation-recovery/"
+    command: "npx goalbuddy board /Users/steven/Workspace/40_Code/hackathons/CareSight/docs/goals/caresight-sprint-02-05-validation-recovery"
+
+active_task: null
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: high
+    objective: "Audit the prior Sprint 02/03/04/05 goal receipts, current diff, docs, tests, and user corrections to map exact evidence gaps without making changes."
+    inputs:
+      - "docs/goals/caresight-sprint-04-05-camera-obs-recon/goal.md"
+      - "docs/goals/caresight-sprint-04-05-camera-obs-recon/state.yaml"
+      - "Current git diff/status"
+      - "User correction notes preserved in this goal.md"
+      - "AGENTS.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "CHANGELOG.md"
+    constraints:
+      - "Read-only."
+      - "Do not implement fixes."
+      - "Classify evidence as implemented, tested, attempted, blocked, researched, or missing."
+      - "Do not soften or relabel the user's critique."
+    expected_output:
+      - "Gap table by Sprint 02/03/04/05."
+      - "Exact stale or overclaiming docs/status language to correct."
+      - "Recommended largest safe Worker packages."
+      - "Verification commands and artifact expectations."
+    receipt:
+      result: done
+      summary: "The prior Sprint 04/05 board produced useful implementation foundations and receipts, but it does not satisfy this recovery goal's corrected oracle. The biggest gaps are actual varied Sprint 03 still-image run receipts, complexity-graded Sprint 04 validation beyond baseline same-track/occlusion tests, concrete Sprint 02 FaceTime/OBS/TTS resolution research plus test ladder, and Sprint 05 end-to-end live/local-camera proof or a precise safe blocker."
+      evidence:
+        - "docs/goals/caresight-sprint-04-05-camera-obs-recon/state.yaml"
+        - "docs/audits/2026-05-23-sprint-03-sourced-still-image-validation.md"
+        - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md"
+        - "docs/audits/2026-05-23-sprint-05-camera-support.md"
+        - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md"
+      gap_table:
+        sprint_02:
+          implemented_or_attempted:
+            - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md records preflight readiness, reachable Gemma endpoint, BlackHole/SwitchAudioSource availability, Dakota WAV generation, and blocked detector/OBS websocket state."
+          missing_or_overclaimed:
+            - "No source-backed resolution matrix for FaceTime virtual-camera behavior, OBS virtual camera compatibility, Aitum/browser/MJPEG alternatives, or TTS routing caveats."
+            - "No local alternative test ladder was written for detector MJPEG -> OBS browser source -> FaceTime-safe audio/TTS path."
+        sprint_03:
+          implemented_or_attempted:
+            - "apps/caresight-hub/config/appearance-still-image-sources.example.json and docs/audits/2026-05-23-sprint-03-sourced-still-image-validation.md provide a source matrix and operator procedure."
+          missing_or_overclaimed:
+            - "No actual describe-image runs are recorded for the matrix."
+            - "Coverage does not yet include full-body, partial-body, occluded, cropped, near/mid/far, low-quality, multi-person/crowded, difficulty labels, descriptor status, confidence summaries, and failure modes."
+        sprint_04:
+          implemented_or_attempted:
+            - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md records same-track dwell, short/long occlusion, dedupe, staged missing-off-camera wording, and contract examples."
+          missing_or_overclaimed:
+            - "Tests are useful but not yet a named complexity-graded matrix across same-track dwell, track churn, occlusion grace, distance/box-scale, low/prone ambiguity, false-positive/non-event, and missing-off-camera escalation."
+        sprint_05:
+          implemented_or_attempted:
+            - "docs/audits/2026-05-23-sprint-05-camera-support.md and docs/audits/2026-05-23-tapo-rtsp-validation.md record local source examples, redacted RTSP dry-run, MultiCameraFrameManager, and narrative CLI."
+          missing_or_overclaimed:
+            - "No operator-authorized live camera config was probed end to end."
+            - "The next acceptable result is either a real redacted probe/frame/narrative receipt from ignored local config or a precise blocker tied to missing same-LAN credentials/hardware."
+      stale_or_risky_language:
+        - "Previous state.yaml final receipt used full_outcome_complete: true for deterministic/local work, which is weaker than this recovery oracle."
+        - "Current docs mostly distinguish deterministic implementation from production readiness, but they still need a corrected recovery receipt and checklist-shaped evidence map."
+      recommended_worker_packages:
+        - "T004: Sprint 03 actual still-image/local-snapshot validation receipt with varied cases, command outputs, descriptor status/confidence, difficulty, and failure modes."
+        - "T005: Sprint 04 complexity-graded deterministic validation matrix and targeted tests/receipt."
+        - "T006: Sprint 05 camera probe/narrative proof-or-blocker receipt with source-backed Tapo assumptions."
+        - "T007: Sprint 02 FaceTime/OBS/TTS resolution ladder with source-backed research and safe local no-call checks."
+        - "T008: Corrected docs/changelog/CLI/current-state recovery status."
+
+  - id: T002
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: high
+    objective: "Research Sprint 02 FaceTime/OBS virtual-camera/TTS known issues and Sprint 05 local camera setup assumptions, then produce a source-backed resolution and test ladder."
+    inputs:
+      - "T001 receipt"
+      - "Existing OBS/FaceTime/TTS notes and audit receipts"
+      - "Existing camera support docs and Tapo/RTSP examples"
+    constraints:
+      - "Read-only."
+      - "Use current web/official sources where appropriate."
+      - "Do not attempt unauthorized camera access or network scanning."
+      - "Do not run live FaceTime, send iMessage, or play TTS without explicit operator approval."
+      - "Default credential research must be framed as owner setup guidance, not a bypass path."
+    expected_output:
+      - "FaceTime/OBS virtual-camera failure modes and candidate fixes."
+      - "TTS-to-FaceTime audio routing options and known caveats."
+      - "Alternative demo paths to test, including OBS browser/MJPEG/Aitum/landscape/portrait options."
+      - "Local camera/Tapo/RTSP setup assumptions, source-backed credential/config notes, and safe probe plan."
+      - "Exact Worker package recommendation for resolution docs/tests."
+    receipt:
+      result: done
+      summary: "Completed source-backed research for the Sprint 02 and Sprint 05 recovery lanes. The recommended path is to treat FaceTime visual bridging as optional and fragile, keep OBS as the local visual review/recording surface, use FaceTime primarily for operator-approved audio/TTS handoff, and require a redacted owner-authorized RTSP probe for any Tapo live-camera claim."
+      evidence:
+        - "OBS, Apple FaceTime, BlackHole, and TP-Link/Tapo source URLs recorded under sources."
+        - "No live calls, sends, playback, camera probing, or network scanning performed during Scout research."
+      sources:
+        - "OBS virtual camera troubleshooting: https://obsproject.com/kb/virtual-camera-troubleshooting"
+        - "OBS virtual camera guide: https://obsproject.com/kb/virtual-camera-guide"
+        - "Apple FaceTime camera/microphone selection: https://support.apple.com/en-ae/guide/facetime/fctm26739220/mac"
+        - "Apple FaceTime troubleshooting: https://support.apple.com/en-gb/102203"
+        - "Apple FaceTime audio options: https://support.apple.com/en-gw/guide/facetime/fctme7c07113/mac"
+        - "BlackHole audio loopback: https://github.com/ExistentialAudio/BlackHole"
+        - "TP-Link Tapo RTSP/ONVIF FAQ: https://www.tp-link.com/us/support/faq/4465/"
+        - "Tapo RTSP setup FAQ: https://www.tapo.com/us/faq/34/"
+      face_time_obs_tts_findings:
+        - "OBS says macOS 13+ with OBS 30+ uses the newer virtual camera component; OBS 29.1 and earlier are not compatible with macOS 14 virtual camera use."
+        - "OBS virtual camera can output Program, Preview, one Scene, or one Source; CareSight should pin a known Scene or Source for tests instead of relying on whatever Program shows."
+        - "Apple documents that FaceTime camera, microphone, and audio output must be selected from FaceTime's Video menu when multiple devices exist."
+        - "Apple troubleshooting says to verify camera/microphone selection and test cameras in another app when FaceTime fails, so Photo Booth or another local app should be used before blaming CareSight."
+        - "BlackHole supports app-to-app audio routing by setting the sending app output to BlackHole and the receiving app input to BlackHole; CareSight's TTS routing tests should verify both sides, not just WAV generation."
+      camera_findings:
+        - "TP-Link/Tapo source says most non-battery Tapo cameras support RTSP and ONVIF Profile S; C210/C210P2 are in the affected model list."
+        - "Tapo RTSP requires a dedicated camera account created in the Tapo app, separate from the Tapo account login."
+        - "Tapo documents stream1/stream2 RTSP URLs and default RTSP port 554; ONVIF service port is documented as 2020."
+        - "Tapo recommends same local network/trusted local network use and warns against public-network exposure; CareSight should keep no-scan/no-port-forward rules."
+      proposed_test_ladder:
+        - "OBS visual: start detector with --obs-browser-feed, verify http://127.0.0.1:8766/live.html, run apps/obs-hub/tools/check_obs_live_feed.py, then select a fixed OBS virtual-camera Scene/Source if FaceTime visual proof is explicitly approved."
+        - "FaceTime visual: before any call, verify OBS Virtual Camera in a non-call local app if possible, then in FaceTime's Video menu; if aspect ratio/stretch remains unreliable, keep OBS as visual surface and FaceTime as audio/TTS only."
+        - "TTS audio: generate WAV without playback, switch sender output and FaceTime input to BlackHole, use FaceTime Wide Spectrum if needed for non-voice audio, then play only with explicit human approval."
+        - "Tapo/camera: copy example to ignored local config, fill owner-authorized account/IP, run caresight_camera_probe.py, then run narrative only if a real event/frame receipt exists; otherwise record blocker class."
+
+  - id: T003
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Choose the largest safe recovery Worker sequence from T001/T002 and set exact scopes, allowed files, verification, and stop conditions."
+    inputs:
+      - "T001 receipt"
+      - "T002 receipt"
+      - "User correction notes"
+    constraints:
+      - "Do not implement."
+      - "Reject tiny doc-only tasks unless they unlock a larger validation package."
+      - "Reject any package that would require unauthorized camera access or unapproved live external actions."
+      - "Prefer coherent vertical slices that produce real validation artifacts."
+    expected_output:
+      - "Decision: approved_sequence | needs_more_scouting | blocked"
+      - "Ordered Worker packages."
+      - "allowed_files per Worker."
+      - "verify per Worker."
+      - "stop_if per Worker."
+    receipt:
+      result: done
+      decision: approved_sequence
+      summary: "Approve five Worker packages. The first two should produce real evidence rather than more prose: Sprint 03 actual local run receipts, then Sprint 04 complexity-graded tests/receipt. Sprint 05 and Sprint 02 should convert the source-backed research into proof-or-blocker receipts without unauthorized camera access, live FaceTime, live iMessage, or TTS playback. Finish with status docs."
+      ordered_worker_packages:
+        - id: T004
+          allowed_files:
+            - "docs/audits/2026-05-23-sprint-03-expanded-still-image-validation.md"
+            - "apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+            - "docs/FILE_TREE.md"
+            - "CHANGELOG.md"
+          verify:
+            - "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-validation-runs.example.json >/dev/null"
+            - "python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image <local-image> --bbox <bbox>"
+            - "npm run check"
+          stop_if:
+            - "Need to commit third-party media."
+            - "Cannot produce machine-readable run summaries from local images/snapshots."
+        - id: T005
+          allowed_files:
+            - "apps/caresight-hub/tests/test_floor_stay.py"
+            - "apps/caresight-hub/tests/test_missing_off_camera.py"
+            - "docs/audits/2026-05-23-sprint-04-complexity-graded-validation.md"
+            - "docs/FILE_TREE.md"
+            - "CHANGELOG.md"
+          verify:
+            - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+            - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+            - "npm run py:check"
+            - "npm run check"
+          stop_if:
+            - "Runtime changes outside deterministic tracking/event tests are needed."
+        - id: T006
+          allowed_files:
+            - "docs/audits/2026-05-23-sprint-05-camera-proof-recovery.md"
+            - "docs/architecture/camera_integration_strategy.md"
+            - "docs/cli/COMMANDS.md"
+            - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+            - "docs/FILE_TREE.md"
+            - "CHANGELOG.md"
+          verify:
+            - "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+            - "npm run check"
+          stop_if:
+            - "Would require unauthorized network scanning, credential guessing, or committed camera secrets."
+        - id: T007
+          allowed_files:
+            - "docs/audits/2026-05-23-sprint-02-facetime-obs-tts-resolution-ladder.md"
+            - "docs/operations/local_model_operations.md"
+            - "docs/cli/COMMANDS.md"
+            - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+            - "docs/FILE_TREE.md"
+            - "CHANGELOG.md"
+          verify:
+            - "python3 apps/caresight-hub/scripts/caresight_audio_route.py check"
+            - "python3 apps/caresight-hub/scripts/caresight_tts.py --voice dakota --text 'CareSight alert. Possible floor stay observed in the Living Room. Needs review.'"
+            - "python3 apps/caresight-hub/scripts/caresight_live_handoff.py --help"
+            - "npm run check"
+          stop_if:
+            - "Would place a live FaceTime call, send iMessage, mutate OBS scenes, or play TTS without explicit approval."
+        - id: T008
+          allowed_files:
+            - "docs/cli/COMMANDS.md"
+            - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+            - "CHANGELOG.md"
+            - "docs/FILE_TREE.md"
+            - "docs/audits/2026-05-23-sprint-02-05-validation-recovery-closeout.md"
+          verify:
+            - "npm run check"
+          stop_if:
+            - "Would claim production readiness without operator/live proof."
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Execute Sprint 03 expanded still-image validation: varied source matrix, local/temp image runs where safe, difficulty/confidence result summaries, and audit/runbook docs."
+    allowed_files:
+      - "docs/audits/2026-05-23-sprint-03-expanded-still-image-validation.md"
+      - "apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+    verify:
+      - "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+      - "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image apps/caresight-hub/data/snapshots/evt_65d6ef11826a40898a0fa4f3acb34aba.jpg --bbox 304.32,277.57,1280.0,712.98"
+      - "npm run check"
+    stop_if:
+      - "T003 has not approved exact allowed files and verification."
+      - "Need to commit downloaded third-party media."
+      - "Source licensing or attribution is unclear."
+      - "Validation would require identity, protected-class, medical, fall-confirmation, or dispatch claims."
+      - "Verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Executed Sprint 03 expanded still-image validation using ten actual local CareSight snapshot runs with SQLite bounding boxes plus one uncommitted source-backed Wikimedia Commons crowded-image run under /private/tmp. Added a machine-readable run summary and audit receipt with difficulty labels, detection confidence, descriptor status, descriptor outputs, and explicit media boundaries."
+      commands:
+        - cmd: "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+          status: pass
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image apps/caresight-hub/data/snapshots/evt_65d6ef11826a40898a0fa4f3acb34aba.jpg --bbox 304.32,277.57,1280.0,712.98"
+          status: pass
+        - cmd: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image /private/tmp/caresight-street-crowd.jpg --bbox 220,120,920,840"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      changed_files:
+        - "apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+        - "docs/audits/2026-05-23-sprint-03-expanded-still-image-validation.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      coverage:
+        - "10 local still-image descriptor runs"
+        - "1 source-backed crowded-image descriptor run"
+        - "full-body or large usable boxes"
+        - "partial/cropped boxes"
+        - "near, mid-distance, and far/small boxes"
+        - "bottom-truncated cases"
+        - "low-quality safe failure"
+        - "headwear and footwear region checks where visible"
+      remaining_gap:
+        - "Broader internet-media still-image variety remains operator-owned if needed beyond this recovery run."
+      verification:
+        - command: "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+          result: "passed"
+        - command: "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image apps/caresight-hub/data/snapshots/evt_65d6ef11826a40898a0fa4f3acb34aba.jpg --bbox 304.32,277.57,1280.0,712.98"
+          result: "passed, descriptor_status=available, upper/lower/footwear=blue"
+        - command: "npm run check"
+          result: "passed"
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Execute Sprint 04 complexity-graded deterministic validation and concept hardening for tracking reliability targets."
+    allowed_files:
+      - "apps/caresight-hub/tests/test_floor_stay.py"
+      - "apps/caresight-hub/tests/test_missing_off_camera.py"
+      - "docs/audits/2026-05-23-sprint-04-complexity-graded-validation.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+    verify:
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+      - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+      - "npm run py:check"
+      - "npm run check"
+    stop_if:
+      - "T003 has not approved exact allowed files and verification."
+      - "Need live-camera-only proof for cases that can be simulated deterministically."
+      - "Runtime changes would confirm/dismiss events or engage external handoff behavior."
+      - "Verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Added Sprint 04 complexity-graded deterministic validation beyond the prior baseline. New tests cover far/small low-posture event behavior, multi-person floor-candidate selection against a higher-confidence standing person, and far standing false-positive rejection. Added a recovery audit matrix mapping each target to named tests."
+      commands:
+        - cmd: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+          status: pass
+        - cmd: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+          status: pass
+        - cmd: "npm run py:check"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      changed_files:
+        - "apps/caresight-hub/tests/test_floor_stay.py"
+        - "docs/audits/2026-05-23-sprint-04-complexity-graded-validation.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      verification:
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+          result: "passed, 12 tests OK"
+        - command: "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+          result: "passed, 5 tests OK"
+        - command: "npm run py:check"
+          result: "passed under escalated loopback permission after sandbox denied test-local HTTP bind; 148 tests OK"
+        - command: "npm run check"
+          result: "passed"
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Execute Sprint 05 end-to-end camera support proof: safe config/probe/frame/narrative tests, redacted camera setup research, improvement attempts, and blocker receipts."
+    allowed_files:
+      - "docs/audits/2026-05-23-sprint-05-camera-proof-recovery.md"
+      - "docs/architecture/camera_integration_strategy.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+    verify:
+      - "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+      - "npm run check"
+    stop_if:
+      - "T003 has not approved exact allowed files and verification."
+      - "Would attempt unauthorized access, network scanning, or credential guessing against devices."
+      - "Would commit credentials, private RTSP URLs, or raw camera footage."
+      - "Verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Added Sprint 05 camera proof recovery receipt and docs updates. The receipt separates source-backed Tapo/RTSP assumptions from deterministic dry-run proof, lists the owner-authorized live inputs required, and defines acceptable redacted live outcomes or blocker classes."
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      changed_files:
+        - "docs/audits/2026-05-23-sprint-05-camera-proof-recovery.md"
+        - "docs/architecture/camera_integration_strategy.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      verification:
+        - command: "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+          result: "passed, redacted_uri=rtsp://***:***@192.0.2.55:554/stream1, stream_opened=not_attempted"
+        - command: "npm run check"
+          result: "passed"
+
+  - id: T007
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Execute Sprint 02 FaceTime/OBS/TTS resolution package: source-backed issue analysis, local alternative tests where safe, recommended path, and corrected docs/audit receipts."
+    allowed_files:
+      - "docs/audits/2026-05-23-sprint-02-facetime-obs-tts-resolution-ladder.md"
+      - "docs/operations/local_model_operations.md"
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "docs/FILE_TREE.md"
+      - "CHANGELOG.md"
+    verify:
+      - "python3 apps/caresight-hub/scripts/caresight_audio_route.py check"
+      - "python3 apps/caresight-hub/scripts/caresight_tts.py --voice dakota --text 'CareSight alert. Possible floor stay observed in the Living Room. Needs review.'"
+      - "python3 apps/caresight-hub/scripts/caresight_live_handoff.py --help"
+      - "npm run check"
+    stop_if:
+      - "T003 has not approved exact allowed files and verification."
+      - "Would place a live FaceTime call, send iMessage, or play TTS without explicit operator approval."
+      - "Would expose raw home video or private contact handles."
+      - "Verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Added Sprint 02 FaceTime/OBS/TTS resolution ladder with source-backed findings and no-call checks. Confirmed live handoff CLI help, OBS feed/websocket blockers as connection refused after loopback permission, BlackHole device unavailable despite SwitchAudioSource presence, and Dakota TTS generation succeeds with played=false when Metal access is available."
+      commands:
+        - cmd: "python3 apps/caresight-hub/scripts/caresight_demo_preflight.py --json"
+          status: pass
+        - cmd: "apps/obs-hub/tools/check_obs_live_feed.py"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/caresight_audio_route.py check"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/caresight_tts.py --voice dakota --text 'CareSight alert. Possible floor stay observed in the Living Room. Needs review.'"
+          status: pass
+        - cmd: "python3 apps/caresight-hub/scripts/caresight_live_handoff.py --help"
+          status: pass
+        - cmd: "npm run check"
+          status: pass
+      changed_files:
+        - "docs/audits/2026-05-23-sprint-02-facetime-obs-tts-resolution-ladder.md"
+        - "docs/operations/local_model_operations.md"
+        - "docs/cli/COMMANDS.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      verification:
+        - command: "python3 apps/caresight-hub/scripts/caresight_audio_route.py check"
+          result: "passed, switchaudio_available=true, blackhole_input_available=false, blackhole_output_available=false"
+        - command: "apps/obs-hub/tools/check_obs_live_feed.py"
+          result: "blocked after loopback permission: detector MJPEG and OBS websocket connection refused"
+        - command: "python3 apps/caresight-hub/scripts/caresight_tts.py --voice dakota --text 'CareSight alert. Possible floor stay observed in the Living Room. Needs review.'"
+          result: "passed with Metal access, tts_generated played=false"
+        - command: "python3 apps/caresight-hub/scripts/caresight_live_handoff.py --help"
+          result: "passed"
+        - command: "npm run check"
+          result: "passed"
+
+  - id: T008
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: medium
+    objective: "Correct docs, CLI docs, changelog, current-state roadmap, and prior status language so they reflect implemented/tested/attempted/blocked/production-validated truth."
+    allowed_files:
+      - "docs/cli/COMMANDS.md"
+      - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+      - "CHANGELOG.md"
+      - "docs/FILE_TREE.md"
+      - "docs/audits/2026-05-23-sprint-02-05-validation-recovery-closeout.md"
+    verify:
+      - "npm run check"
+    stop_if:
+      - "T003 has not approved exact allowed files and verification."
+      - "Would hide or dilute the prior overclaim."
+      - "Would claim production readiness without live/operator proof."
+      - "Verification fails twice for the same unexplained reason."
+    receipt:
+      result: done
+      summary: "Added a corrected Sprint 02-05 recovery closeout receipt and linked it from current-state docs. CLI docs, operations docs, camera architecture docs, changelog, and file tree now reflect the corrected evidence and remaining gates."
+      commands:
+        - cmd: "npm run check"
+          status: pass
+      changed_files:
+        - "docs/audits/2026-05-23-sprint-02-05-validation-recovery-closeout.md"
+        - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+        - "CHANGELOG.md"
+        - "docs/FILE_TREE.md"
+      verification:
+        - command: "npm run check"
+          result: "passed"
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: done
+    reasoning_hint: high
+    objective: "Audit whether the corrected Sprint 02/03/04/05 validation recovery satisfies the user's intended target."
+    inputs:
+      - "All done task receipts"
+      - "Latest verification output"
+      - "Current dirty diff"
+      - "User correction notes in goal.md"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if any required Worker remains queued or active."
+      - "Reject completion if Sprint 03 lacks varied actual run results."
+      - "Reject completion if Sprint 04 lacks complexity-graded deterministic validation."
+      - "Reject completion if Sprint 05 lacks end-to-end proof or precise safe blockers."
+      - "Reject completion if Sprint 02 lacks researched/tested resolution alternatives."
+      - "Reject completion if docs still overclaim."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "Evidence map by user correction and sprint."
+      - "Commands and artifacts."
+      - "Remaining blockers and exact next tasks if not complete."
+    receipt:
+      result: done
+      decision: complete
+      full_outcome_complete: true
+      summary: "The corrected recovery target is satisfied without overclaiming production readiness. Sprint 03 now has actual varied local/source-backed still-image runs including crowded coverage; Sprint 04 has complexity-graded deterministic tests and audit mapping; Sprint 05 has source-backed camera assumptions, dry-run proof, and precise live-camera blockers; Sprint 02 has researched and locally checked FaceTime/OBS/TTS resolution ladder; docs/changelog/CLI/current-state are updated; fresh verification passed."
+      evidence_map:
+        sprint_02:
+          artifacts:
+            - "docs/audits/2026-05-23-sprint-02-facetime-obs-tts-resolution-ladder.md"
+            - "docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md"
+          proof:
+            - "Source-backed OBS/FaceTime/BlackHole findings recorded."
+            - "No-call checks recorded: demo preflight ready, OBS feed/websocket blocked by connection refused when not running, SwitchAudioSource present, BlackHole device absent, Dakota TTS generated with played=false after Metal access."
+          remaining_gate: "Live FaceTime/TTS playback and OBS virtual-camera visual proof still require explicit operator approval and running local services."
+        sprint_03:
+          artifacts:
+            - "apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+            - "docs/audits/2026-05-23-sprint-03-expanded-still-image-validation.md"
+            - "apps/caresight-hub/config/appearance-still-image-sources.example.json"
+          proof:
+            - "11 still-image descriptor runs: 10 local CareSight snapshots plus one Wikimedia Commons crowded source image downloaded to /private/tmp and not committed."
+            - "Runs include difficulty labels, bbox, confidence/status, descriptor outputs, failure mode, source/license record for the crowded case, and forbidden-claim boundaries."
+          remaining_gate: "Broader internet-media variety is optional follow-up, not hidden completion debt for this recovery."
+        sprint_04:
+          artifacts:
+            - "apps/caresight-hub/tests/test_floor_stay.py"
+            - "apps/caresight-hub/tests/test_missing_off_camera.py"
+            - "docs/audits/2026-05-23-sprint-04-complexity-graded-validation.md"
+            - "docs/audits/2026-05-23-sprint-04-tracking-reliability.md"
+          proof:
+            - "Complexity matrix maps same-track dwell, escalation stages, track churn, occlusion, dedupe, distance/box scale, multi-person selection, standing and seated false positives, and missing-off-camera stages to named tests."
+          remaining_gate: "Live-camera production validation remains operator-owned."
+        sprint_05:
+          artifacts:
+            - "docs/audits/2026-05-23-sprint-05-camera-proof-recovery.md"
+            - "docs/audits/2026-05-23-sprint-05-camera-support.md"
+            - "docs/audits/2026-05-23-tapo-rtsp-validation.md"
+          proof:
+            - "Tapo/RTSP assumptions are source-backed; committed example dry-run redacts credentials and does not open a stream."
+            - "Live proof requirements and blocker classes are explicit for ignored owner-authorized config."
+          remaining_gate: "Real Tapo/live RTSP proof remains blocked until operator supplies credentials/IP/same-LAN access outside Git."
+        docs_and_verification:
+          updated:
+            - "CHANGELOG.md"
+            - "docs/cli/COMMANDS.md"
+            - "docs/roadmaps/CURRENT_STATE_AND_NEXT.md"
+            - "docs/operations/local_model_operations.md"
+            - "docs/architecture/camera_integration_strategy.md"
+            - "docs/FILE_TREE.md"
+            - "docs/audits/2026-05-23-sprint-02-05-validation-recovery-closeout.md"
+          commands:
+            - "python3 -m json.tool apps/caresight-hub/config/appearance-still-image-validation-runs.example.json"
+            - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_floor_stay.py'"
+            - "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_missing_off_camera.py'"
+            - "python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run"
+            - "npm run check"
+          latest_result: "passed"
+      boundary_audit:
+        - "No production-ready claim was made."
+        - "No medical-device, HIPAA, fall-confirmation, medication-confirmation, autonomous-dispatch, named-identity, face-recognition, or emergency claim was added."
+        - "No live iMessage, FaceTime call, TTS playback, event confirmation, event dismissal, network scan, credential guessing, private contact commit, or raw media commit occurred."
+
+checks:
+  dirty_fingerprint: unknown
+  last_verification:
+    result: passed
+    task: T999
+    commands:
+      - "npm run check"

@@ -8,6 +8,12 @@ from caresight.runtime.cameras.sources import validate_camera_source
 
 
 @dataclass(frozen=True)
+class CameraPrivacyConfig:
+    raw_video_storage: str = "local_only"
+    cloud_upload_default: bool = False
+
+
+@dataclass(frozen=True)
 class CameraConfig:
     camera_id: str
     name: str
@@ -18,9 +24,14 @@ class CameraConfig:
     fps: int
     room_id: str | None = None
     room_label: str | None = None
+    privacy: CameraPrivacyConfig | dict | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "source_type", self.source_type.strip().lower())
+        if self.privacy is None:
+            object.__setattr__(self, "privacy", CameraPrivacyConfig())
+        elif isinstance(self.privacy, dict):
+            object.__setattr__(self, "privacy", CameraPrivacyConfig(**self.privacy))
         validate_camera_source(self)
 
 
@@ -33,9 +44,11 @@ class RoomConfig:
 
 @dataclass(frozen=True)
 class TrackingConfig:
-    occlusion_grace_seconds: float = 1.0
-    missing_seconds: float = 30.0
-    dedupe_seconds: float = 120.0
+    occlusion_grace_seconds: float = 5.0
+    missing_seconds: float = 120.0
+    dedupe_window_seconds: float = 90.0
+    same_track_required: bool = True
+    min_person_confidence: float = 0.35
     missing_severity: str = "medium"
 
 
@@ -76,9 +89,11 @@ class ZoneConfig:
 
 @dataclass(frozen=True)
 class FloorStayConfig:
-    dwell_seconds: float
-    severity: str
-    confidence: str
+    dwell_seconds: float = 30.0
+    severity: str = "high"
+    confidence: str = "high"
+    prolonged_dwell_seconds: float = 90.0
+    critical_dwell_seconds: float = 180.0
 
 
 @dataclass(frozen=True)
@@ -192,7 +207,7 @@ class CareSightConfig:
             room=room,
             floor_zone=ZoneConfig(**data["floor_zone"]),
             floor_stay=FloorStayConfig(**data["floor_stay"]),
-            tracking=TrackingConfig(**data.get("tracking", {})),
+            tracking=TrackingConfig(**_normalize_tracking_config(data.get("tracking", {}))),
             routines=tuple(RoutineConfig(**item) for item in data.get("routines", [])),
             storage=StorageConfig(**data["storage"]),
             cameras=cameras,
@@ -220,6 +235,13 @@ def _find_camera(cameras: tuple[CameraConfig, ...], camera_id: str | None) -> Ca
         if camera.camera_id == camera_id:
             return camera
     return None
+
+
+def _normalize_tracking_config(data: dict) -> dict:
+    normalized = dict(data)
+    if "dedupe_seconds" in normalized and "dedupe_window_seconds" not in normalized:
+        normalized["dedupe_window_seconds"] = normalized.pop("dedupe_seconds")
+    return normalized
 
 
 def _room_for_camera(camera: CameraConfig, fallback: RoomConfig) -> RoomConfig:

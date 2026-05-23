@@ -12,8 +12,8 @@ describe("contract corpus", () => {
       ok: true,
       checked: {
         schemas: 15,
-        validExamples: 18,
-        invalidExamples: 18
+        validExamples: 20,
+        invalidExamples: 21
       }
     });
   });

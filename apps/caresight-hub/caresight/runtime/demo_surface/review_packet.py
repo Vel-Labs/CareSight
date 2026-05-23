@@ -42,6 +42,7 @@ def build_human_review_packet(
             "zone_id": event.get("zone_id"),
             "track_ids": _track_ids(observations),
             "snapshot_path": event["evidence"].get("snapshot_path"),
+            "escalation_stage": event["evidence"].get("escalation_stage"),
             "observation_count": len(observations),
         },
         "review_state": {
@@ -78,6 +79,7 @@ def render_review_packet_markdown(packet: dict[str, Any]) -> str:
             f"- Current status: {packet['status']}",
             f"- Latest human review: {latest_decision} by {latest_reviewer}",
             f"- Evidence: {evidence['observation_count']} observation, track {track_ids}",
+            f"- Escalation stage: {evidence.get('escalation_stage') or 'not recorded'}",
             f"- Snapshot: {snapshot_path}",
             "",
             "## Suggested Next Step",

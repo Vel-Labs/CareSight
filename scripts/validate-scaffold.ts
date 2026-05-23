@@ -187,6 +187,9 @@ async function listRepoFiles(dir = repoRoot, prefix = ""): Promise<string[]> {
     if (ignoredVendorRoots.has(relative) || ignoredFiles.has(relative)) {
       continue;
     }
+    if (relative.startsWith("apps/caresight-hub/config/") && relative.endsWith(".local.json")) {
+      continue;
+    }
     if (relative.startsWith("apps/obs-hub/assets/") && relative !== "apps/obs-hub/assets/.gitkeep") {
       continue;
     }

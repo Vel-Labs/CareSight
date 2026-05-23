@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS appearance_profiles (
   )),
   descriptor_status TEXT NOT NULL CHECK(descriptor_status IN (
     'available',
+    'posture_limited',
     'unavailable',
     'unreadable',
     'invalid_bbox'
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS appearance_profile_observations (
   )),
   descriptor_status TEXT NOT NULL CHECK(descriptor_status IN (
     'available',
+    'posture_limited',
     'unavailable',
     'unreadable',
     'invalid_bbox'
@@ -84,6 +86,7 @@ CREATE TABLE IF NOT EXISTS appearance_profile_samples (
   frame_source TEXT NOT NULL,
   descriptor_status TEXT NOT NULL CHECK(descriptor_status IN (
     'available',
+    'posture_limited',
     'unavailable',
     'unreadable',
     'invalid_bbox'

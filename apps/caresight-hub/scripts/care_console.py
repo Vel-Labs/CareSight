@@ -46,6 +46,13 @@ def parse_args() -> argparse.Namespace:
     escalation_receipt_parser.add_argument("--output", help="Optional local output path.")
     escalation_receipt_parser.add_argument("--obs-state", default=str(DEFAULT_OBS_STATE_PATH))
     escalation_receipt_parser.add_argument("--live-preview", default=str(DEFAULT_OBS_PREVIEW_PATH))
+    narrative_parser = subparsers.add_parser(
+        "narrative",
+        help="Render a SQLite-derived multi-camera narrative as JSON or Markdown.",
+    )
+    narrative_parser.add_argument("event_id")
+    narrative_parser.add_argument("--format", choices=["json", "markdown"], default="json")
+    narrative_parser.add_argument("--output", help="Optional local output path.")
     appearance_parser = subparsers.add_parser(
         "appearance-profile",
         help="Inspect or derive local non-biometric daily appearance profiles.",
@@ -65,6 +72,7 @@ def parse_args() -> argparse.Namespace:
     )
     appearance_describe.add_argument("image_path")
     appearance_describe.add_argument("--bbox", required=True, help="Bounding box as x1,y1,x2,y2.")
+    appearance_describe.add_argument("--visual-output", help="Optional annotated local image path.")
     appearance_derive = appearance_subparsers.add_parser(
         "derive-from-event",
         help="Derive/update an unassigned appearance profile from a real event observation and local snapshot.",
@@ -218,6 +226,8 @@ def main() -> None:
         build_human_review_packet,
         render_blackbox_receipt_markdown,
         render_escalation_receipt_markdown,
+        build_multi_camera_narrative,
+        render_multi_camera_narrative_markdown,
         render_review_packet_markdown,
     )
     from caresight.runtime.appearance import (
@@ -282,6 +292,14 @@ def main() -> None:
         _print_or_write(_render_payload(receipt, args.format, render_escalation_receipt_markdown), args.output)
         return
 
+    if args.command == "narrative":
+        narrative = build_multi_camera_narrative(store, args.event_id)
+        _print_or_write(
+            _render_payload(narrative, args.format, render_multi_camera_narrative_markdown),
+            args.output,
+        )
+        return
+
     if args.command == "appearance-profile":
         if args.appearance_command == "list":
             print(json.dumps(store.list_active_appearance_profiles(active_date=args.active_date), indent=2, sort_keys=True))
@@ -318,8 +336,11 @@ def main() -> None:
             print(json.dumps(payload, indent=2, sort_keys=True))
             return
         if args.appearance_command == "describe-image":
+            from caresight.runtime.appearance import write_appearance_annotation
+
+            bbox_xyxy = _parse_bbox(args.bbox)
             descriptor = AppearanceProfileService().describe_observation(
-                bbox_xyxy=_parse_bbox(args.bbox),
+                bbox_xyxy=bbox_xyxy,
                 snapshot_path=args.image_path,
                 frame_source="still_image",
                 descriptor_source="runtime_observation",
@@ -328,7 +349,7 @@ def main() -> None:
                 "schema": "appearance-profile-still-image-descriptor",
                 "source_of_truth": "still_image",
                 "image_path": args.image_path,
-                "bbox_xyxy": list(_parse_bbox(args.bbox)),
+                "bbox_xyxy": list(bbox_xyxy),
                 "descriptor_status": descriptor.descriptor_status,
                 "descriptor_source": descriptor.descriptor_source,
                 "frame_source": descriptor.frame_source,
@@ -341,6 +362,14 @@ def main() -> None:
                     "no_cross_day_identity",
                 ],
             }
+            if args.visual_output:
+                payload["visual_evidence"] = write_appearance_annotation(
+                    snapshot_path=args.image_path,
+                    output_path=args.visual_output,
+                    bbox_xyxy=bbox_xyxy,
+                    descriptor=descriptor,
+                    label="person 1",
+                )
             print(json.dumps(payload, indent=2, sort_keys=True))
             return
         if args.appearance_command == "derive-from-event":

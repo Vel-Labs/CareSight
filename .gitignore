@@ -5,6 +5,7 @@ coverage/
 .env
 .env.*
 apps/caresight-hub/config/hermes/*.local.json
+apps/caresight-hub/config/*.local.json
 apps/caresight-hub/config/live-demo.local
 .venv/
 .venv-obs/

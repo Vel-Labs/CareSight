@@ -1,0 +1,64 @@
+{
+  "cameras": [
+    {
+      "camera_id": "living_room_webcam",
+      "name": "Living Room Webcam",
+      "source_type": "webcam",
+      "source_uri": 0,
+      "room_id": "living_room",
+      "room_label": "Living Room",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "privacy": {
+        "raw_video_storage": "local_only",
+        "cloud_upload_default": false
+      }
+    },
+    {
+      "camera_id": "living_room_usb",
+      "name": "Living Room USB Camera",
+      "source_type": "usb",
+      "source_uri": 1,
+      "room_id": "living_room",
+      "room_label": "Living Room",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "privacy": {
+        "raw_video_storage": "local_only",
+        "cloud_upload_default": false
+      }
+    },
+    {
+      "camera_id": "iphone_continuity",
+      "name": "iPhone Continuity Camera",
+      "source_type": "continuity_camera",
+      "source_uri": 2,
+      "room_id": "living_room",
+      "room_label": "Living Room",
+      "width": 1280,
+      "height": 720,
+      "fps": 30,
+      "privacy": {
+        "raw_video_storage": "local_only",
+        "cloud_upload_default": false
+      }
+    },
+    {
+      "camera_id": "kitchen_rtsp",
+      "name": "Kitchen Local RTSP Camera",
+      "source_type": "rtsp",
+      "source_uri": "rtsp://192.0.2.55:554/stream1",
+      "room_id": "kitchen",
+      "room_label": "Kitchen",
+      "width": 1280,
+      "height": 720,
+      "fps": 15,
+      "privacy": {
+        "raw_video_storage": "local_only",
+        "cloud_upload_default": false
+      }
+    }
+  ]
+}
