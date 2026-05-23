@@ -1,0 +1,38 @@
+{
+  "schema": "appearance-profile",
+  "appearance_profile_id": "appearance_2026_05_20_bad_named",
+  "identity_boundary": "non_biometric_daily_appearance_only",
+  "persistence_scope": "same_day_local_only",
+  "active_date": "2026-05-20",
+  "expires_at": "2026-05-20T23:59:59Z",
+  "cross_day_linking": false,
+  "role_assignment": "Steven",
+  "assignment_source": "human_confirmed",
+  "descriptor_source": "operator_demo_seed",
+  "attributes": {
+    "upper_body_color": {
+      "value": "blue",
+      "confidence": 0.82
+    }
+  },
+  "last_seen": {
+    "camera_id": "living_room",
+    "room": "Living Room",
+    "timestamp": "2026-05-20T02:36:31Z"
+  },
+  "forbidden_claims": [
+    "biometric_identity",
+    "face_recognition",
+    "named_person_identification",
+    "cross_day_identity"
+  ],
+  "safety_boundaries": [
+    "local_first",
+    "same_day_only",
+    "non_biometric",
+    "no_face_recognition"
+  ],
+  "provenance": {
+    "source_fields": ["operator_demo_seed"]
+  }
+}

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added Sprint 03 Daily Appearance Profile contracts, SQLite persistence, runtime descriptor extraction for clothing/headwear/footwear, capped quality-gated appearance sampling, CLI still-image/derive/list/show/sample-summary/assign-role commands, dashboard/agent read context, and dynamic proof from real local snapshots instead of seeded fixtures.
+- Added a Sprint 03 validation checklist that separates merge readiness from remaining human review and dynamic proof gates.
 - Added CareSight OBS Hub scene setup with browser-source overlays, local websocket-driven scene creation, dry-run planning, and FaceTime/OBS Virtual Camera operator docs.
 - Added a dynamic OBS overlay-state update tool so local agents can refresh event and recent-activity context from SQLite without rebuilding OBS scenes.
 - Added OBS overlay watch mode for live sessions and shortened caregiver-facing event IDs while preserving full IDs in SQLite/audit state.

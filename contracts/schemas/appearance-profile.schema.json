@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/appearance-profile.schema.json",
+  "title": "AppearanceProfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "appearance_profile_id",
+    "identity_boundary",
+    "persistence_scope",
+    "active_date",
+    "expires_at",
+    "cross_day_linking",
+    "role_assignment",
+    "assignment_source",
+    "descriptor_source",
+    "descriptor_status",
+    "attributes",
+    "last_seen",
+    "forbidden_claims",
+    "safety_boundaries",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "appearance-profile"
+    },
+    "appearance_profile_id": {
+      "type": "string",
+      "pattern": "^appearance_[0-9]{4}_[0-9]{2}_[0-9]{2}_[a-z0-9_-]+$"
+    },
+    "identity_boundary": {
+      "const": "non_biometric_daily_appearance_only"
+    },
+    "persistence_scope": {
+      "const": "same_day_local_only"
+    },
+    "active_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cross_day_linking": {
+      "const": false
+    },
+    "role_assignment": {
+      "type": "string",
+      "enum": [
+        "resident_primary",
+        "resident_secondary",
+        "caregiver_known",
+        "visitor_unknown",
+        "unknown_person",
+        "pet_context"
+      ]
+    },
+    "assignment_source": {
+      "type": "string",
+      "enum": ["unassigned", "human_confirmed", "operator_demo_seed", "care_plan_config"]
+    },
+    "descriptor_source": {
+      "type": "string",
+      "enum": ["runtime_observation", "seeded_test_fixture", "operator_demo_seed"]
+    },
+    "descriptor_status": {
+      "type": "string",
+      "enum": ["available", "unavailable", "unreadable", "invalid_bbox"]
+    },
+    "attributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "upper_body_color": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "lower_body_color": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "outerwear_color": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "eyewear": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "headwear": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "footwear": {
+          "$ref": "#/$defs/descriptor"
+        },
+        "carried_object": {
+          "$ref": "#/$defs/descriptor"
+        }
+      }
+    },
+    "last_seen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["camera_id", "room", "timestamp"],
+      "properties": {
+        "camera_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "room": {
+          "type": "string",
+          "minLength": 3
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "event_id": {
+          "type": ["string", "null"],
+          "pattern": "^evt_[a-z0-9_-]+$"
+        },
+        "track_id": {
+          "type": ["string", "null"],
+          "minLength": 1
+        }
+      }
+    },
+    "forbidden_claims": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "biometric_identity",
+          "face_recognition",
+          "named_person_identification",
+          "cross_day_identity"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "biometric_identity"
+          }
+        },
+        {
+          "contains": {
+            "const": "face_recognition"
+          }
+        },
+        {
+          "contains": {
+            "const": "named_person_identification"
+          }
+        },
+        {
+          "contains": {
+            "const": "cross_day_identity"
+          }
+        }
+      ]
+    },
+    "safety_boundaries": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "local_first",
+          "same_day_only",
+          "non_biometric",
+          "human_review_required",
+          "no_named_person_identity",
+          "no_face_recognition"
+        ]
+      },
+      "allOf": [
+        {
+          "contains": {
+            "const": "same_day_only"
+          }
+        },
+        {
+          "contains": {
+            "const": "non_biometric"
+          }
+        },
+        {
+          "contains": {
+            "const": "no_face_recognition"
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_fields"],
+      "properties": {
+        "source_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "confidence"],
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "not": {
+            "pattern": "([Ff]ace match|[Ff]ace recognition|[Bb]iometric|[Nn]amed person|[Cc]ross-day identity)"
+          }
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    }
+  }
+}

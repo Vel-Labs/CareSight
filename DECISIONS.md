@@ -233,3 +233,13 @@ Rationale: macOS camera ownership can make OpenCV and OBS fight over the same ca
 Each live or dry-run escalation attempt should be readable back through the originating `event_id`. The event-scoped escalation receipt links local event evidence, agent drafts, staged action requests, execution attempts, OBS overlay state, and the detector preview path without creating a new care event or exposing private contact targets.
 
 Rationale: caregivers and demo operators need a clean audit trail for what happened after an event. Keeping the receipt read-only and event-scoped preserves SQLite as source of truth while making iMessage, FaceTime, TTS, and OBS evidence inspectable.
+
+## 2026-05-22: Keep Daily Appearance Profiles Non-Biometric And Same-Day
+
+Sprint 03 appearance profiles are local SQLite records derived from real event observations and local snapshots. They may store coarse clothing descriptors, last-seen room/camera/time, event provenance, track context, same-day continuity hints, and human-assigned daily roles.
+
+They must not identify named people, perform face recognition, claim biometric identity, link identity across days, store raw face crops as canonical truth, diagnose, detect falls, or dispatch help. Missing, unreadable, or invalid image evidence must produce an unavailable descriptor status rather than hallucinated attributes.
+
+Periodic appearance samples may be stored only behind quality gates and capped retention per profile/day. Event snapshots remain audit evidence; they are not automatically trusted as the best appearance descriptor frame.
+
+Rationale: caregivers need bounded context such as "unknown-person profile for today; blue upper clothing; last seen in Living Room," but clothing is not identity, stale daily descriptors can mislead, and a single prone or occluded event frame can produce false appearance claims.

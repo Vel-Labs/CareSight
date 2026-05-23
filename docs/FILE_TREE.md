@@ -40,6 +40,12 @@ apps/caresight-hub/caresight/runtime/agents/__init__.py
 apps/caresight-hub/caresight/runtime/agents/policy.py
 apps/caresight-hub/caresight/runtime/alerts/__init__.py
 apps/caresight-hub/caresight/runtime/alerts/service.py
+apps/caresight-hub/caresight/runtime/appearance/__init__.py
+apps/caresight-hub/caresight/runtime/appearance/descriptors.py
+apps/caresight-hub/caresight/runtime/appearance/profiles.py
+apps/caresight-hub/caresight/runtime/appearance/render.py
+apps/caresight-hub/caresight/runtime/appearance/samples.py
+apps/caresight-hub/caresight/runtime/appearance/service.py
 apps/caresight-hub/caresight/runtime/audit/__init__.py
 apps/caresight-hub/caresight/runtime/audit/live_proof.py
 apps/caresight-hub/caresight/runtime/cameras/__init__.py
@@ -66,6 +72,7 @@ apps/caresight-hub/caresight/runtime/tracking/__init__.py
 apps/caresight-hub/caresight/runtime/tracking/state.py
 apps/caresight-hub/caresight/storage/__init__.py
 apps/caresight-hub/caresight/storage/migrations/001_init.sql
+apps/caresight-hub/caresight/storage/migrations/003_appearance_profiles.sql
 apps/caresight-hub/caresight/storage/sqlite_store.py
 apps/caresight-hub/caresight/vision/__init__.py
 apps/caresight-hub/caresight/vision/coco.py
@@ -110,6 +117,7 @@ apps/caresight-hub/scripts/yolo26_webcam_smoke.py
 apps/caresight-hub/tests/__init__.py
 apps/caresight-hub/tests/test_agent_assist.py
 apps/caresight-hub/tests/test_agent_policy.py
+apps/caresight-hub/tests/test_appearance_profiles.py
 apps/caresight-hub/tests/test_care_console.py
 apps/caresight-hub/tests/test_demo_surface.py
 apps/caresight-hub/tests/test_event_snapshots.py
@@ -237,14 +245,19 @@ apps/caresight-hub/vendor/yolo-mlx/webAI-contributor-license-agreement.md
 apps/obs-hub/README.md
 apps/obs-hub/assets/.gitkeep
 apps/obs-hub/config/cameras.json
+apps/obs-hub/config/overlay_layout.js
+apps/obs-hub/config/overlay_layout.json
 apps/obs-hub/config/sample_event.json
 apps/obs-hub/overlays/camera-feed.html
 apps/obs-hub/overlays/dashboard.html
 apps/obs-hub/overlays/escalation.html
 apps/obs-hub/overlays/facetime-mobile.html
+apps/obs-hub/overlays/live-feed.html
 apps/obs-hub/overlays/obs-overlay.css
 apps/obs-hub/overlays/obs-overlay.js
 apps/obs-hub/tools/aitum_vertical.py
+apps/obs-hub/tools/check_obs_live_feed.py
+apps/obs-hub/tools/normalize_aitum_vertical_scene.py
 apps/obs-hub/tools/setup_obs_scenes.py
 apps/obs-hub/tools/update_obs_event.py
 contracts/README.md
@@ -252,6 +265,10 @@ contracts/examples/invalid/agent-action-request-executed.json
 contracts/examples/invalid/agent-action-request-missing-allowlist.json
 contracts/examples/invalid/agent-draft-autonomous-dispatch-claim.json
 contracts/examples/invalid/agent-draft-medical-device-claim.json
+contracts/examples/invalid/appearance-profile-biometric-identity.json
+contracts/examples/invalid/appearance-profile-cross-day-identity.json
+contracts/examples/invalid/appearance-profile-face-match.json
+contracts/examples/invalid/appearance-profile-named-role.json
 contracts/examples/invalid/blackbox-receipt-claims-diagnosis.json
 contracts/examples/invalid/blackbox-receipt-emergency-dispatch.json
 contracts/examples/invalid/emergency-dispatch-without-human-confirmation.json
@@ -265,6 +282,7 @@ contracts/examples/invalid/tts-utterance-medication-confirmed.json
 contracts/examples/valid/agent-action-request.staged-note.json
 contracts/examples/valid/agent-action-request.urgent-handoff.json
 contracts/examples/valid/agent-draft.possible-floor-stay.json
+contracts/examples/valid/appearance-profile.daily-resident.json
 contracts/examples/valid/blackbox-receipt.possible-floor-stay.json
 contracts/examples/valid/caregiver-alert-policy.json
 contracts/examples/valid/core-capability.json
@@ -285,6 +303,7 @@ contracts/llm-provider-contract.md
 contracts/schemas/agent-action-request.schema.json
 contracts/schemas/agent-draft.schema.json
 contracts/schemas/alert-policy.schema.json
+contracts/schemas/appearance-profile.schema.json
 contracts/schemas/blackbox-receipt.schema.json
 contracts/schemas/camera-config.schema.json
 contracts/schemas/care-event.schema.json
@@ -339,6 +358,7 @@ docs/audits/2026-05-20-t040-human-review-required.md
 docs/audits/2026-05-20-t041-final-live-proof.md
 docs/audits/2026-05-21-agent-harness-review.md
 docs/audits/2026-05-21-sprint-02-agent-model-surface.md
+docs/audits/2026-05-22-sprint-03-daily-appearance-profiles.md
 docs/audits/README.md
 docs/audits/production-validation/sprint-01-02-seeded-real-gate.md
 docs/audits/production-validation/sprint-01/case-a-blackbox-receipt.json
@@ -374,6 +394,7 @@ docs/audits/production-validation/sprint-02/hermes-invocation-dry-run.json
 docs/audits/production-validation/sprint-02/human-validation-feedback-2026-05-21.md
 docs/audits/production-validation/sprint-02/production-acceptance.md
 docs/audits/production-validation/sprint-02/screen-capture-obs-readiness.json
+docs/audits/production-validation/sprint-03/validation-checklist.md
 docs/caresight_hub_docs_pack/01_product_roadmap.md
 docs/caresight_hub_docs_pack/02_six_day_hackathon_plan.md
 docs/caresight_hub_docs_pack/03_architecture.md
@@ -495,8 +516,10 @@ packages/core/src/llm-provider-readiness.ts
 packages/core/src/read-json-files.ts
 packages/core/src/types.ts
 packages/core/src/validate-contracts.ts
+scripts/demo_status_dashboard.sh
 scripts/init-template.ts
 scripts/install_obs_vertical_canvas.sh
+scripts/open_demo_terminals.sh
 scripts/setup_obs_scene.sh
 scripts/update_obs_overlay.sh
 scripts/validate-contracts.ts

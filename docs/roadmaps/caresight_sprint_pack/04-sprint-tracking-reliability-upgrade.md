@@ -144,6 +144,38 @@ Expected behavior:
 7. Missing-off-camera uses last known track/profile context but avoids identity claims.
 8. Every persisted event includes policy version, dwell seconds, and stage.
 
+## Missing-off-camera escalation timing
+
+Use absence as a caregiver-awareness signal only when it is contextual and configurable. A person not appearing on any feed for a while can mean they left the visible room, moved behind furniture, entered a private area, or the camera lost the track; it should not immediately imply distress.
+
+Suggested defaults for the first implementation:
+
+```text
+observe_only: last seen < 2 minutes ago; no event
+check_in_suggested: 2-5 minutes missing from all configured public/common-area feeds
+attention: 5-10 minutes missing after a recent concern or unusual transition
+urgent_handoff: 10-15 minutes missing after a high-concern event or repeated unresolved concern
+```
+
+These should be policy defaults, not hard claims. Care plans, room type, time of day, known private areas, camera coverage, and prior event state should adjust the timer.
+
+Event copy must remain bounded:
+
+```text
+The same-day appearance profile was last seen in the Living Room about 7 minutes ago and has not appeared on configured common-area feeds since. Caregiver review is recommended.
+```
+
+Forbidden copy:
+
+```text
+resident is missing
+person is in danger
+medical emergency
+dispatching help
+```
+
+Sprint 04 should use Sprint 03 appearance samples as supporting context only when the daily profile has enough quality-gated evidence. If the daily profile has weak support, missing-off-camera events should say "a tracked person" rather than role-specific or appearance-specific language.
+
 ## Event examples
 
 `possible_floor_stay` evidence should look like:

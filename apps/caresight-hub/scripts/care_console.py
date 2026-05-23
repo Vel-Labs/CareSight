@@ -1,8 +1,10 @@
 import argparse
+from datetime import UTC, datetime, timedelta
 import json
 import os
 import sys
 from pathlib import Path
+from uuid import uuid4
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
@@ -44,6 +46,60 @@ def parse_args() -> argparse.Namespace:
     escalation_receipt_parser.add_argument("--output", help="Optional local output path.")
     escalation_receipt_parser.add_argument("--obs-state", default=str(DEFAULT_OBS_STATE_PATH))
     escalation_receipt_parser.add_argument("--live-preview", default=str(DEFAULT_OBS_PREVIEW_PATH))
+    appearance_parser = subparsers.add_parser(
+        "appearance-profile",
+        help="Inspect or derive local non-biometric daily appearance profiles.",
+    )
+    appearance_subparsers = appearance_parser.add_subparsers(dest="appearance_command", required=True)
+    appearance_list = appearance_subparsers.add_parser("list", help="List active appearance profiles.")
+    appearance_list.add_argument("--active-date", help="YYYY-MM-DD active date. Defaults to today/now.")
+    appearance_show = appearance_subparsers.add_parser("show", help="Show one appearance profile.")
+    appearance_show.add_argument("appearance_profile_id")
+    appearance_samples = appearance_subparsers.add_parser("list-samples", help="List retained appearance samples for one profile.")
+    appearance_samples.add_argument("appearance_profile_id")
+    appearance_summary = appearance_subparsers.add_parser("summarize-today", help="Summarize same-day appearance sample support.")
+    appearance_summary.add_argument("--active-date", help="YYYY-MM-DD active date. Defaults to today/now.")
+    appearance_describe = appearance_subparsers.add_parser(
+        "describe-image",
+        help="Describe one local still image and bbox without writing a profile.",
+    )
+    appearance_describe.add_argument("image_path")
+    appearance_describe.add_argument("--bbox", required=True, help="Bounding box as x1,y1,x2,y2.")
+    appearance_derive = appearance_subparsers.add_parser(
+        "derive-from-event",
+        help="Derive/update an unassigned appearance profile from a real event observation and local snapshot.",
+    )
+    appearance_derive.add_argument("event_id")
+    appearance_derive.add_argument(
+        "--role",
+        choices=[
+            "resident_primary",
+            "resident_secondary",
+            "caregiver_known",
+            "visitor_unknown",
+            "unknown_person",
+            "pet_context",
+        ],
+        default="unknown_person",
+    )
+    appearance_assign = appearance_subparsers.add_parser(
+        "assign-role",
+        help="Assign a same-day role to an appearance profile. Requires authorized human reviewer.",
+    )
+    appearance_assign.add_argument("appearance_profile_id")
+    appearance_assign.add_argument(
+        "--role",
+        required=True,
+        choices=[
+            "resident_primary",
+            "resident_secondary",
+            "caregiver_known",
+            "visitor_unknown",
+            "unknown_person",
+            "pet_context",
+        ],
+    )
+    appearance_assign.add_argument("--reviewer", required=True)
     agent_draft_parser = subparsers.add_parser(
         "agent-draft",
         help="Create and persist a fake-provider agent draft as JSON.",
@@ -164,6 +220,12 @@ def main() -> None:
         render_escalation_receipt_markdown,
         render_review_packet_markdown,
     )
+    from caresight.runtime.appearance import (
+        AppearanceProfileService,
+        descriptor_attributes,
+        render_appearance_summary,
+        summarize_appearance_samples,
+    )
     from caresight.runtime.agent_assist import (
         build_agent_draft,
         build_execution_attempt,
@@ -219,6 +281,81 @@ def main() -> None:
         )
         _print_or_write(_render_payload(receipt, args.format, render_escalation_receipt_markdown), args.output)
         return
+
+    if args.command == "appearance-profile":
+        if args.appearance_command == "list":
+            print(json.dumps(store.list_active_appearance_profiles(active_date=args.active_date), indent=2, sort_keys=True))
+            return
+        if args.appearance_command == "show":
+            profile = store.get_appearance_profile(args.appearance_profile_id)
+            payload = {
+                **profile,
+                "summary": render_appearance_summary(_profile_for_render(profile)),
+                "observations": store.list_appearance_profile_observations(args.appearance_profile_id),
+                "samples": store.list_appearance_profile_samples(args.appearance_profile_id),
+            }
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return
+        if args.appearance_command == "list-samples":
+            print(json.dumps(store.list_appearance_profile_samples(args.appearance_profile_id), indent=2, sort_keys=True))
+            return
+        if args.appearance_command == "summarize-today":
+            active_date = args.active_date or utc_now()[:10]
+            samples = store.list_appearance_samples_for_date(active_date)
+            by_profile = {}
+            for sample in samples:
+                by_profile.setdefault(sample["appearance_profile_id"], []).append(sample)
+            payload = {
+                "schema": "appearance-profile-daily-sample-summary",
+                "active_date": active_date,
+                "profile_count": len(by_profile),
+                "profiles": {
+                    profile_id: summarize_appearance_samples(profile_samples)
+                    for profile_id, profile_samples in sorted(by_profile.items())
+                },
+                "source_of_truth": "sqlite",
+            }
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return
+        if args.appearance_command == "describe-image":
+            descriptor = AppearanceProfileService().describe_observation(
+                bbox_xyxy=_parse_bbox(args.bbox),
+                snapshot_path=args.image_path,
+                frame_source="still_image",
+                descriptor_source="runtime_observation",
+            )
+            payload = {
+                "schema": "appearance-profile-still-image-descriptor",
+                "source_of_truth": "still_image",
+                "image_path": args.image_path,
+                "bbox_xyxy": list(_parse_bbox(args.bbox)),
+                "descriptor_status": descriptor.descriptor_status,
+                "descriptor_source": descriptor.descriptor_source,
+                "frame_source": descriptor.frame_source,
+                "attributes": descriptor_attributes(descriptor),
+                "safety_boundaries": [
+                    "non_biometric_daily_appearance_only",
+                    "same_day_only",
+                    "no_named_person_identity",
+                    "no_face_recognition",
+                    "no_cross_day_identity",
+                ],
+            }
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return
+        if args.appearance_command == "derive-from-event":
+            payload = _derive_appearance_profile_from_event(store, args.event_id, role_assignment=args.role)
+            print(json.dumps(payload, indent=2, sort_keys=True))
+            return
+        if args.appearance_command == "assign-role":
+            assignment = store.assign_appearance_profile_role(
+                args.appearance_profile_id,
+                role_assignment=args.role,
+                reviewer=args.reviewer,
+            )
+            profile = store.get_appearance_profile(args.appearance_profile_id)
+            print(json.dumps({**assignment, "profile": profile}, indent=2, sort_keys=True))
+            return
 
     if args.command == "agent-draft":
         provider = None
@@ -301,6 +438,161 @@ def _print_or_write(rendered: str, output: str | None) -> None:
         Path(output).write_text(rendered, encoding="utf-8")
         return
     print(rendered, end="")
+
+
+def _derive_appearance_profile_from_event(
+    store,
+    event_id: str,
+    *,
+    role_assignment: str,
+) -> dict:
+    from caresight.runtime.appearance import AppearanceProfileService, descriptor_attributes, render_appearance_summary
+
+    event = store.get_event_context(event_id)
+    observations = store.list_event_observations(event_id)
+    if not observations:
+        raise ValueError(f"event has no observations: {event_id}")
+    observation = observations[0]
+    evidence = event["evidence"]
+    snapshot_path = evidence.get("snapshot_path")
+    descriptor = AppearanceProfileService().describe_observation(
+        bbox_xyxy=tuple(observation["bbox_json"]),
+        snapshot_path=_resolve_snapshot_path(snapshot_path),
+        frame_source="event_snapshot" if snapshot_path else None,
+        descriptor_source="runtime_observation",
+        event_id=event_id,
+        observation_id=str(observation["observation_id"]),
+    )
+    occurred_at = _parse_datetime(event["occurred_at"])
+    active_date = occurred_at.date().isoformat()
+    expires_at = datetime.combine(
+        occurred_at.date() + timedelta(days=1),
+        datetime.min.time(),
+        tzinfo=UTC,
+    ).replace(hour=4)
+    now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    track_id = observation.get("track_id") or evidence.get("track_id")
+    profile_id = _appearance_profile_id(active_date, track_id or event_id)
+    attributes = descriptor_attributes(descriptor)
+    assignment_source = "unassigned" if role_assignment == "unknown_person" else "operator_demo_seed"
+    profile = {
+        "appearance_profile_id": profile_id,
+        "active_date": active_date,
+        "created_at": now,
+        "updated_at": now,
+        "expires_at": expires_at.isoformat().replace("+00:00", "Z"),
+        "descriptor_source": descriptor.descriptor_source,
+        "created_from": descriptor.descriptor_source,
+        "descriptor_status": descriptor.descriptor_status,
+        "source_event_id": event_id,
+        "source_observation_id": observation["observation_id"],
+        "snapshot_path": snapshot_path,
+        "frame_source": descriptor.frame_source,
+        "last_seen_at": event["occurred_at"],
+        "last_seen_camera_id": event["camera_id"],
+        "last_seen_room": evidence.get("room_name") or event.get("camera_name") or event["camera_id"],
+        "role_assignment": role_assignment,
+        "assignment_source": assignment_source,
+        "assigned_by": None,
+        "assigned_at": None,
+        "attributes": attributes,
+    }
+    observation_record = {
+        "profile_observation_id": f"appearance_obs_{uuid4().hex}",
+        "appearance_profile_id": profile_id,
+        "observed_at": event["occurred_at"],
+        "camera_id": event["camera_id"],
+        "room": profile["last_seen_room"],
+        "track_id": track_id,
+        "source_event_id": event_id,
+        "source_observation_id": observation["observation_id"],
+        "snapshot_path": snapshot_path,
+        "frame_source": descriptor.frame_source,
+        "descriptor_source": descriptor.descriptor_source,
+        "created_from": descriptor.descriptor_source,
+        "descriptor_status": descriptor.descriptor_status,
+        "confidence": max(attribute["confidence"] for attribute in attributes.values()),
+        "attributes": attributes,
+    }
+    store.upsert_appearance_profile(profile)
+    store.insert_appearance_profile_observation(observation_record)
+    stored = store.get_appearance_profile(profile_id)
+    return {
+        "schema": "appearance-profile-derivation",
+        "source_of_truth": "sqlite",
+        "event_id": event_id,
+        "observation_id": observation["observation_id"],
+        "track_id": track_id,
+        "snapshot_path": snapshot_path,
+        "descriptor_status": descriptor.descriptor_status,
+        "descriptor_source": descriptor.descriptor_source,
+        "profile": stored,
+        "summary": render_appearance_summary(_profile_for_render(stored)),
+        "observation": observation_record,
+        "safety_boundaries": [
+            "non_biometric_daily_appearance_only",
+            "same_day_only",
+            "no_named_person_identity",
+            "no_face_recognition",
+            "no_cross_day_identity",
+        ],
+    }
+
+
+def _profile_for_render(profile: dict):
+    from caresight.runtime.appearance import AppearanceProfile
+
+    attributes = profile.get("attributes", {})
+    return AppearanceProfile(
+        appearance_profile_id=profile["appearance_profile_id"],
+        active_date=profile["active_date"],
+        expires_at=profile["expires_at"],
+        role_assignment=profile["role_assignment"],
+        assignment_source=profile["assignment_source"],
+        track_id=None,
+        upper_body_color=attributes.get("upper_body_color", {}).get("value", "unknown"),
+        lower_body_color=attributes.get("lower_body_color", {}).get("value", "unknown"),
+        headwear=attributes.get("headwear", {}).get("value", "unknown"),
+        footwear=attributes.get("footwear", {}).get("value", "unknown"),
+        last_seen_camera_id=profile.get("last_seen_camera_id") or "",
+        last_seen_room=profile.get("last_seen_room") or "",
+        last_seen_at=profile.get("last_seen_at") or "",
+        last_seen_event_id=profile.get("source_event_id"),
+    )
+
+
+def _resolve_snapshot_path(snapshot_path: str | None) -> str | None:
+    if not snapshot_path:
+        return None
+    path = Path(snapshot_path)
+    if path.is_absolute():
+        return str(path)
+    return str(ROOT_DIR.parents[1] / path)
+
+
+def _parse_bbox(value: str) -> tuple[float, float, float, float]:
+    parts = value.split(",")
+    if len(parts) != 4:
+        raise argparse.ArgumentTypeError("bbox must be x1,y1,x2,y2")
+    try:
+        x1, y1, x2, y2 = (float(part.strip()) for part in parts)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("bbox values must be numbers") from exc
+    return x1, y1, x2, y2
+
+
+def _parse_datetime(value: str) -> datetime:
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(value)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
+def _appearance_profile_id(active_date: str, source: str) -> str:
+    suffix = "".join(ch if ch.isalnum() else "_" for ch in source.lower()).strip("_")
+    return f"appearance_{active_date.replace('-', '_')}_{suffix[:32]}"
 
 
 if __name__ == "__main__":

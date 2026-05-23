@@ -1,9 +1,12 @@
 import gc
+import sys
 import tempfile
 import unittest
 import warnings
 from pathlib import Path
 import sqlite3
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from caresight.events.floor_stay import FloorStayDetector
 from caresight.runtime.config import CareSightConfig
@@ -201,6 +204,239 @@ class SQLiteStoreTest(unittest.TestCase):
                 "not_executed",
             )
 
+    def test_persists_dynamic_appearance_profile_with_observation_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            store = SQLiteStore(db_path)
+            store.initialize()
+
+            profile = {
+                "appearance_profile_id": "appearance_2026_05_22_001",
+                "active_date": "2026-05-22",
+                "created_at": "2026-05-22T14:00:00Z",
+                "updated_at": "2026-05-22T14:00:00Z",
+                "expires_at": "2026-05-23T04:00:00Z",
+                "descriptor_source": "runtime_observation",
+                "descriptor_status": "available",
+                "source_event_id": "evt_runtime_profile",
+                "source_observation_id": 42,
+                "snapshot_path": "data/snapshots/evt_runtime_profile.jpg",
+                "frame_source": "living_room_camera",
+                "last_seen_at": "2026-05-22T14:00:00Z",
+                "last_seen_camera_id": "living_room",
+                "last_seen_room": "Living Room",
+                "attributes": {
+                    "upper_body_color": {"value": "dark gray", "confidence": 0.78},
+                    "lower_body_color": {"value": "gray", "confidence": 0.7},
+                },
+            }
+            observation = {
+                "profile_observation_id": "appearance_obs_001",
+                "appearance_profile_id": profile["appearance_profile_id"],
+                "observed_at": "2026-05-22T14:00:01Z",
+                "camera_id": "living_room",
+                "room": "Living Room",
+                "track_id": "track_person_001",
+                "source_event_id": "evt_runtime_profile",
+                "source_observation_id": 42,
+                "snapshot_path": "data/snapshots/evt_runtime_profile.jpg",
+                "frame_source": "living_room_camera",
+                "descriptor_source": "runtime_observation",
+                "descriptor_status": "available",
+                "attributes": {"carried_object": {"value": "mug", "confidence": 0.66}},
+                "confidence": 0.72,
+            }
+
+            store.insert_appearance_profile(profile)
+            store.insert_appearance_profile_observation(observation)
+            stored = store.get_appearance_profile(profile["appearance_profile_id"])
+            observations = store.list_appearance_profile_observations(profile["appearance_profile_id"])
+
+            self.assertEqual(stored["schema"], "appearance-profile")
+            self.assertEqual(stored["descriptor_source"], "runtime_observation")
+            self.assertEqual(stored["descriptor_status"], "available")
+            self.assertEqual(stored["source_event_id"], "evt_runtime_profile")
+            self.assertEqual(stored["source_observation_id"], 42)
+            self.assertEqual(stored["snapshot_path"], "data/snapshots/evt_runtime_profile.jpg")
+            self.assertEqual(stored["frame_source"], "living_room_camera")
+            self.assertEqual(stored["attributes"]["upper_body_color"]["value"], "dark gray")
+            self.assertEqual(observations[0]["schema"], "appearance-profile-observation")
+            self.assertEqual(observations[0]["source_event_id"], "evt_runtime_profile")
+            self.assertEqual(observations[0]["source_observation_id"], 42)
+            self.assertEqual(observations[0]["descriptor_source"], "runtime_observation")
+            self.assertEqual(observations[0]["descriptor_status"], "available")
+            self.assertEqual(observations[0]["attributes"]["carried_object"]["value"], "mug")
+
+    def test_persists_and_prunes_capped_appearance_profile_samples(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            store = SQLiteStore(db_path)
+            store.initialize()
+            profile = _appearance_profile(
+                "appearance_samples",
+                active_date="2026-05-22",
+                expires_at="2026-05-23T04:00:00Z",
+                descriptor_source="runtime_observation",
+            )
+            store.upsert_appearance_profile(profile)
+            snapshot_paths = []
+            for index, quality_score in enumerate([0.91, 0.72, 0.84], start=1):
+                snapshot = Path(tmpdir) / f"sample_{index}.jpg"
+                snapshot.write_bytes(b"fake image")
+                snapshot_paths.append(snapshot)
+                store.insert_appearance_profile_sample(
+                    {
+                        "sample_id": f"sample_{index}",
+                        "appearance_profile_id": "appearance_samples",
+                        "active_date": "2026-05-22",
+                        "captured_at": f"2026-05-22T14:0{index}:00Z",
+                        "camera_id": "living_room",
+                        "room": "Living Room",
+                        "track_id": "track_1",
+                        "source_event_id": None,
+                        "source_observation_id": None,
+                        "snapshot_path": str(snapshot),
+                        "frame_source": "periodic_live_sample",
+                        "descriptor_status": "available",
+                        "quality_score": quality_score,
+                        "quality_reasons": ["accepted"],
+                        "detection_confidence": 0.9,
+                        "bbox_xyxy": [10, 10, 50, 70],
+                        "attributes": {
+                            "upper_body_color": {"value": "blue", "confidence": 0.78},
+                            "lower_body_color": {"value": "white", "confidence": 0.78},
+                        },
+                        "created_at": f"2026-05-22T14:0{index}:00Z",
+                    }
+                )
+
+            removed = store.prune_appearance_profile_samples("appearance_samples", max_samples=2)
+            samples = store.list_appearance_profile_samples("appearance_samples")
+
+            self.assertEqual([sample["sample_id"] for sample in samples], ["sample_1", "sample_3"])
+            self.assertEqual([sample["retained_rank"] for sample in samples], [1, 2])
+            self.assertEqual(removed[0]["sample_id"], "sample_2")
+            self.assertFalse(snapshot_paths[1].exists())
+            self.assertEqual(store.list_appearance_samples_for_date("2026-05-22")[0]["sample_id"], "sample_1")
+
+    def test_event_lookup_can_find_same_day_track_profile_from_samples(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            config = CareSightConfig.default()
+            store = SQLiteStore(db_path)
+            store.initialize()
+            store.upsert_config(config)
+            event = _floor_stay_event(config)
+            event["occurred_at"] = "2026-05-22T14:03:00Z"
+            event["evidence"]["track_id"] = "track_1"
+            store.insert_event(event)
+            profile = _appearance_profile(
+                "appearance_2026_05_22_track_1",
+                active_date="2026-05-22",
+                expires_at="2026-05-23T04:00:00Z",
+                descriptor_source="runtime_observation",
+            )
+            store.upsert_appearance_profile(profile)
+            store.insert_appearance_profile_sample(
+                {
+                    "sample_id": "sample_track_link",
+                    "appearance_profile_id": profile["appearance_profile_id"],
+                    "active_date": "2026-05-22",
+                    "captured_at": "2026-05-22T14:00:00Z",
+                    "camera_id": "living_room",
+                    "room": "Living Room",
+                    "track_id": "track_1",
+                    "snapshot_path": str(Path(tmpdir) / "sample.jpg"),
+                    "frame_source": "periodic_live_sample",
+                    "descriptor_status": "available",
+                    "quality_score": 0.82,
+                    "quality_reasons": ["accepted"],
+                    "detection_confidence": 0.91,
+                    "bbox_xyxy": [10, 10, 50, 70],
+                    "attributes": {"upper_body_color": {"value": "blue", "confidence": 0.78}},
+                    "created_at": "2026-05-22T14:00:00Z",
+                }
+            )
+
+            profiles = store.list_appearance_profiles_for_event(event["event_id"])
+
+            self.assertEqual([profile["appearance_profile_id"] for profile in profiles], ["appearance_2026_05_22_track_1"])
+
+    def test_lists_only_unexpired_active_appearance_profiles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            store = SQLiteStore(db_path)
+            store.initialize()
+
+            active = _appearance_profile(
+                "appearance_active",
+                active_date="2026-05-22",
+                expires_at="2026-05-23T04:00:00Z",
+                descriptor_source="operator_demo_seed",
+            )
+            expired = _appearance_profile(
+                "appearance_expired",
+                active_date="2026-05-22",
+                expires_at="2026-05-22T13:00:00Z",
+                descriptor_source="seeded_test_fixture",
+            )
+            different_day = _appearance_profile(
+                "appearance_other_day",
+                active_date="2026-05-21",
+                expires_at="2026-05-23T04:00:00Z",
+                descriptor_source="runtime_observation",
+            )
+
+            store.upsert_appearance_profile(active)
+            store.upsert_appearance_profile(expired)
+            store.upsert_appearance_profile(different_day)
+            profiles = store.list_active_appearance_profiles(
+                active_date="2026-05-22",
+                now="2026-05-22T14:00:00Z",
+            )
+
+            self.assertEqual([profile["appearance_profile_id"] for profile in profiles], ["appearance_active"])
+            self.assertEqual(profiles[0]["descriptor_source"], "operator_demo_seed")
+
+    def test_assigns_appearance_profile_role_with_human_reviewer_and_rejects_automation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "caresight.sqlite3"
+            store = SQLiteStore(db_path)
+            store.initialize()
+            profile = _appearance_profile(
+                "appearance_role",
+                active_date="2026-05-22",
+                expires_at="2026-05-23T04:00:00Z",
+                descriptor_source="runtime_observation",
+            )
+            store.upsert_appearance_profile(profile)
+
+            assigned = store.assign_appearance_profile_role(
+                "appearance_role",
+                role_assignment="resident_primary",
+                reviewer="Steven",
+                assigned_at="2026-05-22T14:05:00Z",
+            )
+
+            self.assertEqual(assigned["role_assignment"], "resident_primary")
+            self.assertEqual(assigned["assignment_source"], "human_confirmed")
+            self.assertEqual(assigned["assigned_by"], "Steven")
+            self.assertEqual(assigned["assigned_at"], "2026-05-22T14:05:00Z")
+            self.assertEqual(
+                store.get_appearance_profile("appearance_role")["role_assignment"],
+                "resident_primary",
+            )
+
+            for reviewer in ("", "   ", "agent", "codex", "automation"):
+                with self.subTest(reviewer=reviewer):
+                    with self.assertRaises(ValueError):
+                        store.assign_appearance_profile_role(
+                            "appearance_role",
+                            role_assignment="caregiver_known",
+                            reviewer=reviewer,
+                            assigned_at="2026-05-22T14:06:00Z",
+                        )
+
     def test_store_operations_do_not_leave_unclosed_sqlite_connections(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             db_path = Path(tmpdir) / "caresight.sqlite3"
@@ -236,6 +472,32 @@ def _floor_stay_event(config: CareSightConfig) -> dict:
     event = detector.update([detection], now=109.0)
     assert event is not None
     return event
+
+
+def _appearance_profile(
+    appearance_profile_id: str,
+    *,
+    active_date: str,
+    expires_at: str,
+    descriptor_source: str,
+) -> dict:
+    return {
+        "appearance_profile_id": appearance_profile_id,
+        "active_date": active_date,
+        "created_at": f"{active_date}T12:00:00Z",
+        "updated_at": f"{active_date}T12:00:00Z",
+        "expires_at": expires_at,
+        "descriptor_source": descriptor_source,
+        "descriptor_status": "available",
+        "source_event_id": None,
+        "source_observation_id": None,
+        "snapshot_path": None,
+        "frame_source": None,
+        "last_seen_at": f"{active_date}T12:00:00Z",
+        "last_seen_camera_id": "living_room",
+        "last_seen_room": "Living Room",
+        "attributes": {"upper_body_color": {"value": "blue", "confidence": 0.71}},
+    }
 
 
 if __name__ == "__main__":

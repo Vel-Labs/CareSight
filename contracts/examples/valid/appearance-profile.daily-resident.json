@@ -1,0 +1,64 @@
+{
+  "schema": "appearance-profile",
+  "appearance_profile_id": "appearance_2026_05_20_001",
+  "identity_boundary": "non_biometric_daily_appearance_only",
+  "persistence_scope": "same_day_local_only",
+  "active_date": "2026-05-20",
+  "expires_at": "2026-05-20T23:59:59Z",
+  "cross_day_linking": false,
+  "role_assignment": "resident_primary",
+  "assignment_source": "human_confirmed",
+  "descriptor_source": "runtime_observation",
+  "descriptor_status": "available",
+  "attributes": {
+    "upper_body_color": {
+      "value": "dark gray",
+      "confidence": 0.78
+    },
+    "lower_body_color": {
+      "value": "gray",
+      "confidence": 0.7
+    },
+    "eyewear": {
+      "value": "glasses",
+      "confidence": 0.64
+    },
+    "headwear": {
+      "value": "none visible",
+      "confidence": 0.58
+    },
+    "footwear": {
+      "value": "unknown",
+      "confidence": 0
+    }
+  },
+  "last_seen": {
+    "camera_id": "living_room",
+    "room": "Living Room",
+    "timestamp": "2026-05-20T02:36:31Z",
+    "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+    "track_id": "track_living_room_001"
+  },
+  "forbidden_claims": [
+    "biometric_identity",
+    "face_recognition",
+    "named_person_identification",
+    "cross_day_identity"
+  ],
+  "safety_boundaries": [
+    "local_first",
+    "same_day_only",
+    "non_biometric",
+    "human_review_required",
+    "no_named_person_identity",
+    "no_face_recognition"
+  ],
+  "provenance": {
+    "source_fields": [
+      "event_observations.track_id",
+      "event_observations.camera_id",
+      "event_observations.timestamp",
+      "operator_review.role_assignment"
+    ]
+  }
+}

@@ -67,6 +67,11 @@ The v1 foundation uses a deterministic local track state machine to attach stabl
 observations and event records. Tracking supports floor-stay dwell continuity through short occlusions and
 an initial `missing_off_camera_extended` policy, but it does not diagnose distress or trigger dispatch.
 
+The appearance boundary lives under `apps/caresight-hub/caresight/runtime/appearance/`.
+It derives coarse, same-day clothing descriptors from real event snapshots and person bounding boxes, stores
+local expiring profile rows in SQLite, and exposes only bounded caregiver context. It is not face recognition,
+biometric identity, named-person identification, or cross-day re-identification.
+
 Routine event policies remain deterministic: person evidence, configured object-label evidence, configured
 zone, and configured routine window. Medication and hydration events are phrased as likely observed and
 remain human-confirmed workflows, not proof of administration or medical state.

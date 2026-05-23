@@ -20,6 +20,8 @@ class ReviewStore(Protocol):
 
     def list_agent_handoffs(self, event_id: str) -> list[dict[str, Any]]: ...
 
+    def list_appearance_profiles_for_event(self, event_id: str) -> list[dict[str, Any]]: ...
+
     def record_event_review(
         self,
         event_id: str,
@@ -94,6 +96,9 @@ class ReviewService:
             "journal_entries": self._store.list_journal_entries(event_id),
             "agent_handoffs": self._store.list_agent_handoffs(event_id),
         }
+
+    def list_appearance_profiles_for_event(self, event_id: str) -> list[dict[str, Any]]:
+        return self._store.list_appearance_profiles_for_event(event_id)
 
     def _record_human_review(
         self,
