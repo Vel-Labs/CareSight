@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Reworked the hackathon entry README to lead with the caregiver journey, YOLO26 MLX local perception, affordable home-bundle concept, and agentic-ready architecture instead of foregrounding camera hardware.
 - Added a root `hackathon/` judge/operator entrypoint with a demo journey, audit digest, and product-roadmap routing so setup, configuration, utilization, and proof gates are easier to inspect.
 - Wired `missing_off_camera_extended` into the live detector launcher by default, using a last-seen cache to persist missing events with local last-seen snapshot evidence and advisory appearance context.
 - Added a scripts README that groups setup, camera configuration, utilization, handoff/media, and validation commands.
