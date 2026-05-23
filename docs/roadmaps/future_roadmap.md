@@ -16,6 +16,33 @@ Future versions expand that into a fuller local-first care platform.
 
 ---
 
+## Current Perception Cut Line
+
+The hackathon cut should keep the calibrated floor-plane approach as the stable baseline:
+
+```text
+single RGB camera
+  -> owner-calibrated floor-plane polygon
+  -> YOLO26 MLX person/object detection
+  -> bounded possible event
+  -> human review
+```
+
+This is intentionally not true metric depth. It is a low-risk way to make the visible floor surface match the camera perspective while keeping the event logic inspectable. More perception layers can be built later if the product earns adoption signal.
+
+Future perception layers to evaluate after the current cut is stable:
+
+- monocular depth estimation as advisory context, not first-order event truth
+- stereo or depth-camera hardware for metric distance
+- pose estimation for prone/seated/standing posture
+- segmentation models for cleaner body, clothing, floor, couch, and bed regions
+- room calibration UI with draggable floor-plane points
+- object masks and exclusion zones for couch/bed/chair false-positive reduction
+
+Each layer should get its own local validation receipt before it can affect caregiver-facing event claims.
+
+---
+
 ## Guiding principle
 
 CareSight should become a **set-and-forget care appliance**.

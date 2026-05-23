@@ -376,6 +376,7 @@ docs/audits/2026-05-20-t041-final-live-proof.md
 docs/audits/2026-05-21-agent-harness-review.md
 docs/audits/2026-05-21-sprint-02-agent-model-surface.md
 docs/audits/2026-05-22-sprint-03-daily-appearance-profiles.md
+docs/audits/2026-05-23-hackathon-state-and-cleanup-plan.md
 docs/audits/2026-05-23-sprint-02-05-validation-recovery-closeout.md
 docs/audits/2026-05-23-sprint-02-facetime-obs-tts-resolution-ladder.md
 docs/audits/2026-05-23-sprint-02-no-call-runtime-audit.md

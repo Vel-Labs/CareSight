@@ -69,3 +69,10 @@ npm run typecheck
 5. `hackathon/rules.md`
 6. `hackathon/vendor-tracks.md`
 7. `hackathon/submission-checklist.md`
+
+### Current state and cleanup
+
+1. `roadmaps/CURRENT_STATE_AND_NEXT.md`
+2. `audits/2026-05-23-hackathon-state-and-cleanup-plan.md`
+3. `cli/COMMANDS.md`
+4. `architecture/camera_integration_strategy.md`
