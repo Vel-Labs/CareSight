@@ -97,6 +97,11 @@ def parse_args():
         help="Draw visual-review clothing descriptor subregions on person detections in preview/OBS frames.",
     )
     parser.add_argument(
+        "--missing-off-camera-events",
+        action="store_true",
+        help="Emit bounded missing_off_camera_extended events when a tracked person is absent for tracking.missing_seconds.",
+    )
+    parser.add_argument(
         "--camera-read-failure-timeout-seconds",
         type=float,
         default=12.0,
@@ -829,6 +834,75 @@ def _appearance_profile_id(active_date: str, source: str) -> str:
     return f"appearance_{active_date.replace('-', '_')}_{suffix[:32]}"
 
 
+def update_last_seen_cache(last_seen_cache: dict, tracked_people, frame, rgb_frame) -> None:
+    for track in tracked_people:
+        if not track.detection.is_person():
+            continue
+        last_seen_cache[track.track_id] = {
+            "bbox_xyxy": tuple(track.detection.bbox_xyxy),
+            "confidence": track.detection.confidence,
+            "first_seen_at": track.first_seen_at,
+            "frame": frame.copy(),
+            "frame_height": track.detection.frame_height,
+            "frame_width": track.detection.frame_width,
+            "last_seen_at": track.last_seen_at,
+            "rgb_frame": rgb_frame.copy(),
+        }
+
+
+def missing_candidates_from_last_seen(last_seen_cache: dict, *, now: float, missing_seconds: float):
+    from caresight.runtime.tracking import TrackSnapshot
+    from caresight.vision.detections import Detection
+
+    candidates = []
+    for track_id, cached in last_seen_cache.items():
+        missed_seconds = round(now - float(cached["last_seen_at"]), 2)
+        if missed_seconds < missing_seconds:
+            continue
+        detection = Detection(
+            class_name="person",
+            confidence=float(cached["confidence"]),
+            bbox_xyxy=tuple(float(value) for value in cached["bbox_xyxy"]),
+            frame_width=int(cached["frame_width"]),
+            frame_height=int(cached["frame_height"]),
+        )
+        candidates.append(
+            TrackSnapshot(
+                track_id=track_id,
+                detection=detection,
+                first_seen_at=float(cached["first_seen_at"]),
+                last_seen_at=float(cached["last_seen_at"]),
+                missed_seconds=missed_seconds,
+            )
+        )
+    return candidates
+
+
+def add_last_seen_appearance(event: dict, cached: dict | None) -> dict:
+    if cached is None:
+        return event
+    try:
+        from caresight.runtime.appearance import descriptor_attributes, extract_appearance_descriptor
+
+        descriptor = extract_appearance_descriptor(
+            frame=cached["rgb_frame"],
+            bbox_xyxy=tuple(float(value) for value in cached["bbox_xyxy"]),
+            frame_source="missing_last_seen_frame",
+            descriptor_source="runtime_observation",
+        )
+        event["evidence"]["last_seen_appearance"] = {
+            "attributes": descriptor_attributes(descriptor),
+            "descriptor_status": descriptor.descriptor_status,
+            "identity_boundary": "non_biometric_daily_appearance_only",
+        }
+    except Exception as exc:  # noqa: BLE001 - appearance is advisory, not event authority.
+        event["evidence"]["last_seen_appearance"] = {
+            "descriptor_status": "unavailable",
+            "reason": f"{type(exc).__name__}: {exc}",
+        }
+    return event
+
+
 def run_post_event_agent_dry_run(
     *,
     store,
@@ -1296,6 +1370,7 @@ def main() -> None:
     from yolo26mlx import YOLO
 
     from caresight.events.floor_stay import FloorStayDetector
+    from caresight.events.missing_off_camera import MissingOffCameraDetector
     from caresight.events.snapshots import attach_local_snapshot
     from caresight.runtime.cameras import select_configured_camera
     from caresight.runtime.config import CareSightConfig
@@ -1321,6 +1396,7 @@ def main() -> None:
         raise SystemExit(f"Could not open camera {config.camera.source_uri}")
 
     detector = FloorStayDetector(config)
+    missing_detector = MissingOffCameraDetector(config)
     fps_values: deque[float] = deque(maxlen=30)
     print(format_started_line(config, database_path))
     mjpeg_server = None
@@ -1349,6 +1425,8 @@ def main() -> None:
     post_event_live_lock = threading.Lock()
     post_event_live_running = False
     last_appearance_sample_at = 0.0
+    last_concern_severity = None
+    last_seen_cache = {}
 
     def run_post_event_live_in_background(event_id: str) -> bool:
         nonlocal post_event_live_running
@@ -1420,7 +1498,23 @@ def main() -> None:
             result = model.predict(rgb_frame, conf=args.conf)[0]
             height, width = frame.shape[:2]
             detections = result_to_detections(result, width, height)
-            event = detector.update(detections)
+            now_epoch = datetime.now(tz=UTC).timestamp()
+            event = detector.update(detections, now=now_epoch)
+            tracked_people = detector.tracked_people()
+            update_last_seen_cache(last_seen_cache, tracked_people, frame, rgb_frame)
+            if event is None and args.missing_off_camera_events:
+                missing_candidates = missing_candidates_from_last_seen(
+                    last_seen_cache,
+                    now=now_epoch,
+                    missing_seconds=config.tracking.missing_seconds,
+                )
+                event = missing_detector.update(
+                    missing_candidates,
+                    now=now_epoch,
+                    recent_concern_severity=last_concern_severity,
+                )
+                if event is not None:
+                    event = add_last_seen_appearance(event, last_seen_cache.get(event["evidence"]["track_id"]))
             if (
                 args.appearance_sampling
                 and time.monotonic() - last_appearance_sample_at >= args.appearance_sample_interval_seconds
@@ -1430,7 +1524,7 @@ def main() -> None:
                     store=store,
                     frame=frame,
                     rgb_frame=rgb_frame,
-                    tracked_people=detector.tracked_people(),
+                    tracked_people=tracked_people,
                     config=config,
                     database_path=database_path,
                     min_quality_score=args.appearance_min_quality_score,
@@ -1472,15 +1566,21 @@ def main() -> None:
             event_persisted = False
             if event is not None:
                 snapshot_dir = database_path.parent / "snapshots"
+                snapshot_frame = frame
+                if event["event_type"] == "missing_off_camera_extended":
+                    cached = last_seen_cache.get(event["evidence"]["track_id"])
+                    if cached is not None:
+                        snapshot_frame = cached["frame"]
                 event = attach_local_snapshot(
                     event=event,
                     snapshot_dir=snapshot_dir,
-                    write_snapshot=lambda path: cv2.imwrite(str(path), frame),
+                    write_snapshot=lambda path: cv2.imwrite(str(path), snapshot_frame),
                 )
                 store.insert_event(event)
                 print("event_persisted " + json.dumps(event, sort_keys=True))
                 event_persisted = True
                 persisted_event_count += 1
+                last_concern_severity = event.get("severity")
                 if args.auto_agent_live_run:
                     if not run_post_event_live_in_background(event["event_id"]):
                         try:

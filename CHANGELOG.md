@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added a root `hackathon/` judge/operator entrypoint with a demo journey, audit digest, and product-roadmap routing so setup, configuration, utilization, and proof gates are easier to inspect.
+- Wired `missing_off_camera_extended` into the live detector launcher by default, using a last-seen cache to persist missing events with local last-seen snapshot evidence and advisory appearance context.
+- Added a scripts README that groups setup, camera configuration, utilization, handoff/media, and validation commands.
 - Added per-camera calibrated floor-plane polygons for local camera configs so floor-stay scoring and OBS overlays can use perspective-aware floor surfaces instead of only rectangular lower-zone bands.
 - Proved owner-authorized local RTSP first-frame access for Living Room and Kitchen Tapo C210 cameras through ignored local configs using the YOLO26/OpenCV venv, and documented the `missing_cv2` blocker path for system Python.
 - Added `caresight_camera_view.py` as a local RTSP preview-window utility for operator camera framing checks without creating care events.

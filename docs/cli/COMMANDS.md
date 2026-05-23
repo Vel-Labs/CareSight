@@ -151,6 +151,8 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
 
 Purpose: start the current dual-camera app path for OBS. This launches one detached `v0_floor_stay_live.py` process per configured camera, writes PID/log files under `apps/caresight-hub/data/runtime/`, and prints the feed URLs and health receipts. Use this path when OBS should show the actively scanned local Tapo feeds.
 
+By default this also enables `missing_off_camera_extended` events for detector workers. Use `--no-missing-off-camera-events` when the operator wants visual feeds without missing-event persistence.
+
 Equivalent manual commands:
 
 ```bash
@@ -161,6 +163,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --obs-browser-feed \
   --obs-browser-feed-port 8766 \
   --appearance-overlay \
+  --missing-off-camera-events \
   --no-window
 ```
 
@@ -172,6 +175,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --obs-browser-feed \
   --obs-browser-feed-port 8767 \
   --appearance-overlay \
+  --missing-off-camera-events \
   --no-window
 ```
 
@@ -181,6 +185,8 @@ OBS Browser Source URLs:
 - Kitchen: `http://127.0.0.1:8767/live.html`
 
 `--appearance-overlay` draws visual-review clothing descriptor sub-boxes on YOLO `person` detections in the OBS feed. This is not true pixel segmentation; it samples bounded body regions inside a person box, so if YOLO labels a seated or partial person as `couch` there is no clothing pass for that object yet.
+
+`--missing-off-camera-events` emits a bounded `missing_off_camera_extended` event when a previously visible tracked person is absent for `tracking.missing_seconds`. Missing events use the last-seen local snapshot and advisory last-seen appearance attributes; they do not claim identity or emergency status.
 
 `floor_zone.vertices` can be added to the ignored local runtime config to draw and score against a calibrated floor-plane polygon instead of a flat rectangular lower-zone band. Use normalized image coordinates, ordered around the visible floor plane:
 

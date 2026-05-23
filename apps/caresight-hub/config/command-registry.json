@@ -68,7 +68,7 @@
       "id": "tapo_dual_detector_obs_start",
       "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/caresight_detector_start.py --appearance-overlay --stop-existing",
       "safety_class": "manual-operator",
-      "description": "Start detached Living Room and Kitchen YOLO26 detector browser feeds for OBS with visual-review clothing descriptor overlays.",
+      "description": "Start detached Living Room and Kitchen YOLO26 detector browser feeds for OBS with visual-review clothing descriptor overlays and missing-off-camera event persistence enabled by default.",
       "external_network": false,
       "live_action": false
     },

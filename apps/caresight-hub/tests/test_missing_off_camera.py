@@ -65,6 +65,19 @@ class MissingOffCameraDetectorTest(unittest.TestCase):
 
         self.assertIsNone(event)
 
+    def test_missing_threshold_comes_from_config(self) -> None:
+        config = replace(
+            CareSightConfig.default(),
+            tracking=replace(CareSightConfig.default().tracking, missing_seconds=30.0),
+        )
+        detector = MissingOffCameraDetector(config)
+
+        event = detector.update([missing_track(31.0)], now=220.0)
+
+        self.assertIsNotNone(event)
+        assert event is not None
+        self.assertEqual(event["evidence"]["missed_seconds"], 31.0)
+
     def test_attention_language_after_recent_concern(self) -> None:
         detector = MissingOffCameraDetector(CareSightConfig.default())
 

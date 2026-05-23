@@ -32,6 +32,7 @@ class V0FloorStayLiveTest(unittest.TestCase):
         self.assertIn("--obs-live-preview", result.stdout)
         self.assertIn("--obs-browser-feed", result.stdout)
         self.assertIn("--appearance-overlay", result.stdout)
+        self.assertIn("--missing-off-camera-events", result.stdout)
         self.assertIn("--auto-facetime-on-reply", result.stdout)
         self.assertIn("--no-response-escalation-seconds", result.stdout)
         self.assertIn("--play-tts-after-facetime", result.stdout)
@@ -109,6 +110,35 @@ class V0FloorStayLiveTest(unittest.TestCase):
         resolved = module.resolve_runtime_path("apps/caresight-hub/data/caresight-v0.sqlite3")
 
         self.assertEqual(resolved, module.REPO_ROOT / "apps/caresight-hub/data/caresight-v0.sqlite3")
+
+    def test_missing_candidates_use_last_seen_cache(self) -> None:
+        candidates = module.missing_candidates_from_last_seen(
+            {
+                "track_1": {
+                    "bbox_xyxy": (10.0, 20.0, 110.0, 220.0),
+                    "confidence": 0.82,
+                    "first_seen_at": 100.0,
+                    "frame_height": 720,
+                    "frame_width": 1280,
+                    "last_seen_at": 120.0,
+                },
+                "track_2": {
+                    "bbox_xyxy": (200.0, 20.0, 300.0, 220.0),
+                    "confidence": 0.9,
+                    "first_seen_at": 101.0,
+                    "frame_height": 720,
+                    "frame_width": 1280,
+                    "last_seen_at": 149.0,
+                },
+            },
+            now=151.0,
+            missing_seconds=30.0,
+        )
+
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0].track_id, "track_1")
+        self.assertEqual(candidates[0].missed_seconds, 31.0)
+        self.assertEqual(candidates[0].detection.class_name, "person")
 
     def test_post_event_agent_receipt_line_is_machine_readable(self) -> None:
         line = module.format_post_event_agent_line(

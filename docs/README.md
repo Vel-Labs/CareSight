@@ -17,6 +17,7 @@ docs/
   roadmaps/
   templates/
   audits/
+hackathon/     judge/operator entrypoint for the current demo
 ```
 
 Root-level implementation and quality directories:
@@ -62,13 +63,16 @@ npm run typecheck
 
 ### Hackathon project
 
-1. `project/PROJECT_BRIEF.md`
-2. `getting_started.md`
-3. `operations/local_model_operations.md`
-4. `hackathon/README.md`
-5. `hackathon/rules.md`
-6. `hackathon/vendor-tracks.md`
-7. `hackathon/submission-checklist.md`
+1. `../hackathon/README.md`
+2. `../hackathon/DEMO_JOURNEY.md`
+3. `../hackathon/AUDIT_DIGEST.md`
+4. `project/PROJECT_BRIEF.md`
+5. `getting_started.md`
+6. `operations/local_model_operations.md`
+7. `hackathon/README.md`
+8. `hackathon/rules.md`
+9. `hackathon/vendor-tracks.md`
+10. `hackathon/submission-checklist.md`
 
 ### Current state and cleanup
 

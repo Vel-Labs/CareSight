@@ -60,7 +60,84 @@ The system should quietly observe configured care-relevant signals, store struct
 
 ---
 
-# 1. Product roadmap
+# 1. Product concept roadmap
+
+## Lane A — Home care / local operated
+
+Goal:
+
+```text
+Make CareSight useful as a local home appliance without requiring a caregiver to operate the system day to day.
+```
+
+Focus:
+
+- stable detector startup and restart wrappers
+- camera health and heartbeat checks
+- local event recording with retention settings
+- local SQLite blackbox and Markdown review packet
+- calibrated floor-plane setup
+- room labels, camera labels, and routine configuration
+- visible caregiver handoff surfaces in OBS or a local dashboard
+
+Primary buyer/user:
+
+```text
+household running CareSight on owned hardware
+```
+
+## Lane B — Home care / external caregivers
+
+Goal:
+
+```text
+Let trusted caregivers receive only the event context they need, with household-controlled access.
+```
+
+Focus:
+
+- caregiver roles and allowlists
+- alert acknowledgement flow
+- escalation if no acknowledgement
+- event-scoped screenshot or clip sharing
+- missing-person return follow-up messages
+- shared daily care journal
+- caregiver comments and review history
+- privacy-preserving remote access defaults
+
+Primary buyer/user:
+
+```text
+family caregiver network, care worker, sitter, or temporary helper
+```
+
+## Lane C — Business / facility utilization
+
+Goal:
+
+```text
+Turn local event documentation into auditable workflows for small care teams.
+```
+
+Focus:
+
+- multi-room and multi-resident configuration
+- staff roles and shift handoffs
+- facility dashboard for event acknowledgement status
+- local recording and retention policy per detected object or event type
+- integration hooks such as MQTT after local proof is stable
+- operations reporting without continuous raw-video exposure by default
+- deployment, support, updates, and hardware compatibility
+
+Primary buyer/user:
+
+```text
+in-home care agency, assisted living operator, memory care operator, small nursing home, or hospital safety pilot
+```
+
+---
+
+# 2. Version roadmap
 
 ## v3 — Home pilot
 
@@ -182,7 +259,7 @@ Remote access should expose care events first, not continuous surveillance by de
 
 ---
 
-# 2. Enterprise roadmap
+# 3. Enterprise roadmap
 
 ## Enterprise wedge
 

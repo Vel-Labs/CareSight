@@ -20,7 +20,7 @@ class MissingOffCameraDetector:
         recent_concern_severity: str | None = None,
     ) -> dict | None:
         for track in missing_tracks:
-            if track.missed_seconds < 120:
+            if track.missed_seconds < self.config.tracking.missing_seconds:
                 continue
             if track.track_id in self._emitted_track_ids:
                 continue

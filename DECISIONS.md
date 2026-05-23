@@ -158,6 +158,18 @@ Bounded normal/no-event runs are local continuity evidence and should be persist
 
 Rationale: normal presence is useful for operational confidence and non-escalation testing, but treating no-event checks as care events would blur the bounded control loop and create misleading review surfaces.
 
+## 2026-05-23: Add a Root Hackathon Entry Folder for Judge Visibility
+
+The root `hackathon/` folder is allowed as a curated judge/operator entrypoint. It should contain short navigation, demo runbooks, and audit digests only. Canonical architecture, contracts, roadmaps, audit receipts, and runtime implementation stay in their existing `docs/`, `contracts/`, and `apps/` boundaries.
+
+Rationale: the repository now has enough audit and sprint history that a judge-facing path buried under `docs/` is hard to discover. A root entrypoint improves demo readability without moving canonical truth out of the established architecture.
+
+## 2026-05-23: Use Floor-Stay and Missing-Off-Camera as the v1 Demo Event Pair
+
+The recorded hackathon demo should emphasize `possible_floor_stay` and `missing_off_camera_extended`. Routine medication/hydration awareness remains deterministic support work but is not a primary demo claim.
+
+Rationale: floor-stay and missing-off-camera match the current live camera evidence and escalation path. Medication and hydration routines are more claim-sensitive, and vision alone must not imply care actions were completed.
+
 ## 2026-05-21: Log External-Action Attempts Before Live Execution
 
 CareSight stores dry-run external-action attempts in `agent_execution_attempts` before any live Hermes, iMessage, FaceTime, Apple Notes, or TTS path is enabled. A dry-run attempt records the staged request ID, event ID, harness, payload snapshot, execution state, result, safety boundaries, and `external_action_performed: false` while leaving the source action request in `not_executed`.

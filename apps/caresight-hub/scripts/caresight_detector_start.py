@@ -49,6 +49,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log-dir", default=str(DEFAULT_LOG_DIR), help="Directory for detached detector PID and log files.")
     parser.add_argument("--wait-seconds", type=float, default=12.0, help="Wait this long for each detector health endpoint.")
     parser.add_argument("--appearance-overlay", action="store_true", help="Draw clothing descriptor sub-boxes on person detections.")
+    parser.add_argument(
+        "--no-missing-off-camera-events",
+        action="store_true",
+        help="Disable missing_off_camera_extended events for this detector run.",
+    )
     parser.add_argument("--stop-existing", action="store_true", help="Stop matching PID-file processes before starting.")
     return parser.parse_args()
 
@@ -119,6 +124,8 @@ def start_detector(args: argparse.Namespace, camera_id: str, port: int) -> dict[
     ]
     if args.appearance_overlay:
         command.append("--appearance-overlay")
+    if not args.no_missing_off_camera_events:
+        command.append("--missing-off-camera-events")
 
     env = dict(os.environ)
     env["PYTHONUNBUFFERED"] = "1"
@@ -139,6 +146,7 @@ def start_detector(args: argparse.Namespace, camera_id: str, port: int) -> dict[
         "feed_url": f"http://127.0.0.1:{port}/live.html",
         "health": health,
         "log_path": str(log_path),
+        "missing_off_camera_events": not args.no_missing_off_camera_events,
         "pid": process.pid,
         "pid_path": str(pid_path),
         "port": port,

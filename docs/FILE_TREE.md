@@ -94,6 +94,7 @@ apps/caresight-hub/config/live-demo.local
 apps/caresight-hub/config/live-demo.local.example
 apps/caresight-hub/config/tapo.local.example.json
 apps/caresight-hub/pyproject.toml
+apps/caresight-hub/scripts/README.md
 apps/caresight-hub/scripts/care_console.py
 apps/caresight-hub/scripts/caresight_audio_route.py
 apps/caresight-hub/scripts/caresight_camera_discover.py
@@ -549,6 +550,9 @@ docs/templates/PHASE_AUDIT_TEMPLATE.md
 docs/templates/PHASE_IMPLEMENTATION_TEMPLATE.md
 docs/templates/PHASE_PROMPT_TEMPLATE.md
 docs/templates/REPO_PERSONALIZATION_CHECKLIST.md
+hackathon/AUDIT_DIGEST.md
+hackathon/DEMO_JOURNEY.md
+hackathon/README.md
 package-lock.json
 package.json
 packages/core/README.md

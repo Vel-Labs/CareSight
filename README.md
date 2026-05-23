@@ -99,9 +99,16 @@ Then start the local no-send operator stack:
 python3 apps/caresight-hub/scripts/caresight_stack_start.py
 ```
 
+For the current recorded hackathon demo, use the judge/operator entrypoint:
+
+- `hackathon/README.md`
+- `hackathon/DEMO_JOURNEY.md`
+- `hackathon/AUDIT_DIGEST.md`
+
 ## Roadmaps
 
 - Hackathon plan: `docs/hackathon/hackathon_roadmap.md`
+- Current hackathon entrypoint: `hackathon/README.md`
 - Future product plan: `docs/roadmaps/future_roadmap.md`
 - Operational next steps: `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`
 - Local model operations: `docs/operations/local_model_operations.md`

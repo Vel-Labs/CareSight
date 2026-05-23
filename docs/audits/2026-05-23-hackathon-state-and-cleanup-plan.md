@@ -26,11 +26,11 @@ This is the right hackathon cut because it proves the local-first care loop with
 | On-device YOLO26 MLX inference | YOLO26 MLX is running from the local venv against live Tapo RTSP feeds. | Demo-ready for current machine | Keep startup command and model path documented. |
 | Meaningful care event | `possible_floor_stay` is implemented with same-track dwell, occlusion grace, dedupe evidence, and calibrated floor-plane support. | Implemented; live event proof still needs final operator receipt after the latest calibration | Run one bounded operator proof using the current Tapo setup and save the resulting receipt. |
 | Local structured memory | SQLite event, observation, review, journal, draft, action, and appearance paths exist. | Implemented | Keep SQLite as canonical; avoid dashboard or OBS becoming truth. |
-| Human-readable care journal | Review packet, blackbox receipt, dashboard, and journal paths exist. | Implemented | Create a single judge-facing demo script that references one current event ID. |
+| Human-readable care journal | Review packet, blackbox receipt, escalation receipt, dashboard, and multi-camera narrative paths exist. A literal `journal` CLI surface still needs a judge-friendly wrapper. | Implemented as receipts; journal wrapper pending | Create a single judge-facing demo script that references one current event ID. |
 | Caregiver alert | Gemma draft, action-request staging, Hermes no-send, iMessage/FaceTime/TTS ladders exist. | Staged; not fully production-validated | Use one approved demo route: no-send or one explicitly approved live handoff, not both. |
 | Set-and-forget resident experience | OBS plus detached detector launcher reduces operator work; camera setup still needs local config and manual launch. | Partially implemented | Add launchd/app auto-start later; not needed for hackathon cut. |
-| Two v1 care events | `possible_floor_stay`, medication, and hydration likely-observed policies exist in code/docs. | Implemented in deterministic path; demo emphasis should remain floor-stay unless routine proof is refreshed | Decide whether routine event is in the live demo or documented as implemented support. |
-| Multi-camera support | Living Room and Kitchen Tapo feeds run as separate detector processes on ports 8766 and 8767. | Implemented for current demo architecture | Future: single ingest/restream worker after adoption signal. |
+| Two v1 care events | `possible_floor_stay` and `missing_off_camera_extended` are the right recorded-demo pair. Medication and hydration should stay out of the primary demo. | Floor-stay implemented; missing event now wired for live-loop validation | Run one current proof for each event using the Tapo setup. |
+| Multi-camera support | Living Room and Kitchen Tapo feeds run as separate detector processes on ports 8766 and 8767. | Implemented for current demo architecture | Future: active feed selection by strongest visibility, then single ingest/restream worker after adoption signal. |
 
 ## What Should Stay In The Hackathon Demo
 
@@ -38,6 +38,7 @@ This is the right hackathon cut because it proves the local-first care loop with
 - YOLO26 MLX as the vision lane.
 - Calibrated floor-plane polygons as the current low-risk depth approximation.
 - `possible_floor_stay` wording, not fall detection or medical emergency wording.
+- `missing_off_camera_extended` as the second v1 event, showing last-seen snapshot and advisory clothing context.
 - OBS as the visible reviewer surface.
 - SQLite receipts and Markdown review artifacts as the proof layer.
 - Human approval before any live iMessage, FaceTime, or TTS action.
@@ -46,6 +47,7 @@ This is the right hackathon cut because it proves the local-first care loop with
 
 - True depth perception from depth/stereo hardware or monocular-depth models.
 - A single restream/ingest worker to reduce camera connections and avoid one YOLO process per feed.
+- Active camera selection that promotes the feed with the strongest visible person/event evidence.
 - WebRTC/MSE low-latency live view outside OBS.
 - MQTT integration.
 - Event-scoped recording clips with retention controls.
@@ -80,7 +82,7 @@ These should remain ignored because they contain local environment state, camera
 No files should be moved until this plan is approved. Recommended cleanup order:
 
 1. Create a short judge/operator landing page.
-   - Candidate path: `docs/hackathon/current-demo-status.md`
+   - Candidate path: `hackathon/README.md`
    - It should name the current demo command, OBS URLs, safety boundaries, and proof receipts.
 
 2. Split docs into three visible lanes.
@@ -105,7 +107,7 @@ No files should be moved until this plan is approved. Recommended cleanup order:
 ## Recommended Next Work
 
 1. Run one current calibrated-floor-plane live proof and save a redacted audit receipt.
-2. Create `docs/hackathon/current-demo-status.md` as the human-facing entrypoint.
+2. Maintain `hackathon/README.md` and `hackathon/DEMO_JOURNEY.md` as the human-facing entrypoints.
 3. Create an archive-candidate review file; do not move files yet.
-4. Decide whether the hackathon demo includes medication/hydration likely-observed live proof or keeps it as implemented-but-not-primary.
+4. Keep medication/hydration out of the recorded demo; use `possible_floor_stay` and `missing_off_camera_extended`.
 5. After the demo story is stable, consider future perception layers: monocular depth, stereo/depth hardware, pose estimation, and true segmentation. These should remain future work until the current floor-plane cut proves useful.
