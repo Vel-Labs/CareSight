@@ -12,6 +12,14 @@ python3 apps/caresight-hub/scripts/caresight_camera_probe.py \
   --dry-run
 ```
 
+Live validation command used locally:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/caresight_camera_probe.py \
+  --config apps/caresight-hub/config/tapo_living_room.local.json
+```
+
 ## Result
 
 The committed example dry-run passed and produced a redacted receipt:
@@ -28,14 +36,14 @@ The committed example dry-run passed and produced a redacted receipt:
 
 ## Live Validation Status
 
-Status: blocked on operator-owned hardware/network credentials.
+Status: live local RTSP probe passed for the two owner-authorized Tapo C210 cameras after Camera Account setup.
 
-Required operator inputs:
+Observed receipts:
 
-- Copy `apps/caresight-hub/config/tapo.local.example.json` to an ignored local config.
-- Replace the TEST-NET IP, placeholder camera username, and placeholder camera password.
-- Keep the camera and CareSight machine on the same LAN.
-- Run the probe without `--dry-run`.
+- `tapo_living_room`: reachable true, stream opened true, first frame received true, `1920x1080`, `15.0` FPS, redacted RTSP URI.
+- `tapo_kitchen`: reachable true, stream opened true, first frame received true, `1920x1080`, `15.0` FPS, redacted RTSP URI.
+
+Important runtime note: system `python3` reported `missing_cv2`; live probe success used `apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python`, because that venv includes OpenCV.
 
 If live frames open, record frame dimensions, FPS, camera ID, room label, and whether the stream path is `stream1` or `stream2`. If live frames do not open, record ping/TCP reachability, RTSP open state, first-frame state, and blocker class.
 

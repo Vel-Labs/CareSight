@@ -57,6 +57,22 @@
       "live_action": false
     },
     {
+      "id": "camera_view_owner_config",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/caresight_camera_view.py --config apps/caresight-hub/config/<camera_id>.local.json",
+      "safety_class": "manual-operator",
+      "description": "Open one owner-authorized local camera config in a local OpenCV preview window without running YOLO26 or creating care events.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
+      "id": "tapo_dual_detector_obs_start",
+      "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/caresight_detector_start.py --appearance-overlay --stop-existing",
+      "safety_class": "manual-operator",
+      "description": "Start detached Living Room and Kitchen YOLO26 detector browser feeds for OBS with visual-review clothing descriptor overlays.",
+      "external_network": false,
+      "live_action": false
+    },
+    {
       "id": "yolo26_appearance_review",
       "command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/caresight_yolo26_appearance_review.py <image_path> --output-dir apps/caresight-hub/data/appearance-validation/annotated",
       "safety_class": "manual-operator",

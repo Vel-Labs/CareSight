@@ -24,7 +24,7 @@ def validate_camera_source(camera: "CameraConfig") -> None:
         parsed = urlparse(str(camera.source_uri))
         if parsed.scheme.lower() != "rtsp" or not parsed.hostname:
             raise ValueError("rtsp camera source_uri must be an rtsp:// host path")
-        if parsed.username or parsed.password:
+        if (parsed.username or parsed.password) and not camera.allow_embedded_credentials:
             raise ValueError("rtsp source_uri must not embed credentials")
         return
 

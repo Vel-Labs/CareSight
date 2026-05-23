@@ -92,6 +92,23 @@ def parse_args():
         help="Periodically store capped, quality-gated local appearance samples for same-day profile support.",
     )
     parser.add_argument(
+        "--appearance-overlay",
+        action="store_true",
+        help="Draw visual-review clothing descriptor subregions on person detections in preview/OBS frames.",
+    )
+    parser.add_argument(
+        "--camera-read-failure-timeout-seconds",
+        type=float,
+        default=12.0,
+        help="Reconnect RTSP sources for this long after frame-read failures before ending the run.",
+    )
+    parser.add_argument(
+        "--camera-read-retry-delay-seconds",
+        type=float,
+        default=0.5,
+        help="Delay between RTSP frame-read retry attempts.",
+    )
+    parser.add_argument(
         "--appearance-sample-interval-seconds",
         type=float,
         default=15.0,
@@ -254,7 +271,7 @@ def result_to_detections(result, frame_width: int, frame_height: int):
     return detections
 
 
-def draw_frame(cv2, frame, result, config, fps_values: deque[float]):
+def draw_frame(cv2, frame, result, config, fps_values: deque[float], *, appearance_overlay: bool = False, rgb_frame=None):
     display = frame.copy()
     zone = config.floor_zone
     height, width = display.shape[:2]
@@ -262,6 +279,9 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float]):
     y1 = int(zone.y_min * height)
     x2 = int(zone.x_max * width)
     y2 = int(zone.y_max * height)
+    zone_fill = display.copy()
+    cv2.rectangle(zone_fill, (x1, y1), (x2, y2), (35, 125, 55), -1)
+    display = cv2.addWeighted(zone_fill, 0.16, display, 0.84, 0)
     cv2.rectangle(display, (x1, y1), (x2, y2), (60, 220, 80), 2)
     cv2.putText(
         display,
@@ -292,6 +312,8 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float]):
                 2,
                 cv2.LINE_AA,
             )
+            if appearance_overlay and name == "person" and rgb_frame is not None:
+                draw_appearance_overlay(cv2, display, rgb_frame, (bx1, by1, bx2, by2))
 
     avg_fps = sum(fps_values) / len(fps_values) if fps_values else 0.0
     cv2.putText(
@@ -305,6 +327,128 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float]):
         cv2.LINE_AA,
     )
     return display
+
+
+def draw_appearance_overlay(cv2, display, rgb_frame, bbox_xyxy):
+    from caresight.runtime.appearance import appearance_region_receipt, descriptor_attributes, extract_appearance_descriptor
+
+    height, width = display.shape[:2]
+    descriptor = extract_appearance_descriptor(
+        frame=rgb_frame,
+        bbox_xyxy=tuple(float(value) for value in bbox_xyxy),
+        frame_source="live_rtsp_frame",
+        descriptor_source="runtime_observation",
+    )
+    attributes = descriptor_attributes(descriptor)
+    receipt = appearance_region_receipt(
+        bbox_xyxy=tuple(float(value) for value in bbox_xyxy),
+        frame_width=width,
+        frame_height=height,
+    )
+    colors = {
+        "headwear": (168, 85, 247),
+        "upper_body_color": (37, 99, 235),
+        "lower_body_color": (22, 163, 74),
+        "footwear": (220, 38, 38),
+    }
+    for region in receipt["descriptor_regions"]:
+        region_name = str(region["region"])
+        bbox = region["bbox_xyxy"]
+        if bbox is None:
+            continue
+        attribute = attributes[region_name]
+        label = f"{region_name}: {attribute['value']} {attribute['confidence']:.0%}"
+        _draw_labeled_box(cv2, display, tuple(int(round(value)) for value in bbox), colors[region_name], label)
+    if descriptor.descriptor_status != "available":
+        x1, y1, _x2, y2 = [int(round(value)) for value in bbox_xyxy]
+        cv2.putText(
+            display,
+            f"appearance: {descriptor.descriptor_status}",
+            (x1 + 4, min(height - 10, y2 + 22)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.48,
+            (245, 245, 245),
+            1,
+            cv2.LINE_AA,
+        )
+
+
+def _draw_labeled_box(cv2, image, bbox, color, label):
+    x1, y1, x2, y2 = bbox
+    cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+    text_width = max(120, len(label) * 7)
+    label_top = max(0, y1 - 18)
+    cv2.rectangle(image, (x1, label_top), (x1 + text_width, label_top + 18), color, -1)
+    cv2.putText(
+        image,
+        label,
+        (x1 + 3, label_top + 13),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.38,
+        (17, 24, 39),
+        1,
+        cv2.LINE_AA,
+    )
+
+
+def open_capture(cv2, config):
+    from caresight.runtime.cameras import camera_source_for_opencv
+
+    capture_source = camera_source_for_opencv(config.camera)
+    if config.camera.source_type == "rtsp":
+        cap = cv2.VideoCapture(capture_source)
+    else:
+        cap = cv2.VideoCapture(capture_source, cv2.CAP_AVFOUNDATION)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.camera.width)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.camera.height)
+    cap.set(cv2.CAP_PROP_FPS, config.camera.fps)
+    return cap
+
+
+def read_frame_with_reconnect(
+    *,
+    cv2,
+    cap,
+    config,
+    timeout_seconds: float,
+    retry_delay_seconds: float,
+):
+    ok, frame = cap.read()
+    if ok:
+        return cap, frame
+    if config.camera.source_type != "rtsp" or timeout_seconds <= 0:
+        return cap, None
+
+    deadline = time.monotonic() + timeout_seconds
+    attempts = 0
+    while time.monotonic() < deadline:
+        attempts += 1
+        cap.release()
+        time.sleep(max(retry_delay_seconds, 0.05))
+        cap = open_capture(cv2, config)
+        if not cap.isOpened():
+            continue
+        ok, frame = cap.read()
+        if ok:
+            print(
+                "camera_read_recovered "
+                + json.dumps({"attempts": attempts, "camera_id": config.camera.camera_id}, sort_keys=True),
+                flush=True,
+            )
+            return cap, frame
+    print(
+        "camera_read_failed "
+        + json.dumps(
+            {
+                "camera_id": config.camera.camera_id,
+                "retry_timeout_seconds": timeout_seconds,
+                "source_type": config.camera.source_type,
+            },
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+    return cap, None
 
 
 class MjpegPreviewServer:
@@ -1069,12 +1213,14 @@ def maybe_write_obs_preview(
     *,
     cv2,
     frame,
+    rgb_frame,
     result,
     config,
     fps_values: deque[float],
     preview_path: Path,
     last_write_at: float,
     preview_fps: float,
+    appearance_overlay: bool,
 ) -> float:
     if preview_fps <= 0:
         return last_write_at
@@ -1082,7 +1228,15 @@ def maybe_write_obs_preview(
     if last_write_at and now - last_write_at < 1.0 / preview_fps:
         return last_write_at
     preview_path.parent.mkdir(parents=True, exist_ok=True)
-    annotated = draw_frame(cv2, frame, result, config, fps_values)
+    annotated = draw_frame(
+        cv2,
+        frame,
+        result,
+        config,
+        fps_values,
+        appearance_overlay=appearance_overlay,
+        rgb_frame=rgb_frame,
+    )
     cv2.imwrite(str(preview_path), annotated)
     return now
 
@@ -1135,7 +1289,7 @@ def main() -> None:
 
     from caresight.events.floor_stay import FloorStayDetector
     from caresight.events.snapshots import attach_local_snapshot
-    from caresight.runtime.cameras import camera_source_for_opencv, select_configured_camera
+    from caresight.runtime.cameras import select_configured_camera
     from caresight.runtime.config import CareSightConfig
     from caresight.storage.sqlite_store import SQLiteStore
 
@@ -1154,14 +1308,7 @@ def main() -> None:
     store.upsert_config(config)
 
     model = YOLO(str(model_path))
-    capture_source = camera_source_for_opencv(config.camera)
-    if config.camera.source_type == "rtsp":
-        cap = cv2.VideoCapture(capture_source)
-    else:
-        cap = cv2.VideoCapture(capture_source, cv2.CAP_AVFOUNDATION)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, config.camera.width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config.camera.height)
-    cap.set(cv2.CAP_PROP_FPS, config.camera.fps)
+    cap = open_capture(cv2, config)
     if not cap.isOpened():
         raise SystemExit(f"Could not open camera {config.camera.source_uri}")
 
@@ -1250,8 +1397,14 @@ def main() -> None:
     try:
         while True:
             started_at = time.perf_counter()
-            ok, frame = cap.read()
-            if not ok:
+            cap, frame = read_frame_with_reconnect(
+                cv2=cv2,
+                cap=cap,
+                config=config,
+                timeout_seconds=args.camera_read_failure_timeout_seconds,
+                retry_delay_seconds=args.camera_read_retry_delay_seconds,
+            )
+            if frame is None:
                 break
             frame_count += 1
 
@@ -1284,19 +1437,29 @@ def main() -> None:
 
             annotated_frame = None
             if args.obs_browser_feed or args.obs_live_preview or use_preview_window:
-                annotated_frame = draw_frame(cv2, frame, result, config, fps_values)
+                annotated_frame = draw_frame(
+                    cv2,
+                    frame,
+                    result,
+                    config,
+                    fps_values,
+                    appearance_overlay=args.appearance_overlay,
+                    rgb_frame=rgb_frame,
+                )
             if mjpeg_server is not None and annotated_frame is not None:
                 mjpeg_server.update(cv2, annotated_frame)
             if args.obs_live_preview:
                 last_obs_preview_write_at = maybe_write_obs_preview(
                     cv2=cv2,
                     frame=frame,
+                    rgb_frame=rgb_frame,
                     result=result,
                     config=config,
                     fps_values=fps_values,
                     preview_path=obs_preview_path,
                     last_write_at=last_obs_preview_write_at,
                     preview_fps=args.obs_live_preview_fps,
+                    appearance_overlay=args.appearance_overlay,
                 )
             event_persisted = False
             if event is not None:

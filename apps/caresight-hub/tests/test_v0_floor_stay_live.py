@@ -31,6 +31,7 @@ class V0FloorStayLiveTest(unittest.TestCase):
         self.assertIn("--live-approved", result.stdout)
         self.assertIn("--obs-live-preview", result.stdout)
         self.assertIn("--obs-browser-feed", result.stdout)
+        self.assertIn("--appearance-overlay", result.stdout)
         self.assertIn("--auto-facetime-on-reply", result.stdout)
         self.assertIn("--no-response-escalation-seconds", result.stdout)
         self.assertIn("--play-tts-after-facetime", result.stdout)

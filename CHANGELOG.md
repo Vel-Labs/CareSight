@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Proved owner-authorized local RTSP first-frame access for Living Room and Kitchen Tapo C210 cameras through ignored local configs using the YOLO26/OpenCV venv, and documented the `missing_cv2` blocker path for system Python.
+- Added `caresight_camera_view.py` as a local RTSP preview-window utility for operator camera framing checks without creating care events.
+- Added `caresight_detector_start.py` for the current dual-Tapo OBS path: one detached `v0_floor_stay_live.py` process per camera, unique OBS browser-feed ports, PID/log receipts, and optional live appearance descriptor overlays.
+- Documented the current dual-Tapo detector pattern: one `v0_floor_stay_live.py` process per camera, unique OBS browser-feed ports, and no shared `live_preview.jpg` path.
 - Improved horizontal low-posture appearance sampling to keep body-axis subregions for laid-down people, reduce shadow-driven color errors, and recognize cream clothing descriptors.
 - Expanded camera discovery beyond RTSP/ONVIF to common camera/web candidate ports, excluded the local Mac from candidates, and included ARP-visible hosts in scan receipts.
 - Corrected Sprint 03 appearance annotation for horizontal low-posture people so CareSight no longer applies upright head-to-toe subregions to floor-stay boxes; generated annotated review images for all local Sprint 03 matrix rows.

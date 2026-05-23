@@ -68,13 +68,42 @@ For the hackathon lane, Tapo cameras are treated as explicit local RTSP sources 
 Probe local ignored configs with:
 
 ```bash
-python3 apps/caresight-hub/scripts/caresight_camera_probe.py \
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/caresight_camera_probe.py \
   --config apps/caresight-hub/config/tapo.local.json
 ```
 
-The probe prints a redacted receipt with reachability, stream open state, first-frame state, dimensions, and FPS when available. A failed probe is a camera-health blocker, not a care event.
+The probe prints a redacted receipt with reachability, stream open state, first-frame state, dimensions, and FPS when available. Live probes should use the YOLO26 venv because it contains OpenCV. A failed probe is a camera-health blocker, not a care event.
 
-Current recovery status: the committed example only proves redaction and command behavior through `--dry-run`. Live Tapo proof still requires an owner-authorized ignored local config, same-LAN camera IP, and camera account credentials outside Git. Do not claim live-camera validation from the example receipt alone.
+To open a local operator preview window without running the detector:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/caresight_camera_view.py \
+  --config apps/caresight-hub/config/tapo_living_room.local.json
+```
+
+Press `q` or Esc to close the preview. This viewer is a local camera-health and framing check only; the bounded event loop still runs through `v0_floor_stay_live.py`.
+
+Current dual-camera detector approach:
+
+- Run one `v0_floor_stay_live.py` process per active camera.
+- Give each process a unique `--obs-browser-feed-port`.
+- Add one OBS Browser Source per local feed URL.
+- Avoid shared `--obs-live-preview` output unless each process has a distinct preview path.
+- Use `caresight_detector_start.py --appearance-overlay --stop-existing` for the current operator-friendly start path; it detaches the two detector processes, writes PID/log files, and reports feed health.
+- `--appearance-overlay` draws bounded clothing descriptor sub-boxes only when YOLO26 emits a `person` detection. It is visible review evidence, not true segmentation, and it will not run when the detector labels a seated or partial person as furniture.
+
+Example OBS feed URLs:
+
+```text
+http://127.0.0.1:8766/live.html  # Living Room
+http://127.0.0.1:8767/live.html  # Kitchen
+```
+
+This is less efficient than a future single ingest/restream worker, because YOLO26 loads once per process. It is the best current app path because it reuses the proven bounded detector loop, SQLite audit writes, and OBS MJPEG browser feed without introducing a new unvalidated multi-camera scheduler.
+
+Current recovery status: the committed example proves redaction and command behavior through `--dry-run`; the ignored local Living Room and Kitchen configs have now also produced owner-authorized live RTSP probe receipts with first frames at `1920x1080@15fps`. Do not commit real camera IPs, usernames, passwords, or frames.
 
 ### Discovery-assisted local config
 
@@ -115,8 +144,8 @@ Latest local scan receipts:
 
 - `192.168.1.0/24`: wrong subnet for this Mac; the active Wi-Fi address is `10.0.0.111`.
 - `10.0.0.0/24`: 254 hosts checked with `--scan-timeout-seconds 0.12`; zero service-port candidates after excluding the Mac itself, but ARP-visible devices were present and surfaced as unclassified local hosts.
-- Tapo C210 Living Room at `10.0.0.20`: ping reachable and ARP-visible; host discovery is `service_only` with port `443` open, RTSP `554` closed, and ONVIF `2020` closed.
-- Tapo C210 Kitchen at `10.0.0.104`: ping reachable and ARP-visible; host discovery is `service_only` with port `443` open, RTSP `554` closed, and ONVIF `2020` closed.
+- Tapo C210 Living Room: ping reachable and ARP-visible; after Camera Account setup, host discovery is `rtsp_ready` with ports `554`, `2020`, and `443` open.
+- Tapo C210 Kitchen: ping reachable and ARP-visible; after Camera Account setup, host discovery is `rtsp_ready` with ports `554`, `2020`, and `443` open.
 
 That means the cameras may be on the LAN but not exposing the checked ports, RTSP/ONVIF may be disabled in the camera app, the cameras may be on a guest/VLAN-isolated SSID, or the actual camera IPs use a vendor-specific setup path before local RTSP is enabled.
 

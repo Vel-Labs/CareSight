@@ -662,6 +662,9 @@ def _headwear_color(
 
 
 def _bucket_color(red: float, green: float, blue: float) -> str:
+    red = float(red)
+    green = float(green)
+    blue = float(blue)
     maximum = max(red, green, blue)
     minimum = min(red, green, blue)
     brightness = maximum

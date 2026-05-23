@@ -92,6 +92,7 @@ def main() -> None:
             "width": args.width,
             "height": args.height,
             "fps": args.fps,
+            "allow_embedded_credentials": True,
             "privacy": {
                 "raw_video_storage": "local_only",
                 "cloud_upload_default": False,

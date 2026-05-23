@@ -48,26 +48,38 @@ def main() -> None:
         receipt["reachable"] = _tcp_reachable(parsed.hostname, parsed.port or 554, args.timeout_seconds)
     try:
         import cv2
-
-        capture = cv2.VideoCapture(str(camera["source_uri"]))
-        capture.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, int(args.timeout_seconds * 1000))
-        capture.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, int(args.timeout_seconds * 1000))
-        opened = bool(capture.isOpened())
-        receipt["stream_opened"] = opened
-        if opened:
-            ok, _frame = capture.read()
-            receipt["first_frame_received"] = bool(ok)
-            receipt["width"] = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0) or None
-            receipt["height"] = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0) or None
-            receipt["fps"] = float(capture.get(cv2.CAP_PROP_FPS) or 0) or None
-        else:
-            receipt["blocker"] = "stream_open_failed"
-        capture.release()
-    except Exception as error:
+    except ModuleNotFoundError as error:
+        if error.name != "cv2":
+            raise
         receipt["stream_opened"] = False
         receipt["first_frame_received"] = False
-        receipt["blocker"] = "probe_error"
-        receipt["error"] = str(error)
+        receipt["blocker"] = "missing_cv2"
+        receipt["error"] = "OpenCV is not installed for this Python interpreter."
+        receipt["next_command"] = (
+            "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python "
+            "apps/caresight-hub/scripts/caresight_camera_probe.py --config <this-file>"
+        )
+    else:
+        try:
+            capture = cv2.VideoCapture(str(camera["source_uri"]))
+            capture.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, int(args.timeout_seconds * 1000))
+            capture.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, int(args.timeout_seconds * 1000))
+            opened = bool(capture.isOpened())
+            receipt["stream_opened"] = opened
+            if opened:
+                ok, _frame = capture.read()
+                receipt["first_frame_received"] = bool(ok)
+                receipt["width"] = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0) or None
+                receipt["height"] = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0) or None
+                receipt["fps"] = float(capture.get(cv2.CAP_PROP_FPS) or 0) or None
+            else:
+                receipt["blocker"] = "stream_open_failed"
+            capture.release()
+        except Exception as error:
+            receipt["stream_opened"] = False
+            receipt["first_frame_received"] = False
+            receipt["blocker"] = "probe_error"
+            receipt["error"] = str(error)
     print(json.dumps(receipt, indent=2, sort_keys=True))
 
 

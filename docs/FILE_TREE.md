@@ -98,8 +98,10 @@ apps/caresight-hub/scripts/care_console.py
 apps/caresight-hub/scripts/caresight_audio_route.py
 apps/caresight-hub/scripts/caresight_camera_discover.py
 apps/caresight-hub/scripts/caresight_camera_probe.py
+apps/caresight-hub/scripts/caresight_camera_view.py
 apps/caresight-hub/scripts/caresight_contacts_config.py
 apps/caresight-hub/scripts/caresight_demo_preflight.py
+apps/caresight-hub/scripts/caresight_detector_start.py
 apps/caresight-hub/scripts/caresight_gemma_start.py
 apps/caresight-hub/scripts/caresight_gemma_stop.py
 apps/caresight-hub/scripts/caresight_hermes_start.py

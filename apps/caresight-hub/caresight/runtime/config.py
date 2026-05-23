@@ -25,6 +25,7 @@ class CameraConfig:
     room_id: str | None = None
     room_label: str | None = None
     privacy: CameraPrivacyConfig | dict | None = None
+    allow_embedded_credentials: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "source_type", self.source_type.strip().lower())

@@ -111,7 +111,8 @@ If the scan prints zero candidates but `arp_hosts` lists other devices, the Mac 
 Command:
 
 ```bash
-python3 apps/caresight-hub/scripts/caresight_camera_probe.py \
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/caresight_camera_probe.py \
   --config apps/caresight-hub/config/tapo.local.json
 ```
 
@@ -123,11 +124,65 @@ python3 apps/caresight-hub/scripts/caresight_camera_probe.py \
   --dry-run
 ```
 
-Purpose: probe one explicit local RTSP camera config and print a redacted health receipt. The probe reports `reachable`, `stream_opened`, `first_frame_received`, dimensions, FPS, and a blocker classification when available.
+Purpose: probe one explicit local RTSP camera config and print a redacted health receipt. The probe reports `reachable`, `stream_opened`, `first_frame_received`, dimensions, FPS, and a blocker classification when available. Use the YOLO26 venv command above for live probes because system `python3` may not include OpenCV; when that happens the blocker is `missing_cv2`.
 
 Inputs: an ignored local JSON config copied from `apps/caresight-hub/config/tapo.local.example.json`. The config may contain private RTSP credentials locally, but output must redact them.
 
 Outputs: JSON receipt only. It does not create care events.
+
+Live preview window:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/caresight_camera_view.py \
+  --config apps/caresight-hub/config/tapo_living_room.local.json
+```
+
+Purpose: open one owner-authorized local RTSP camera in an OpenCV preview window. Press `q` or Esc to close. This is a local operator preview utility only; it does not run YOLO26, create events, confirm observations, or store video.
+
+Two Tapo detector feeds for OBS:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/caresight_detector_start.py \
+  --appearance-overlay \
+  --stop-existing
+```
+
+Purpose: start the current dual-camera app path for OBS. This launches one detached `v0_floor_stay_live.py` process per configured camera, writes PID/log files under `apps/caresight-hub/data/runtime/`, and prints the feed URLs and health receipts. Use this path when OBS should show the actively scanned local Tapo feeds.
+
+Equivalent manual commands:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --config apps/caresight-hub/config/tapo-runtime.local.json \
+  --camera-id tapo_living_room \
+  --obs-browser-feed \
+  --obs-browser-feed-port 8766 \
+  --appearance-overlay \
+  --no-window
+```
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --config apps/caresight-hub/config/tapo-runtime.local.json \
+  --camera-id tapo_kitchen \
+  --obs-browser-feed \
+  --obs-browser-feed-port 8767 \
+  --appearance-overlay \
+  --no-window
+```
+
+OBS Browser Source URLs:
+
+- Living Room: `http://127.0.0.1:8766/live.html`
+- Kitchen: `http://127.0.0.1:8767/live.html`
+
+`--appearance-overlay` draws visual-review clothing descriptor sub-boxes on YOLO `person` detections in the OBS feed. This is not true pixel segmentation; it samples bounded body regions inside a person box, so if YOLO labels a seated or partial person as `couch` there is no clothing pass for that object yet.
+
+Do not run both processes with the default `--obs-live-preview` path unless each process also gets a distinct `--obs-live-preview-path`; otherwise both cameras will overwrite the same `apps/obs-hub/config/live_preview.jpg`. Browser-feed ports are the preferred dual-camera OBS path.
 
 Validation: `test_multi_camera_sources.py` verifies dry-run redaction and no credential leakage.
 
@@ -326,7 +381,7 @@ Default TTS readout:
 This is an automated CareSight message. A possible floor stay was observed in the Living Room. Please review the live feed. CareSight will keep this handoff open briefly for review.
 ```
 
-`--obs-browser-feed` serves the annotated detector feed at `http://127.0.0.1:8766/live.html`, backed by local MJPEG at `http://127.0.0.1:8766/stream.mjpg`. OBS should use the `/live.html` page as the Browser Source URL, so the caregiver sees the boxed detector view without OBS competing for the webcam. Browser-feed mode suppresses the OpenCV preview window by default; add `--show-window` only for local detector debugging.
+`--obs-browser-feed` serves the annotated detector feed at `http://127.0.0.1:8766/live.html`, backed by local MJPEG at `http://127.0.0.1:8766/stream.mjpg`. OBS should use the `/live.html` page as the Browser Source URL, so the caregiver sees the boxed detector view without OBS competing for the webcam. Browser-feed mode suppresses the OpenCV preview window by default; add `--show-window` only for local detector debugging. Add `--appearance-overlay` when the OBS feed should show clothing descriptor sub-boxes for YOLO `person` detections.
 
 `--obs-live-preview` still writes `apps/obs-hub/config/live_preview.jpg` as a fallback/snapshot-style local artifact. It is not the primary live video path.
 

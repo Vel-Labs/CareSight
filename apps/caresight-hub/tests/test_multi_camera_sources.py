@@ -69,6 +69,26 @@ class MultiCameraSourcesTest(unittest.TestCase):
                         fps=15,
                     )
 
+    def test_allows_credential_bearing_rtsp_only_when_local_flag_is_explicit(self) -> None:
+        camera = CameraConfig(
+            camera_id="tapo_living_room",
+            name="Tapo Living Room",
+            source_type="rtsp",
+            source_uri="rtsp://user:secret@10.0.0.20:554/stream1",
+            width=1920,
+            height=1080,
+            fps=15,
+            room_id="living_room",
+            room_label="Living Room",
+            allow_embedded_credentials=True,
+            privacy={
+                "raw_video_storage": "local_only",
+                "cloud_upload_default": False,
+            },
+        )
+
+        self.assertEqual(camera_source_for_opencv(camera), "rtsp://user:secret@10.0.0.20:554/stream1")
+
     def test_round_robin_manager_returns_camera_metadata_and_health(self) -> None:
         config = CareSightConfig.from_dict(
             {
@@ -177,6 +197,76 @@ class MultiCameraSourcesTest(unittest.TestCase):
             self.assertEqual(payload["redacted_uri"], "rtsp://***:***@192.0.2.55:554/stream1")
             self.assertNotIn("secret", result.stdout)
             self.assertEqual(payload["stream_opened"], "not_attempted")
+
+    def test_camera_probe_reports_missing_cv2_next_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "camera.local.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "camera": {
+                            "camera_id": "tapo_living_room",
+                            "source_type": "rtsp",
+                            "source_uri": "rtsp://care:secret@192.0.2.55:554/stream1",
+                            "room_id": "living_room",
+                            "room_label": "Living Room",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "apps/caresight-hub/scripts/caresight_camera_probe.py",
+                    "--config",
+                    str(config_path),
+                    "--timeout-seconds",
+                    "0.01",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            payload = json.loads(result.stdout)
+
+            if payload["blocker"] == "missing_cv2":
+                self.assertIn("vendor/yolo-mlx/.venv/bin/python", payload["next_command"])
+                self.assertNotIn("secret", result.stdout)
+
+    def test_camera_view_reports_missing_cv2_guidance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "camera.local.json"
+            config_path.write_text(
+                json.dumps(
+                    {
+                        "camera": {
+                            "camera_id": "tapo_living_room",
+                            "source_type": "rtsp",
+                            "source_uri": "rtsp://care:secret@192.0.2.55:554/stream1",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "apps/caresight-hub/scripts/caresight_camera_view.py",
+                    "--config",
+                    str(config_path),
+                    "--max-seconds",
+                    "0.01",
+                ],
+                capture_output=True,
+                text=True,
+            )
+
+            if result.returncode != 0:
+                self.assertIn("vendor/yolo-mlx/.venv/bin/python", result.stderr)
+                self.assertNotIn("secret", result.stderr)
 
     def test_camera_discovery_writes_owner_specified_rtsp_template(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
