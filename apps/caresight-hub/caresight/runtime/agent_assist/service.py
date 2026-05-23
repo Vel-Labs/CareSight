@@ -34,6 +34,8 @@ class AgentDraftStore(Protocol):
 
     def list_agent_handoffs(self, event_id: str) -> list[dict[str, Any]]: ...
 
+    def list_appearance_profiles_for_event(self, event_id: str) -> list[dict[str, Any]]: ...
+
     def insert_agent_draft(self, draft: dict[str, Any]) -> None: ...
 
     def list_agent_drafts(self, event_id: str) -> list[dict[str, Any]]: ...
@@ -112,6 +114,7 @@ def build_agent_draft(
         "reviews": store.list_event_reviews(event_id),
         "journal_entries": store.list_journal_entries(event_id),
         "agent_handoffs": store.list_agent_handoffs(event_id),
+        "appearance_profiles": store.list_appearance_profiles_for_event(event_id),
     }
     fake_provider = provider or FakeAgentProvider()
     draft_text = override_text if override_text is not None else fake_provider.draft_text(audit, purpose)
@@ -145,6 +148,7 @@ def build_agent_draft(
                 "event_reviews",
                 "journal_entries",
                 "agent_handoffs",
+                "appearance_profiles",
             ],
         },
         "blocked_claims": blocked_claims,

@@ -33,6 +33,7 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - `apps/caresight-hub/config/hermes/` contains safe repo-local Hermes templates for a local OpenAI-compatible Gemma MLX endpoint; OpenRouter is not required by default and remains an explicit cloud fallback only.
 - Staged Hermes handoff payloads now support `routine`, `attention`, and `urgent_handoff` levels, allowlisted emergency-contact routing, and bounded response options for journal text updates, local screen capture by request, or FaceTime handoff by request.
 - Production-validation receipts live under `docs/audits/production-validation/`. Current blockers are explicit: local Gemma E2B serves through `mlx-vlm.server`; Case A now has a validated `provider: gemma_mlx` draft, staged urgent handoff, and Hermes no-send receipt; Case B correctly produces no Gemma alert or urgent handoff because it is a normal/no-event check; live iMessage/BlueBubbles delivery is not approved/proven; OBS and `obsws_python` are present but need scene/privacy confirmation; TTS generation works locally from the Gemma message but playback needs human wording/tone validation.
+- Sprint 03 Daily Appearance Profile foundations are implemented on the `codex/sprint-03-appearance` worktree branch: the contract corpus includes `appearance-profile`, SQLite stores same-day profile, observation, and capped sample rows, the runtime derives coarse clothing descriptors from real local snapshots, and `care_console.py appearance-profile derive-from-event` has been proven against copied local SQLite data for event `evt_67f81ae3d0df49fd92832766b94be216`. Periodic `--appearance-sampling` can now collect better non-event frames and `summarize-today` reports support ratios. This is dynamic local proof, not a seeded fixture. Human role assignment and production acceptance remain gated.
 
 ## Production Readiness Correction
 
@@ -63,6 +64,7 @@ Clear the Sprint 02 runtime blockers before asking for live-action approval:
 2. Configure the live Hermes/BlueBubbles route without committing secrets, then rerun `care_console.py hermes-dry-run <request_id>` before asking for approval.
 3. Create the OBS `CareSight Demo` scene or a simpler local screen-capture proof path and confirm it only shows intended content.
 4. After Gemma message wording is approved, play the generated local TTS audio and record human audibility/tone approval.
+5. For Sprint 03, run the live loop with `--appearance-sampling` to collect capped quality-gated samples, inspect `care_console.py appearance-profile summarize-today`, and have a human assign any resident/caregiver/visitor role before using that role in caregiver-facing copy.
 
 Primary sprint entrypoint: [`docs/roadmaps/caresight_sprint_pack/00-master-codex-prompt.md`](caresight_sprint_pack/00-master-codex-prompt.md).
 
@@ -218,6 +220,8 @@ Recommended answer to ambiguity: the agent may propose wording and packets, but 
 
 Goal: add non-biometric, local-only person continuity for caregiving context.
 
+Current branch status: started and implementation-ready in `codex/sprint-03-appearance`. The dynamic path reads existing SQLite events, observation bounding boxes, local `snapshot_path` images, and capped periodic appearance samples; it does not depend on seeded appearance fixtures. Remaining production gates are human role assignment, longer live/demo operator validation, and acceptance of the dashboard wording.
+
 Value:
 
 - Helps caregivers answer “who was last seen where, wearing what?”
@@ -322,6 +326,10 @@ Rationale: Clothing/accessory descriptors are useful caregiver context but are n
 Question: How long should daily appearance profiles remain active?
 Suggested Answer: Default to same-day expiration with a configurable 12-18 hour active window.
 Rationale: Clothing changes frequently; stale descriptors can mislead caregivers during a high-stress event.
+
+Question: How long should someone be absent from all configured feeds before CareSight escalates?
+Suggested Answer: Start with configurable stages: observe-only under 2 minutes, check-in suggested at 2-5 minutes, attention at 5-10 minutes when recent context is concerning, and urgent handoff at 10-15 minutes only after a high-concern or repeated unresolved event. All stages remain caregiver-review prompts, not emergency dispatch.
+Rationale: Absence can mean normal movement, privacy, occlusion, or camera coverage gaps. Sprint 04 should combine last-seen track context, same-day appearance sample confidence, room type, time of day, and prior event state before escalating.
 
 Question: Should multi-camera support include LAN discovery or ONVIF now?
 Suggested Answer: No. Use two explicitly configured local sources first, then evaluate ONVIF discovery later.

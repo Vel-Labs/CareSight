@@ -612,6 +612,206 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(receipt["escalation_counts"]["execution_attempts"], 1)
             self.assertEqual(receipt["execution_attempts"][0]["result"], "payload_logged_no_send")
 
+    def test_appearance_profile_cli_derives_from_event_snapshot_and_lists_profile(self) -> None:
+        with seeded_review_service() as seed:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "appearance-profile",
+                    "derive-from-event",
+                    seed.event_id,
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["schema"], "appearance-profile-derivation")
+            self.assertEqual(payload["descriptor_source"], "runtime_observation")
+            self.assertEqual(payload["descriptor_status"], "available")
+            self.assertEqual(payload["profile"]["descriptor_source"], "runtime_observation")
+            self.assertEqual(payload["profile"]["source_event_id"], seed.event_id)
+            self.assertEqual(payload["profile"]["attributes"]["upper_body_color"]["value"], "blue")
+            self.assertEqual(payload["profile"]["attributes"]["lower_body_color"]["value"], "blue")
+            self.assertNotIn("identity", payload["summary"].casefold())
+
+            shown = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "appearance-profile",
+                    "show",
+                    payload["profile"]["appearance_profile_id"],
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(shown.returncode, 0, shown.stderr)
+            profile = json.loads(shown.stdout)
+            self.assertEqual(profile["appearance_profile_id"], payload["profile"]["appearance_profile_id"])
+            self.assertEqual(profile["observations"][0]["source_event_id"], seed.event_id)
+
+    def test_appearance_profile_cli_describes_still_image_without_writing_profile(self) -> None:
+        with seeded_review_service() as seed:
+            image_path = Path(seed.tmpdir.name) / "still-accessories.ppm"
+            write_ppm(
+                image_path,
+                width=100,
+                height=100,
+                fills=[
+                    ((42, 22, 58, 31), (20, 20, 20)),
+                    ((38, 47, 62, 63), (42, 96, 180)),
+                    ((38, 63, 62, 83), (245, 248, 248)),
+                    ((42, 84, 58, 89), (245, 248, 248)),
+                ],
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "appearance-profile",
+                    "describe-image",
+                    str(image_path),
+                    "--bbox",
+                    "20,20,80,90",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["schema"], "appearance-profile-still-image-descriptor")
+            self.assertEqual(payload["source_of_truth"], "still_image")
+            self.assertEqual(payload["descriptor_status"], "available")
+            self.assertEqual(payload["attributes"]["upper_body_color"]["value"], "blue")
+            self.assertEqual(payload["attributes"]["lower_body_color"]["value"], "white")
+            self.assertEqual(payload["attributes"]["headwear"]["value"], "black")
+            self.assertEqual(payload["attributes"]["footwear"]["value"], "white")
+            self.assertEqual(seed.store.list_active_appearance_profiles(active_date="2026-05-22"), [])
+
+    def test_appearance_profile_cli_summarizes_daily_sample_support(self) -> None:
+        with seeded_review_service() as seed:
+            profile = {
+                "appearance_profile_id": "appearance_2026_05_22_track_1",
+                "active_date": "2026-05-22",
+                "created_at": "2026-05-22T14:00:00Z",
+                "updated_at": "2026-05-22T14:00:00Z",
+                "expires_at": "2026-05-23T04:00:00Z",
+                "descriptor_source": "runtime_observation",
+                "descriptor_status": "available",
+                "last_seen_at": "2026-05-22T14:00:00Z",
+                "last_seen_camera_id": "living_room",
+                "last_seen_room": "Living Room",
+                "attributes": {
+                    "upper_body_color": {"value": "blue", "confidence": 0.78},
+                    "lower_body_color": {"value": "white", "confidence": 0.78},
+                    "headwear": {"value": "black", "confidence": 0.62},
+                    "footwear": {"value": "white", "confidence": 0.78},
+                },
+            }
+            seed.store.upsert_appearance_profile(profile)
+            for sample_id, upper, lower, headwear, footwear, quality in [
+                ("sample_1", "blue", "white", "black", "white", 0.82),
+                ("sample_2", "blue", "white", "black", "white", 0.76),
+                ("sample_3", "gray", "unknown", "unknown", "unknown", 0.68),
+            ]:
+                seed.store.insert_appearance_profile_sample(
+                    {
+                        "sample_id": sample_id,
+                        "appearance_profile_id": profile["appearance_profile_id"],
+                        "active_date": "2026-05-22",
+                        "captured_at": "2026-05-22T14:00:00Z",
+                        "camera_id": "living_room",
+                        "room": "Living Room",
+                        "track_id": "track_1",
+                        "snapshot_path": str(seed.snapshot_path),
+                        "frame_source": "periodic_live_sample",
+                        "descriptor_status": "available",
+                        "quality_score": quality,
+                        "quality_reasons": ["accepted"],
+                        "detection_confidence": 0.9,
+                        "bbox_xyxy": [10, 10, 50, 70],
+                        "attributes": {
+                            "upper_body_color": {"value": upper, "confidence": 0.78},
+                            "lower_body_color": {"value": lower, "confidence": 0.78 if lower != "unknown" else 0.0},
+                            "headwear": {"value": headwear, "confidence": 0.62 if headwear != "unknown" else 0.0},
+                            "footwear": {"value": footwear, "confidence": 0.78 if footwear != "unknown" else 0.0},
+                        },
+                        "created_at": "2026-05-22T14:00:00Z",
+                    }
+                )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "appearance-profile",
+                    "summarize-today",
+                    "--active-date",
+                    "2026-05-22",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            summary = payload["profiles"]["appearance_2026_05_22_track_1"]
+            self.assertEqual(summary["upper_body_color"]["value"], "blue")
+            self.assertEqual(summary["upper_body_color"]["support_ratio"], 0.667)
+            self.assertEqual(summary["lower_body_color"]["value"], "white")
+            self.assertEqual(summary["headwear"]["value"], "black")
+            self.assertEqual(summary["footwear"]["value"], "white")
+            self.assertIn("no_named_person_identity", summary["safety_boundaries"])
+
+    def test_dashboard_includes_bounded_appearance_context_after_derivation(self) -> None:
+        with seeded_review_service() as seed:
+            derive = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "appearance-profile",
+                    "derive-from-event",
+                    seed.event_id,
+                    "--role",
+                    "resident_primary",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(derive.returncode, 0, derive.stderr)
+
+            state = build_dashboard_state(seed.service, event_id=seed.event_id)
+
+            context = state["appearance_context"]
+            self.assertEqual(context["identity_boundary"], "non_biometric_daily_appearance_only")
+            self.assertEqual(context["descriptor_source"], "runtime_observation")
+            self.assertIn("resident-assigned profile for today", context["summary"])
+            self.assertIn("face_recognition", context["forbidden_claims"])
+            forbidden = ["this is", "face match", "biometric identity", "resident identity verified"]
+            for phrase in forbidden:
+                self.assertNotIn(phrase, json.dumps(context).casefold())
+
     def test_contacts_config_writes_ignored_local_allowlist_shape(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             output = Path(tmpdir) / "allowlisted-contacts.local.json"
@@ -689,6 +889,18 @@ class Seed:
         detector.update([detection], now=100.0)
         event = detector.update([detection], now=109.0)
         assert event is not None
+        self.snapshot_path = Path(tmpdir.name) / "event-snapshot.ppm"
+        write_ppm(
+            self.snapshot_path,
+            width=1280,
+            height=720,
+            fills=[
+                ((200, 470, 1080, 570), (45, 45, 45)),
+                ((200, 570, 1080, 710), (42, 96, 180)),
+            ],
+        )
+        event["evidence"]["snapshot_path"] = str(self.snapshot_path)
+        event["evidence"]["room_name"] = "Living Room"
         self.event_id = event["event_id"]
         self.store.insert_event(event)
         self.service = ReviewService(self.store)
@@ -720,6 +932,24 @@ class Seed:
 
 def seeded_review_service() -> Seed:
     return Seed(tempfile.TemporaryDirectory())
+
+
+def write_ppm(
+    path: Path,
+    width: int,
+    height: int,
+    fills: list[tuple[tuple[int, int, int, int], tuple[int, int, int]]],
+) -> None:
+    pixels = [[(255, 255, 255) for _ in range(width)] for _ in range(height)]
+    for (x1, y1, x2, y2), color in fills:
+        for y in range(y1, y2):
+            for x in range(x1, x2):
+                pixels[y][x] = color
+    data = bytearray(f"P6\n{width} {height}\n255\n".encode("ascii"))
+    for row in pixels:
+        for red, green, blue in row:
+            data.extend(bytes((red, green, blue)))
+    path.write_bytes(data)
 
 
 if __name__ == "__main__":

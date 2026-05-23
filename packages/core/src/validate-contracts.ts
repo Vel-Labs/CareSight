@@ -11,6 +11,7 @@ const schemaByName = new Map([
   ["alert-policy", "alert-policy.schema.json"],
   ["agent-action-request", "agent-action-request.schema.json"],
   ["agent-draft", "agent-draft.schema.json"],
+  ["appearance-profile", "appearance-profile.schema.json"],
   ["blackbox-receipt", "blackbox-receipt.schema.json"],
   ["camera-config", "camera-config.schema.json"],
   ["care-event", "care-event.schema.json"],

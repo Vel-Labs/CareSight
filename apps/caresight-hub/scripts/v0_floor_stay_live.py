@@ -8,7 +8,7 @@ import threading
 import time
 import traceback
 from collections import deque
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -80,6 +80,29 @@ def parse_args():
         "--debug-floor-stay",
         action="store_true",
         help="Print one compact floor-stay detector diagnostic line per second.",
+    )
+    parser.add_argument(
+        "--appearance-sampling",
+        action="store_true",
+        help="Periodically store capped, quality-gated local appearance samples for same-day profile support.",
+    )
+    parser.add_argument(
+        "--appearance-sample-interval-seconds",
+        type=float,
+        default=15.0,
+        help="Minimum seconds between accepted appearance samples.",
+    )
+    parser.add_argument(
+        "--appearance-max-samples-per-profile",
+        type=int,
+        default=5,
+        help="Retain this many best appearance sample snapshots per profile per day.",
+    )
+    parser.add_argument(
+        "--appearance-min-quality-score",
+        type=float,
+        default=0.62,
+        help="Minimum appearance quality score required before saving a sample snapshot.",
     )
     parser.add_argument(
         "--auto-agent-live-run",
@@ -479,12 +502,152 @@ def format_no_event_line(check: dict) -> str:
     )
 
 
+def format_appearance_sample_line(sample: dict) -> str:
+    payload = {
+        "appearance_profile_id": sample["appearance_profile_id"],
+        "quality_score": sample["quality_score"],
+        "sample_id": sample["sample_id"],
+        "snapshot_path": sample["snapshot_path"],
+        "summary": sample["summary"],
+        "track_id": sample["track_id"],
+    }
+    return "appearance_sample_persisted " + json.dumps(payload, sort_keys=True)
+
+
 def format_floor_stay_debug_line(diagnostic: dict) -> str:
     return "floor_stay_debug " + json.dumps(diagnostic, sort_keys=True)
 
 
 def utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def maybe_capture_appearance_sample(
+    *,
+    cv2,
+    store,
+    frame,
+    rgb_frame,
+    tracked_people,
+    config,
+    database_path: Path,
+    min_quality_score: float,
+    max_samples_per_profile: int,
+) -> dict | None:
+    from caresight.runtime.appearance import (
+        AppearanceProfile,
+        AppearanceProfileService,
+        descriptor_attributes,
+        render_appearance_summary,
+        score_appearance_sample,
+    )
+
+    if not tracked_people:
+        return None
+    height, width = frame.shape[:2]
+    service = AppearanceProfileService()
+    candidates = []
+    for track in tracked_people:
+        detection = track.detection
+        if not detection.is_person():
+            continue
+        descriptor = service.describe_observation(
+            bbox_xyxy=detection.bbox_xyxy,
+            frame=rgb_frame,
+            frame_source="periodic_live_sample",
+            descriptor_source="runtime_observation",
+        )
+        quality = score_appearance_sample(
+            descriptor=descriptor,
+            bbox_xyxy=detection.bbox_xyxy,
+            frame_width=width,
+            frame_height=height,
+            detection_confidence=detection.confidence,
+        )
+        if quality.accepted and quality.score >= min_quality_score:
+            candidates.append((quality.score, track, descriptor, quality))
+    if not candidates:
+        return None
+
+    _score, track, descriptor, quality = max(candidates, key=lambda candidate: candidate[0])
+    captured_at = utc_now()
+    active_date = captured_at[:10]
+    profile_id = _appearance_profile_id(active_date, track.track_id)
+    sample_id = f"appearance_sample_{uuid4().hex}"
+    sample_dir = database_path.parent / "appearance-samples" / active_date / profile_id
+    sample_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_path = sample_dir / f"{sample_id}.jpg"
+    cv2.imwrite(str(snapshot_path), frame)
+    attributes = descriptor_attributes(descriptor)
+    profile = {
+        "appearance_profile_id": profile_id,
+        "active_date": active_date,
+        "created_at": captured_at,
+        "updated_at": captured_at,
+        "expires_at": (
+            datetime.fromisoformat(active_date).replace(tzinfo=UTC) + timedelta(days=1)
+        ).replace(hour=4).isoformat().replace("+00:00", "Z"),
+        "descriptor_source": descriptor.descriptor_source,
+        "created_from": descriptor.descriptor_source,
+        "descriptor_status": descriptor.descriptor_status,
+        "source_event_id": None,
+        "source_observation_id": None,
+        "snapshot_path": str(snapshot_path),
+        "frame_source": "periodic_live_sample",
+        "last_seen_at": captured_at,
+        "last_seen_camera_id": config.camera.camera_id,
+        "last_seen_room": config.room.name,
+        "role_assignment": "unknown_person",
+        "assignment_source": "unassigned",
+        "assigned_by": None,
+        "assigned_at": None,
+        "attributes": attributes,
+    }
+    sample = {
+        "sample_id": sample_id,
+        "appearance_profile_id": profile_id,
+        "active_date": active_date,
+        "captured_at": captured_at,
+        "camera_id": config.camera.camera_id,
+        "room": config.room.name,
+        "track_id": track.track_id,
+        "source_event_id": None,
+        "source_observation_id": None,
+        "snapshot_path": str(snapshot_path),
+        "frame_source": "periodic_live_sample",
+        "descriptor_status": descriptor.descriptor_status,
+        "quality_score": quality.score,
+        "quality_reasons": quality.reasons,
+        "detection_confidence": round(track.detection.confidence, 4),
+        "bbox_xyxy": list(track.detection.bbox_xyxy),
+        "attributes": attributes,
+        "retained_rank": 0,
+        "created_at": captured_at,
+    }
+    store.upsert_appearance_profile(profile)
+    store.insert_appearance_profile_sample(sample)
+    store.prune_appearance_profile_samples(profile_id, max_samples=max_samples_per_profile)
+    render_profile = AppearanceProfile(
+        appearance_profile_id=profile_id,
+        active_date=active_date,
+        expires_at=profile["expires_at"],
+        role_assignment="unknown_person",
+        assignment_source="unassigned",
+        track_id=track.track_id,
+        upper_body_color=descriptor.upper_body_color.value,
+        lower_body_color=descriptor.lower_body_color.value,
+        headwear=descriptor.headwear.value,
+        footwear=descriptor.footwear.value,
+        last_seen_camera_id=config.camera.camera_id,
+        last_seen_room=config.room.name,
+        last_seen_at=captured_at,
+    )
+    return {**sample, "summary": render_appearance_summary(render_profile)}
+
+
+def _appearance_profile_id(active_date: str, source: str) -> str:
+    suffix = "".join(ch if ch.isalnum() else "_" for ch in source.lower()).strip("_")
+    return f"appearance_{active_date.replace('-', '_')}_{suffix[:32]}"
 
 
 def run_post_event_agent_dry_run(
@@ -870,6 +1033,7 @@ def main() -> None:
     obs_preview_path = resolve_runtime_path(args.obs_live_preview_path)
     last_obs_preview_write_at = 0.0
     last_floor_debug_at = 0.0
+    last_appearance_sample_at = 0.0
     try:
         while True:
             started_at = time.perf_counter()
@@ -881,7 +1045,26 @@ def main() -> None:
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = model.predict(rgb_frame, conf=args.conf)[0]
             height, width = frame.shape[:2]
-            event = detector.update(result_to_detections(result, width, height))
+            detections = result_to_detections(result, width, height)
+            event = detector.update(detections)
+            if (
+                args.appearance_sampling
+                and time.monotonic() - last_appearance_sample_at >= args.appearance_sample_interval_seconds
+            ):
+                sample = maybe_capture_appearance_sample(
+                    cv2=cv2,
+                    store=store,
+                    frame=frame,
+                    rgb_frame=rgb_frame,
+                    tracked_people=detector.tracked_people(),
+                    config=config,
+                    database_path=database_path,
+                    min_quality_score=args.appearance_min_quality_score,
+                    max_samples_per_profile=args.appearance_max_samples_per_profile,
+                )
+                if sample is not None:
+                    last_appearance_sample_at = time.monotonic()
+                    print(format_appearance_sample_line(sample))
             if args.debug_floor_stay and time.monotonic() - last_floor_debug_at >= 1.0:
                 print(format_floor_stay_debug_line(detector.diagnostic()))
                 last_floor_debug_at = time.monotonic()

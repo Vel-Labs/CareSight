@@ -18,12 +18,14 @@ class FloorStayDetector:
         self._floor_candidate_last_seen_at: float | None = None
         self._last_floor_event_at: float | None = None
         self._last_diagnostic: dict = {"status": "not_started"}
+        self._last_tracked_people: list[TrackSnapshot] = []
 
     def update(self, detections: list[Detection], now: float | None = None) -> dict | None:
         if now is None:
             now = datetime.now(tz=UTC).timestamp()
 
         tracked_people = self._tracker.update(detections, now=now)
+        self._last_tracked_people = tracked_people
         person = self._best_person_in_floor_zone(tracked_people)
         active_track_ids = self._tracker.active_track_ids()
         self._entered_at_by_track = {
@@ -72,6 +74,9 @@ class FloorStayDetector:
 
     def diagnostic(self) -> dict:
         return self._last_diagnostic
+
+    def tracked_people(self) -> list[TrackSnapshot]:
+        return list(self._last_tracked_people)
 
     def _best_person_in_floor_zone(self, detections: list[TrackSnapshot]) -> TrackSnapshot | None:
         people_in_zone = [

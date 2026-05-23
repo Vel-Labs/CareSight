@@ -41,6 +41,356 @@ class SQLiteStore:
                 definition="TEXT NOT NULL DEFAULT '[]'",
             )
 
+    def insert_appearance_profile(self, profile: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO appearance_profiles (
+                  appearance_profile_id,
+                  active_date,
+                  created_at,
+                  updated_at,
+                  expires_at,
+                  descriptor_source,
+                  descriptor_status,
+                  source_event_id,
+                  source_observation_id,
+                  snapshot_path,
+                  frame_source,
+                  last_seen_at,
+                  last_seen_camera_id,
+                  last_seen_room,
+                  role_assignment,
+                  assignment_source,
+                  assigned_by,
+                  assigned_at,
+                  attributes_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                appearance_profile_values(profile),
+            )
+
+    def upsert_appearance_profile(self, profile: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO appearance_profiles (
+                  appearance_profile_id,
+                  active_date,
+                  created_at,
+                  updated_at,
+                  expires_at,
+                  descriptor_source,
+                  descriptor_status,
+                  source_event_id,
+                  source_observation_id,
+                  snapshot_path,
+                  frame_source,
+                  last_seen_at,
+                  last_seen_camera_id,
+                  last_seen_room,
+                  role_assignment,
+                  assignment_source,
+                  assigned_by,
+                  assigned_at,
+                  attributes_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(appearance_profile_id) DO UPDATE SET
+                  active_date=excluded.active_date,
+                  updated_at=excluded.updated_at,
+                  expires_at=excluded.expires_at,
+                  descriptor_source=excluded.descriptor_source,
+                  descriptor_status=excluded.descriptor_status,
+                  source_event_id=excluded.source_event_id,
+                  source_observation_id=excluded.source_observation_id,
+                  snapshot_path=excluded.snapshot_path,
+                  frame_source=excluded.frame_source,
+                  last_seen_at=excluded.last_seen_at,
+                  last_seen_camera_id=excluded.last_seen_camera_id,
+                  last_seen_room=excluded.last_seen_room,
+                  role_assignment=excluded.role_assignment,
+                  assignment_source=excluded.assignment_source,
+                  assigned_by=excluded.assigned_by,
+                  assigned_at=excluded.assigned_at,
+                  attributes_json=excluded.attributes_json
+                """,
+                appearance_profile_values(profile),
+            )
+
+    def get_appearance_profile(self, appearance_profile_id: str) -> dict[str, Any]:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM appearance_profiles WHERE appearance_profile_id = ?",
+                (appearance_profile_id,),
+            ).fetchone()
+        if row is None:
+            raise KeyError(appearance_profile_id)
+        return appearance_profile_from_row(row)
+
+    def list_active_appearance_profiles(
+        self,
+        *,
+        active_date: str | None = None,
+        now: str | None = None,
+    ) -> list[dict[str, Any]]:
+        if now is None:
+            now = utc_now()
+        if active_date is None:
+            active_date = now[:10]
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM appearance_profiles
+                WHERE active_date = ?
+                  AND expires_at > ?
+                ORDER BY last_seen_at DESC, appearance_profile_id
+                """,
+                (active_date, now),
+            ).fetchall()
+        return [appearance_profile_from_row(row) for row in rows]
+
+    def insert_appearance_profile_observation(self, observation: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            profile_row = conn.execute(
+                """
+                SELECT appearance_profile_id FROM appearance_profiles
+                WHERE appearance_profile_id = ?
+                """,
+                (observation["appearance_profile_id"],),
+            ).fetchone()
+            if profile_row is None:
+                raise KeyError(observation["appearance_profile_id"])
+            conn.execute(
+                """
+                INSERT INTO appearance_profile_observations (
+                  profile_observation_id,
+                  appearance_profile_id,
+                  observed_at,
+                  camera_id,
+                  room,
+                  track_id,
+                  source_event_id,
+                  source_observation_id,
+                  snapshot_path,
+                  frame_source,
+                  descriptor_source,
+                  descriptor_status,
+                  confidence,
+                  attributes_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                appearance_profile_observation_values(observation),
+            )
+
+    def list_appearance_profile_observations(
+        self,
+        appearance_profile_id: str,
+    ) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM appearance_profile_observations
+                WHERE appearance_profile_id = ?
+                ORDER BY observed_at, profile_observation_id
+                """,
+                (appearance_profile_id,),
+            ).fetchall()
+        return [appearance_profile_observation_from_row(row) for row in rows]
+
+    def insert_appearance_profile_sample(self, sample: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO appearance_profile_samples (
+                  sample_id,
+                  appearance_profile_id,
+                  active_date,
+                  captured_at,
+                  camera_id,
+                  room,
+                  track_id,
+                  source_event_id,
+                  source_observation_id,
+                  snapshot_path,
+                  frame_source,
+                  descriptor_status,
+                  quality_score,
+                  quality_reasons_json,
+                  detection_confidence,
+                  bbox_json,
+                  attributes_json,
+                  retained_rank,
+                  created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                appearance_profile_sample_values(sample),
+            )
+
+    def list_appearance_profile_samples(
+        self,
+        appearance_profile_id: str,
+    ) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM appearance_profile_samples
+                WHERE appearance_profile_id = ?
+                ORDER BY quality_score DESC, captured_at DESC, sample_id
+                """,
+                (appearance_profile_id,),
+            ).fetchall()
+        return [appearance_profile_sample_from_row(row) for row in rows]
+
+    def list_appearance_samples_for_date(self, active_date: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM appearance_profile_samples
+                WHERE active_date = ?
+                ORDER BY appearance_profile_id, quality_score DESC, captured_at DESC, sample_id
+                """,
+                (active_date,),
+            ).fetchall()
+        return [appearance_profile_sample_from_row(row) for row in rows]
+
+    def prune_appearance_profile_samples(
+        self,
+        appearance_profile_id: str,
+        *,
+        max_samples: int,
+        delete_files: bool = True,
+    ) -> list[dict[str, Any]]:
+        if max_samples < 1:
+            raise ValueError("max_samples must be >= 1")
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT * FROM appearance_profile_samples
+                WHERE appearance_profile_id = ?
+                ORDER BY quality_score DESC, captured_at DESC, sample_id
+                """,
+                (appearance_profile_id,),
+            ).fetchall()
+            kept = rows[:max_samples]
+            removed = rows[max_samples:]
+            for rank, row in enumerate(kept, start=1):
+                conn.execute(
+                    """
+                    UPDATE appearance_profile_samples
+                    SET retained_rank = ?
+                    WHERE sample_id = ?
+                    """,
+                    (rank, row["sample_id"]),
+                )
+            for row in removed:
+                conn.execute(
+                    "DELETE FROM appearance_profile_samples WHERE sample_id = ?",
+                    (row["sample_id"],),
+                )
+        removed_samples = [appearance_profile_sample_from_row(row) for row in removed]
+        if delete_files:
+            for sample in removed_samples:
+                try:
+                    Path(sample["snapshot_path"]).unlink(missing_ok=True)
+                except OSError:
+                    pass
+        return removed_samples
+
+    def list_appearance_profiles_for_event(self, event_id: str) -> list[dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT DISTINCT appearance_profiles.*
+                FROM appearance_profiles
+                LEFT JOIN events
+                  ON events.event_id = ?
+                LEFT JOIN event_observations
+                  ON event_observations.event_id = events.event_id
+                LEFT JOIN appearance_profile_observations
+                  ON appearance_profile_observations.appearance_profile_id =
+                     appearance_profiles.appearance_profile_id
+                LEFT JOIN appearance_profile_samples
+                  ON appearance_profile_samples.appearance_profile_id =
+                     appearance_profiles.appearance_profile_id
+                WHERE appearance_profiles.source_event_id = ?
+                   OR appearance_profile_observations.source_event_id = ?
+                   OR (
+                        events.event_id IS NOT NULL
+                        AND appearance_profiles.active_date = substr(events.occurred_at, 1, 10)
+                        AND event_observations.track_id IS NOT NULL
+                        AND (
+                          appearance_profile_observations.track_id = event_observations.track_id
+                          OR appearance_profile_samples.track_id = event_observations.track_id
+                        )
+                      )
+                ORDER BY appearance_profiles.last_seen_at DESC,
+                         appearance_profiles.appearance_profile_id
+                """,
+                (event_id, event_id, event_id),
+            ).fetchall()
+        return [appearance_profile_from_row(row) for row in rows]
+
+    def assign_appearance_profile_role(
+        self,
+        appearance_profile_id: str,
+        *,
+        role_assignment: str,
+        reviewer: str,
+        assigned_at: str | None = None,
+    ) -> dict[str, Any]:
+        role_assignment = role_assignment.strip()
+        reviewer = reviewer.strip()
+        if not role_assignment:
+            raise ValueError("role_assignment is required")
+        if not reviewer:
+            raise ValueError("reviewer is required")
+        if is_automation_reviewer(reviewer):
+            raise ValueError("reviewer must be an authorized human, not an agent or automation")
+        if assigned_at is None:
+            assigned_at = utc_now()
+
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT appearance_profile_id FROM appearance_profiles
+                WHERE appearance_profile_id = ?
+                """,
+                (appearance_profile_id,),
+            ).fetchone()
+            if row is None:
+                raise KeyError(appearance_profile_id)
+            conn.execute(
+                """
+                UPDATE appearance_profiles
+                SET role_assignment = ?,
+                    assignment_source = ?,
+                    assigned_by = ?,
+                    assigned_at = ?,
+                    updated_at = ?
+                WHERE appearance_profile_id = ?
+                """,
+                (
+                    role_assignment,
+                    "human_confirmed",
+                    reviewer,
+                    assigned_at,
+                    assigned_at,
+                    appearance_profile_id,
+                ),
+            )
+
+        return {
+            "appearance_profile_id": appearance_profile_id,
+            "role_assignment": role_assignment,
+            "assignment_source": "human_confirmed",
+            "assigned_by": reviewer,
+            "assigned_at": assigned_at,
+        }
+
     def upsert_config(self, config: CareSightConfig) -> None:
         with self._connect() as conn:
             conn.execute(
@@ -809,6 +1159,147 @@ def agent_execution_attempt_from_row(row: sqlite3.Row) -> dict[str, Any]:
     }
 
 
+def appearance_profile_values(profile: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        profile["appearance_profile_id"],
+        profile["active_date"],
+        profile["created_at"],
+        profile["updated_at"],
+        profile["expires_at"],
+        profile.get("descriptor_source", profile.get("created_from")),
+        profile["descriptor_status"],
+        profile.get("source_event_id"),
+        profile.get("source_observation_id"),
+        profile.get("snapshot_path"),
+        profile.get("frame_source"),
+        profile.get("last_seen_at"),
+        profile.get("last_seen_camera_id"),
+        profile.get("last_seen_room"),
+        profile.get("role_assignment", "unknown_person"),
+        profile.get("assignment_source", "unassigned"),
+        profile.get("assigned_by"),
+        profile.get("assigned_at"),
+        json.dumps(profile["attributes"], sort_keys=True),
+    )
+
+
+def appearance_profile_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    descriptor_source = row["descriptor_source"]
+    return {
+        "schema": "appearance-profile",
+        "appearance_profile_id": row["appearance_profile_id"],
+        "active_date": row["active_date"],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+        "expires_at": row["expires_at"],
+        "descriptor_source": descriptor_source,
+        "created_from": descriptor_source,
+        "descriptor_status": row["descriptor_status"],
+        "source_event_id": row["source_event_id"],
+        "source_observation_id": row["source_observation_id"],
+        "snapshot_path": row["snapshot_path"],
+        "frame_source": row["frame_source"],
+        "last_seen_at": row["last_seen_at"],
+        "last_seen_camera_id": row["last_seen_camera_id"],
+        "last_seen_room": row["last_seen_room"],
+        "role_assignment": row["role_assignment"],
+        "assignment_source": row["assignment_source"],
+        "assigned_by": row["assigned_by"],
+        "assigned_at": row["assigned_at"],
+        "attributes": json.loads(row["attributes_json"]),
+    }
+
+
+def appearance_profile_observation_values(observation: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        observation["profile_observation_id"],
+        observation["appearance_profile_id"],
+        observation["observed_at"],
+        observation.get("camera_id"),
+        observation.get("room"),
+        observation.get("track_id"),
+        observation.get("source_event_id"),
+        observation.get("source_observation_id"),
+        observation.get("snapshot_path"),
+        observation.get("frame_source"),
+        observation.get("descriptor_source", observation.get("created_from")),
+        observation["descriptor_status"],
+        observation.get("confidence"),
+        json.dumps(observation["attributes"], sort_keys=True),
+    )
+
+
+def appearance_profile_observation_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    descriptor_source = row["descriptor_source"]
+    return {
+        "schema": "appearance-profile-observation",
+        "profile_observation_id": row["profile_observation_id"],
+        "appearance_profile_id": row["appearance_profile_id"],
+        "observed_at": row["observed_at"],
+        "camera_id": row["camera_id"],
+        "room": row["room"],
+        "track_id": row["track_id"],
+        "source_event_id": row["source_event_id"],
+        "source_observation_id": row["source_observation_id"],
+        "snapshot_path": row["snapshot_path"],
+        "frame_source": row["frame_source"],
+        "descriptor_source": descriptor_source,
+        "created_from": descriptor_source,
+        "descriptor_status": row["descriptor_status"],
+        "confidence": row["confidence"],
+        "attributes": json.loads(row["attributes_json"]),
+    }
+
+
+def appearance_profile_sample_values(sample: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        sample["sample_id"],
+        sample["appearance_profile_id"],
+        sample["active_date"],
+        sample["captured_at"],
+        sample.get("camera_id"),
+        sample.get("room"),
+        sample.get("track_id"),
+        sample.get("source_event_id"),
+        sample.get("source_observation_id"),
+        sample["snapshot_path"],
+        sample["frame_source"],
+        sample["descriptor_status"],
+        sample["quality_score"],
+        json.dumps(sample["quality_reasons"], sort_keys=True),
+        sample.get("detection_confidence"),
+        json.dumps(sample["bbox_xyxy"], sort_keys=True),
+        json.dumps(sample["attributes"], sort_keys=True),
+        sample.get("retained_rank", 0),
+        sample["created_at"],
+    )
+
+
+def appearance_profile_sample_from_row(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "schema": "appearance-profile-sample",
+        "sample_id": row["sample_id"],
+        "appearance_profile_id": row["appearance_profile_id"],
+        "active_date": row["active_date"],
+        "captured_at": row["captured_at"],
+        "camera_id": row["camera_id"],
+        "room": row["room"],
+        "track_id": row["track_id"],
+        "source_event_id": row["source_event_id"],
+        "source_observation_id": row["source_observation_id"],
+        "snapshot_path": row["snapshot_path"],
+        "frame_source": row["frame_source"],
+        "descriptor_status": row["descriptor_status"],
+        "quality_score": row["quality_score"],
+        "quality_reasons": json.loads(row["quality_reasons_json"]),
+        "detection_confidence": row["detection_confidence"],
+        "bbox_xyxy": json.loads(row["bbox_json"]),
+        "attributes": json.loads(row["attributes_json"]),
+        "retained_rank": row["retained_rank"],
+        "created_at": row["created_at"],
+    }
+
+
 def review_journal_body(
     event: dict[str, Any],
     reviewer: str,
@@ -829,7 +1320,21 @@ def review_journal_body(
 
 def is_automation_reviewer(reviewer: str) -> bool:
     normalized = reviewer.strip().lower().replace("_", " ").replace("-", " ")
-    automation_names = {"agent", "ai", "llm", "dashboard", "script", "automation", "carebot"}
+    automation_names = {
+        "agent",
+        "ai",
+        "assistant",
+        "automation",
+        "bot",
+        "carebot",
+        "chatgpt",
+        "codex",
+        "dashboard",
+        "llm",
+        "model",
+        "openclaw",
+        "script",
+    }
     return normalized in automation_names
 
 
@@ -844,4 +1349,10 @@ def utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-SCHEMA_SQL = (Path(__file__).resolve().parent / "migrations" / "001_init.sql").read_text(encoding="utf-8")
+MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
+SCHEMA_SQL = "\n".join(
+    [
+        (MIGRATIONS_DIR / "001_init.sql").read_text(encoding="utf-8"),
+        (MIGRATIONS_DIR / "003_appearance_profiles.sql").read_text(encoding="utf-8"),
+    ]
+)

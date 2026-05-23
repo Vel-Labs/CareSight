@@ -24,6 +24,7 @@ It should not contain YOLO, OpenCV, camera, SQLite runtime, dashboard, or alert 
 - detections, tracking, zones, and temporal event rules
 - CareSight-owned inference harnesses that convert raw detections into normalized observations with configured camera and room metadata
 - local track state and track metadata under `caresight/runtime/tracking/`
+- non-biometric same-day appearance descriptors and SQLite profile read/write paths under `caresight/runtime/appearance/`
 - SQLite storage
 - journal generation
 - alert adapters
@@ -50,6 +51,7 @@ Out of scope unless explicitly moved:
 - emergency service integrations
 - EHR integrations
 - clinical/facility compliance workflows
+- biometric identity, face recognition, named-person identification, or cross-day person identity matching
 
 ## Fold-In Rule
 

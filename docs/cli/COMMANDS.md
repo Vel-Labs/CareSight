@@ -90,6 +90,26 @@ The startup line reports `required_dwell_seconds`; this is the configured thresh
 
 Omit `--no-window` when the operator needs the preview overlay to position the floor/low zone.
 
+Appearance sampling:
+
+```bash
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --camera-id living_room \
+  --max-seconds 600 \
+  --appearance-sampling \
+  --appearance-sample-interval-seconds 20 \
+  --appearance-max-samples-per-profile 5
+```
+
+Purpose: periodically store capped, quality-gated local appearance sample snapshots for same-day profile support. Event snapshots are still stored separately when events occur; appearance samples are kept only when descriptor quality passes and lower-quality samples are pruned by retention rank.
+
+Outputs: `appearance_sample_persisted` terminal lines, `appearance_profile_samples` SQLite rows, capped local files under `apps/caresight-hub/data/appearance-samples/`, and same-day appearance profile updates. The samples support aggregate statements such as `blue upper clothing: 2/3 good samples`; they do not identify named people.
+
+Validation: `test_appearance_profiles.py`, `test_sqlite_store.py`, and `test_care_console.py` verify quality scoring, capped retention, sample readback, and daily summary support ratios.
+
+Agent safety: `manual-operator`. The command reads local camera frames and writes local sample evidence only. It does not send messages, open FaceTime, play TTS, upload raw video, perform face recognition, or identify named people.
+
 No-send agent pipeline:
 
 ```bash
@@ -441,6 +461,32 @@ Outputs: source-of-truth marker, focused-event mode when `--event-id` is used, s
 Validation: `test_care_console.py` verifies the dashboard reads SQLite state, keeps review actions routed through `ReviewService`, and marks delete/dispatch as forbidden.
 
 Agent safety: `agent-safe-read`.
+
+## Care Console Appearance Profile
+
+Commands:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py appearance-profile list --active-date 2026-05-22
+python apps/caresight-hub/scripts/care_console.py appearance-profile show appearance_2026_05_22_track_29
+python apps/caresight-hub/scripts/care_console.py appearance-profile list-samples appearance_2026_05_22_track_29
+python apps/caresight-hub/scripts/care_console.py appearance-profile summarize-today --active-date 2026-05-22
+python apps/caresight-hub/scripts/care_console.py appearance-profile describe-image /tmp/person.ppm --bbox 20,20,80,90
+python apps/caresight-hub/scripts/care_console.py appearance-profile derive-from-event evt_67f81ae3d0df49fd92832766b94be216
+python apps/caresight-hub/scripts/care_console.py appearance-profile assign-role appearance_2026_05_22_track_29 --role resident_primary --reviewer Steven
+```
+
+Purpose: inspect or derive local non-biometric, same-day appearance profiles from SQLite events and local event snapshots.
+
+Inputs: optional `--db <path>` for all subcommands; `list` and `summarize-today` accept `--active-date YYYY-MM-DD`; `show` and `list-samples` accept an `appearance_profile_id`; `describe-image` accepts a local image path and `--bbox x1,y1,x2,y2`; `derive-from-event` accepts an `event_id` and optional bounded `--role`; `assign-role` accepts an `appearance_profile_id`, required bounded `--role`, and required human `--reviewer`.
+
+Outputs: JSON receipts with `identity_boundary: non_biometric_daily_appearance_only`, `descriptor_source`, `descriptor_status`, same-day profile metadata, event/observation/sample provenance, bounded role assignment, and forbidden claims. `describe-image` is read-only and supports still-image checks for upper clothing, lower clothing, headwear, and footwear descriptors. `derive-from-event` reads the real event row, observation row, and local `snapshot_path`; it does not create a seeded fixture. `summarize-today` aggregates retained quality-gated samples into support ratios without claiming identity.
+
+Validation: `test_appearance_profiles.py`, `test_sqlite_store.py`, and `test_care_console.py` verify contract-safe descriptors, fail-closed unreadable/invalid image handling, SQLite profile/observation persistence, still-image descriptor checks, CLI derivation from event snapshots, and dashboard bounded context.
+
+Agent safety: `agent-safe-read` for `list`, `show`, `list-samples`, `summarize-today`, and `describe-image`. `derive-from-event` is `manual-operator` because it writes local SQLite appearance rows from an existing event and snapshot. `assign-role` is `human-review-required` because role assignment must be explicitly attributed to a human reviewer.
+
+Boundaries: appearance profiles are clothing/accessory context for the current day only. The command must not claim biometric identity, face recognition, named-person identification, cross-day identity, medical-device behavior, diagnosis, fall detection, or autonomous emergency dispatch.
 
 ## Care Console Review Packet
 
