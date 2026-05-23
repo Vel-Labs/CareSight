@@ -183,6 +183,11 @@ class FloorStayDetector:
                 "detection_confidence": round(detection.confidence, 4),
                 "bbox_xyxy": list(detection.bbox_xyxy),
                 "zone_kind": self.config.floor_zone.kind,
+                "zone_shape": "polygon" if self.config.floor_zone.vertices else "rectangle",
+                "zone_vertices": [
+                    [round(x, 4), round(y, 4)]
+                    for x, y in self.config.floor_zone.normalized_vertices()
+                ],
                 "camera_id": self.config.camera.camera_id,
                 "room_id": self.config.room.room_id,
                 "room_name": self.config.room.name,

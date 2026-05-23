@@ -93,6 +93,7 @@ Current dual-camera detector approach:
 - Avoid shared `--obs-live-preview` output unless each process has a distinct preview path.
 - Use `caresight_detector_start.py --appearance-overlay --stop-existing` for the current operator-friendly start path; it detaches the two detector processes, writes PID/log files, and reports feed health.
 - `--appearance-overlay` draws bounded clothing descriptor sub-boxes only when YOLO26 emits a `person` detection. It is visible review evidence, not true segmentation, and it will not run when the detector labels a seated or partial person as furniture.
+- Configure per-camera `floor_zones[].vertices` in ignored local runtime config when the camera view needs perspective-aware floor-plane scoring. The detector then uses point-in-polygon membership and OBS draws the filled calibrated floor plane instead of a flat lower-third rectangle.
 
 Example OBS feed URLs:
 
@@ -102,6 +103,8 @@ http://127.0.0.1:8767/live.html  # Kitchen
 ```
 
 This is less efficient than a future single ingest/restream worker, because YOLO26 loads once per process. It is the best current app path because it reuses the proven bounded detector loop, SQLite audit writes, and OBS MJPEG browser feed without introducing a new unvalidated multi-camera scheduler.
+
+Depth boundary: Tapo C210 feeds are single RGB streams, so CareSight cannot infer reliable metric depth from the camera alone. The current supported path is a calibrated 2D floor-plane polygon per camera. A later validation lane could evaluate monocular-depth models or dedicated depth/stereo hardware, but that would need separate local performance, false-positive, and privacy receipts before it drives event logic.
 
 Current recovery status: the committed example proves redaction and command behavior through `--dry-run`; the ignored local Living Room and Kitchen configs have now also produced owner-authorized live RTSP probe receipts with first frames at `1920x1080@15fps`. Do not commit real camera IPs, usernames, passwords, or frames.
 

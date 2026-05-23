@@ -275,17 +275,25 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float], *, appearan
     display = frame.copy()
     zone = config.floor_zone
     height, width = display.shape[:2]
-    x1 = int(zone.x_min * width)
-    y1 = int(zone.y_min * height)
-    x2 = int(zone.x_max * width)
-    y2 = int(zone.y_max * height)
+    vertices = tuple((int(x * width), int(y * height)) for x, y in zone.normalized_vertices())
+    x1 = min(x for x, _y in vertices)
+    y1 = min(y for _x, y in vertices)
+    x2 = max(x for x, _y in vertices)
+    y2 = max(y for _x, y in vertices)
     zone_fill = display.copy()
-    cv2.rectangle(zone_fill, (x1, y1), (x2, y2), (35, 125, 55), -1)
+    if zone.vertices:
+        import numpy as np
+
+        polygon = np.array(vertices, dtype=np.int32)
+        cv2.fillPoly(zone_fill, [polygon], (35, 125, 55))
+        cv2.polylines(display, [polygon], True, (60, 220, 80), 3)
+    else:
+        cv2.rectangle(zone_fill, (x1, y1), (x2, y2), (35, 125, 55), -1)
+        cv2.rectangle(display, (x1, y1), (x2, y2), (60, 220, 80), 2)
     display = cv2.addWeighted(zone_fill, 0.16, display, 0.84, 0)
-    cv2.rectangle(display, (x1, y1), (x2, y2), (60, 220, 80), 2)
     cv2.putText(
         display,
-        zone.name,
+        "Calibrated Floor Plane" if zone.vertices else zone.name,
         (x1 + 8, max(y1 - 8, 24)),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.6,

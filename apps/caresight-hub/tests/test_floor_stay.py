@@ -2,7 +2,7 @@ import unittest
 from dataclasses import replace
 
 from caresight.events.floor_stay import FloorStayDetector
-from caresight.runtime.config import CareSightConfig
+from caresight.runtime.config import CareSightConfig, ZoneConfig
 from caresight.vision.detections import Detection
 
 
@@ -285,6 +285,51 @@ class FloorStayDetectorTest(unittest.TestCase):
         diagnostic = detector.diagnostic()
         self.assertEqual(diagnostic["status"], "person_detected_but_not_floor_stay_candidate")
         self.assertFalse(diagnostic["people"][0]["low_posture"])
+
+    def test_calibrated_polygon_floor_zone_excludes_non_floor_area_inside_rectangle(self) -> None:
+        config = replace(
+            CareSightConfig.default(),
+            floor_zone=ZoneConfig(
+                zone_id="floor_zone",
+                camera_id="living_room",
+                name="Calibrated Floor Plane",
+                kind="floor_low",
+                x_min=0.0,
+                y_min=0.45,
+                x_max=1.0,
+                y_max=1.0,
+                vertices=((0.25, 0.55), (0.75, 0.55), (1.0, 1.0), (0.0, 1.0)),
+            ),
+        )
+        detector = FloorStayDetector(config)
+        outside_polygon = Detection(
+            class_name="person",
+            confidence=0.91,
+            bbox_xyxy=(0, 400, 300, 530),
+            frame_width=1280,
+            frame_height=720,
+        )
+        inside_polygon = Detection(
+            class_name="person",
+            confidence=0.91,
+            bbox_xyxy=(300, 430, 980, 715),
+            frame_width=1280,
+            frame_height=720,
+        )
+
+        detector.update([outside_polygon], now=100.0)
+        self.assertIsNone(detector.update([outside_polygon], now=109.0))
+        diagnostic = detector.diagnostic()
+        self.assertFalse(diagnostic["people"][0]["in_floor_zone"])
+
+        detector = FloorStayDetector(config)
+        detector.update([inside_polygon], now=100.0)
+        event = detector.update([inside_polygon], now=109.0)
+
+        self.assertIsNotNone(event)
+        assert event is not None
+        self.assertEqual(event["evidence"]["zone_shape"], "polygon")
+        self.assertEqual(len(event["evidence"]["zone_vertices"]), 4)
 
 
 if __name__ == "__main__":

@@ -182,6 +182,28 @@ OBS Browser Source URLs:
 
 `--appearance-overlay` draws visual-review clothing descriptor sub-boxes on YOLO `person` detections in the OBS feed. This is not true pixel segmentation; it samples bounded body regions inside a person box, so if YOLO labels a seated or partial person as `couch` there is no clothing pass for that object yet.
 
+`floor_zone.vertices` can be added to the ignored local runtime config to draw and score against a calibrated floor-plane polygon instead of a flat rectangular lower-zone band. Use normalized image coordinates, ordered around the visible floor plane:
+
+```json
+{
+  "floor_zones": [
+    {
+      "zone_id": "floor_zone",
+      "camera_id": "tapo_living_room",
+      "name": "Living Room Calibrated Floor Plane",
+      "kind": "floor_low",
+      "x_min": 0.0,
+      "y_min": 0.44,
+      "x_max": 1.0,
+      "y_max": 1.0,
+      "vertices": [[0.0, 0.44], [0.52, 0.43], [0.78, 0.45], [1.0, 0.48], [1.0, 1.0], [0.0, 1.0]]
+    }
+  ]
+}
+```
+
+This is camera calibration, not metric depth. It gives the detector and OBS overlay a perspective-aware floor surface for each camera; true distance/depth would require a depth sensor, stereo camera pair, or an additional monocular-depth model with its own validation.
+
 Do not run both processes with the default `--obs-live-preview` path unless each process also gets a distinct `--obs-live-preview-path`; otherwise both cameras will overwrite the same `apps/obs-hub/config/live_preview.jpg`. Browser-feed ports are the preferred dual-camera OBS path.
 
 Validation: `test_multi_camera_sources.py` verifies dry-run redaction and no credential leakage.

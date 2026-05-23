@@ -83,9 +83,31 @@ class ZoneConfig:
     y_min: float
     x_max: float
     y_max: float
+    vertices: tuple[tuple[float, float], ...] = ()
+
+    def __post_init__(self) -> None:
+        normalized_vertices = tuple(
+            (float(point[0]), float(point[1]))
+            for point in self.vertices
+        )
+        if normalized_vertices and len(normalized_vertices) < 3:
+            raise ValueError("zone vertices must contain at least three points")
+        object.__setattr__(self, "vertices", normalized_vertices)
 
     def contains_normalized_point(self, x: float, y: float) -> bool:
+        if self.vertices:
+            return _point_in_polygon(x, y, self.vertices)
         return self.x_min <= x <= self.x_max and self.y_min <= y <= self.y_max
+
+    def normalized_vertices(self) -> tuple[tuple[float, float], ...]:
+        if self.vertices:
+            return self.vertices
+        return (
+            (self.x_min, self.y_min),
+            (self.x_max, self.y_min),
+            (self.x_max, self.y_max),
+            (self.x_min, self.y_max),
+        )
 
 
 @dataclass(frozen=True)
@@ -113,6 +135,7 @@ class CareSightConfig:
     storage: StorageConfig
     cameras: tuple[CameraConfig, ...] = ()
     active_camera_id: str | None = None
+    floor_zones: tuple[ZoneConfig, ...] = ()
 
     @classmethod
     def default(cls) -> "CareSightConfig":
@@ -179,6 +202,7 @@ class CareSightConfig:
             ),
             cameras=(camera,),
             active_camera_id=camera.camera_id,
+            floor_zones=(),
         )
 
     @classmethod
@@ -192,6 +216,9 @@ class CareSightConfig:
         cameras = tuple(CameraConfig(**item) for item in data.get("cameras", [data["camera"]]))
         active_camera_id = data.get("active_camera_id", camera.camera_id)
         selected_camera = _find_camera(cameras, active_camera_id) or camera
+        base_floor_zone = ZoneConfig(**data["floor_zone"])
+        floor_zones = tuple(ZoneConfig(**item) for item in data.get("floor_zones", []))
+        selected_floor_zone = _find_zone(floor_zones, selected_camera.camera_id) or base_floor_zone
         room = RoomConfig(
             **data.get(
                 "room",
@@ -206,18 +233,19 @@ class CareSightConfig:
         return cls(
             camera=selected_camera,
             room=room,
-            floor_zone=ZoneConfig(**data["floor_zone"]),
+            floor_zone=selected_floor_zone,
             floor_stay=FloorStayConfig(**data["floor_stay"]),
             tracking=TrackingConfig(**_normalize_tracking_config(data.get("tracking", {}))),
             routines=tuple(RoutineConfig(**item) for item in data.get("routines", [])),
             storage=StorageConfig(**data["storage"]),
             cameras=cameras,
             active_camera_id=selected_camera.camera_id,
+            floor_zones=floor_zones,
         )
 
     def with_selected_camera(self, camera: CameraConfig) -> "CareSightConfig":
         room = _room_for_camera(camera, self.room)
-        zone = replace(self.floor_zone, camera_id=camera.camera_id)
+        zone = _find_zone(self.floor_zones, camera.camera_id) or replace(self.floor_zone, camera_id=camera.camera_id)
         return replace(self, camera=camera, room=room, floor_zone=zone, active_camera_id=camera.camera_id)
 
     def save(self, path: str | Path) -> None:
@@ -238,11 +266,53 @@ def _find_camera(cameras: tuple[CameraConfig, ...], camera_id: str | None) -> Ca
     return None
 
 
+def _find_zone(zones: tuple[ZoneConfig, ...], camera_id: str | None) -> ZoneConfig | None:
+    if camera_id is None:
+        return None
+    for zone in zones:
+        if zone.camera_id == camera_id:
+            return zone
+    return None
+
+
 def _normalize_tracking_config(data: dict) -> dict:
     normalized = dict(data)
     if "dedupe_seconds" in normalized and "dedupe_window_seconds" not in normalized:
         normalized["dedupe_window_seconds"] = normalized.pop("dedupe_seconds")
     return normalized
+
+
+def _point_in_polygon(x: float, y: float, vertices: tuple[tuple[float, float], ...]) -> bool:
+    inside = False
+    previous_x, previous_y = vertices[-1]
+    for current_x, current_y in vertices:
+        if _point_on_segment(x, y, previous_x, previous_y, current_x, current_y):
+            return True
+        intersects = (current_y > y) != (previous_y > y)
+        if intersects:
+            slope_x = (previous_x - current_x) * (y - current_y) / (previous_y - current_y) + current_x
+            if x < slope_x:
+                inside = not inside
+        previous_x, previous_y = current_x, current_y
+    return inside
+
+
+def _point_on_segment(
+    x: float,
+    y: float,
+    segment_x1: float,
+    segment_y1: float,
+    segment_x2: float,
+    segment_y2: float,
+) -> bool:
+    epsilon = 1e-9
+    cross_product = (y - segment_y1) * (segment_x2 - segment_x1) - (x - segment_x1) * (segment_y2 - segment_y1)
+    if abs(cross_product) > epsilon:
+        return False
+    return (
+        min(segment_x1, segment_x2) - epsilon <= x <= max(segment_x1, segment_x2) + epsilon
+        and min(segment_y1, segment_y2) - epsilon <= y <= max(segment_y1, segment_y2) + epsilon
+    )
 
 
 def _room_for_camera(camera: CameraConfig, fallback: RoomConfig) -> RoomConfig:
