@@ -49,7 +49,9 @@ local camera feeds
 
 The current hardware path uses owner-authorized local Tapo RTSP cameras because they are cheap, available, and enough to prove the home-bundle concept. They are replaceable inputs, not the center of the architecture.
 
-The important privacy and trust boundary is that raw camera context, event memory, model drafting, and proof receipts are designed to run locally first. The SQLite store acts like a local blackbox: events, observations, reviews, drafts, snapshots, and execution attempts are structured records that agents can read from and add to through bounded services, but they are not supposed to delete records or rewrite history. The handoff path should expose only the event-scoped context that a caregiver needs: message text, a screenshot when approved, and a live feed only when the operator chooses that escalation path.
+The important privacy and trust boundary is that raw camera context, event memory, model drafting, and proof receipts are designed to run locally first. The SQLite store acts like a local blackbox: events, observations, reviews, drafts, snapshots, and execution attempts are structured records that agents can read from and add to through bounded services, but they are not supposed to delete records or rewrite history.
+
+Off-network escalation is optional, not forced. CareSight can stay local-only for observation, review, and diary workflows. If a household configures caregiver handoff, the external surface should be bounded to event-scoped context: message text, a screenshot when approved, and a live feed only when the operator chooses that escalation path.
 
 ## Three Visible Lanes
 
