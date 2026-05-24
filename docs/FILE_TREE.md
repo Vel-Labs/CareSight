@@ -344,6 +344,7 @@ docs/architecture/bounded_control_loop.md
 docs/architecture/camera_integration_strategy.md
 docs/architecture/caresight_runtime_architecture.md
 docs/architecture/obs_facetime_live_view.md
+docs/assets/caresight-readme-loop.svg
 docs/audits/2026-04-26-contract-core-stability-baseline.md
 docs/audits/2026-05-12-llm-provider-scaffold-baseline.md
 docs/audits/2026-05-18-v0-eventization-implementation.md

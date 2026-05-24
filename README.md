@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/caresight-readme-loop.svg" alt="Animated CareSight loop showing a possible floor-stay routed through human review, caregiver help confirmation, and assisted recovery." width="100%">
+</p>
+
 # CareSight Hub
 
 CareSight Hub is a local-first caregiver awareness system for homes where peace of mind matters: an aging parent living alone, a child at home, a pet, or any loved one you want to know is okay without turning the home into a cloud surveillance product.
