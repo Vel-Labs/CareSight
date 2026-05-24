@@ -15,6 +15,7 @@ from .harness import (
 )
 from .live_handoff import (
     DEFAULT_LIVE_MESSAGE,
+    classify_reply_intent,
     execute_facetime_if_yes,
     execute_live_imessage,
     is_yes_like_reply,
@@ -32,6 +33,7 @@ __all__ = [
     "build_hermes_handoff_payload",
     "contact_ids",
     "DEFAULT_LIVE_MESSAGE",
+    "classify_reply_intent",
     "execute_facetime_if_yes",
     "execute_live_imessage",
     "is_yes_like_reply",

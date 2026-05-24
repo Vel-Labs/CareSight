@@ -10,7 +10,7 @@ from typing import Any
 ROOT_DIR = Path(__file__).resolve().parents[1]
 YOLO_DIR = ROOT_DIR / "vendor" / "yolo-mlx"
 MODEL_PATH = YOLO_DIR / "models" / "yolo26n.npz"
-CONFIG_PATH = ROOT_DIR / "config" / "v0.local.json"
+CONFIG_PATH = ROOT_DIR / "config" / "v0.example.json"
 WINDOW_NAME = "CareSight YOLO26 MLX"
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(YOLO_DIR))

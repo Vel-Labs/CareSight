@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 YOLO_DIR = ROOT_DIR / "vendor" / "yolo-mlx"
-DEFAULT_CONFIG = ROOT_DIR / "config" / "v0.local.json"
+DEFAULT_CONFIG = ROOT_DIR / "config" / "v0.example.json"
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "appearance-validation" / "annotated"
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(YOLO_DIR))

@@ -84,7 +84,17 @@
   },
   "tracking": {
     "occlusion_grace_seconds": 1.0,
-    "missing_seconds": 30.0,
+    "missing_seconds": 300.0,
+    "per_camera_missing_seconds": {
+      "living_room": 45.0,
+      "kitchen_rtsp": 120.0
+    },
+    "per_room_missing_seconds": {
+      "living_room": 45.0,
+      "kitchen": 120.0
+    },
+    "absence_expected_after_seconds": 600.0,
+    "quiet_hours": ["22:00-06:00"],
     "dedupe_seconds": 120.0,
     "missing_severity": "medium"
   },
@@ -122,5 +132,10 @@
   ],
   "storage": {
     "database_path": "apps/caresight-hub/data/caresight-v0.sqlite3"
+  },
+  "site": {
+    "name": "CareSight Local Demo",
+    "mode": "Observation Mode",
+    "label_source": "default_generic"
   }
 }

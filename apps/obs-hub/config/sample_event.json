@@ -1,7 +1,8 @@
 {
   "site": {
-    "name": "Maple Residence",
-    "mode": "Observation Mode"
+    "name": "CareSight Local Demo",
+    "mode": "Observation Mode",
+    "label_source": "default_generic"
   },
   "current_time": "2026-05-21T19:43:18-05:00",
   "current_event": {

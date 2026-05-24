@@ -34,11 +34,16 @@ class DemoTerminalLauncherTest(unittest.TestCase):
         living_section = result.stdout.split("### Terminal 4 - Living Room Detector", 1)[1].split("### Terminal 5", 1)[0]
         kitchen_section = result.stdout.split("### Terminal 5 - Kitchen Detector", 1)[1].split("### Terminal 6", 1)[0]
         self.assertIn("--auto-agent-live-run", living_section)
+        self.assertIn("Starting Living Room detector.", living_section)
+        self.assertNotIn("Press Enter to start Living Room detector", living_section)
         self.assertIn("CARESIGHT_AITUM_VERTICAL_MODE=off", living_section)
         self.assertIn('CARESIGHT_OBS_FACETIME_SCENE=""', living_section)
         self.assertIn('CARESIGHT_OBS_FACETIME_VIDEO_MODE=""', living_section)
         self.assertIn("--tts-audio-route blackhole", living_section)
         self.assertNotIn("--auto-agent-live-run", kitchen_section)
+        self.assertNotIn("--auto-facetime-on-reply", kitchen_section)
+        self.assertIn("Starting Kitchen detector.", kitchen_section)
+        self.assertNotIn("Press Enter to start Kitchen detector", kitchen_section)
 
 
 if __name__ == "__main__":

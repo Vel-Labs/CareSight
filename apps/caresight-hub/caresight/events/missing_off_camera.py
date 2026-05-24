@@ -18,14 +18,23 @@ class MissingOffCameraDetector:
         now: float,
         *,
         recent_concern_severity: str | None = None,
+        likely_continuity_camera_id: str | None = None,
     ) -> dict | None:
+        if likely_continuity_camera_id:
+            return None
         for track in missing_tracks:
-            if track.missed_seconds < self.config.tracking.missing_seconds:
+            missing_window = _missing_window_seconds(self.config)
+            if track.missed_seconds < missing_window:
                 continue
             if track.track_id in self._emitted_track_ids:
                 continue
             self._emitted_track_ids.add(track.track_id)
-            return self._build_event(track, now, recent_concern_severity=recent_concern_severity)
+            return self._build_event(
+                track,
+                now,
+                recent_concern_severity=recent_concern_severity,
+                missing_window_seconds=missing_window,
+            )
         return None
 
     def _build_event(
@@ -34,6 +43,7 @@ class MissingOffCameraDetector:
         now: float,
         *,
         recent_concern_severity: str | None,
+        missing_window_seconds: float,
     ) -> dict:
         occurred_at = datetime.fromtimestamp(now, tz=UTC).isoformat().replace("+00:00", "Z")
         stage, severity, language = _stage_for_missing(
@@ -57,9 +67,12 @@ class MissingOffCameraDetector:
                 "raw_video_stays_local": True,
                 "track_id": track.track_id,
                 "missed_seconds": track.missed_seconds,
+                "missing_window_seconds": missing_window_seconds,
+                "absence_expected_after_seconds": self.config.tracking.absence_expected_after_seconds,
+                "quiet_hours": list(self.config.tracking.quiet_hours),
                 "visibility_state": "previously_seen_now_absent",
                 "indicator_label": _indicator_for_stage(stage),
-                "review_reason": "tracked person no longer visible past configured missing window",
+                "review_reason": _review_reason(track.missed_seconds, missing_window_seconds),
                 "escalation_stage": stage,
                 "caregiver_language": language,
                 "policy_version": "missing_off_camera_v1_tracking_reliability",
@@ -82,6 +95,22 @@ def _indicator_for_stage(stage: str) -> str:
     if stage == "attention_suggested":
         return "Off-camera attention suggested"
     return "Off-camera check-in suggested"
+
+
+def _missing_window_seconds(config: CareSightConfig) -> float:
+    tracking = config.tracking
+    if config.camera.camera_id in tracking.per_camera_missing_seconds:
+        return float(tracking.per_camera_missing_seconds[config.camera.camera_id])
+    if config.room.room_id in tracking.per_room_missing_seconds:
+        return float(tracking.per_room_missing_seconds[config.room.room_id])
+    return float(tracking.missing_seconds)
+
+
+def _review_reason(missed_seconds: float, missing_window_seconds: float) -> str:
+    return (
+        "tracked person no longer visible past configured contextual missing window "
+        f"({missed_seconds:.1f}s observed, {missing_window_seconds:.1f}s required)"
+    )
 
 
 def _stage_for_missing(

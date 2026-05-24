@@ -23,6 +23,7 @@ The current judged demo path lives in [`hackathon/README.md`](hackathon/README.m
 | [`hackathon/README.md`](hackathon/README.md) | Demo story, current video slot, and judge/operator orientation |
 | [`hackathon/DEMO_JOURNEY.md`](hackathon/DEMO_JOURNEY.md) | Step-by-step operator path for setup, running, and review |
 | [`hackathon/AUDIT_DIGEST.md`](hackathon/AUDIT_DIGEST.md) | Proof receipts, validation boundaries, and remaining gates |
+| [`docs/status/OPERATING_STATUS.md`](docs/status/OPERATING_STATUS.md) | Current feature status, completed tests, safe command classes, and remaining runtime gates |
 
 <details>
 <summary>Why CareSight exists</summary>
@@ -155,6 +156,7 @@ For the current recorded hackathon demo, use the judge/operator entrypoint:
 - Current hackathon entrypoint: `hackathon/README.md`
 - Future product plan: `docs/roadmaps/future_roadmap.md`
 - Operational next steps: `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`
+- Current operating status: `docs/status/OPERATING_STATUS.md`
 - Local model operations: `docs/operations/local_model_operations.md`
 - Imported docs pack: `docs/caresight_hub_docs_pack/`
 

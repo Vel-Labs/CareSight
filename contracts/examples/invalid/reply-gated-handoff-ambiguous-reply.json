@@ -4,7 +4,7 @@
   "source_request_id": "action_req_evt_d9aa38bdc636459c92ea4e25f665cd0d_urgent_imessage",
   "allowed_followup_actions": ["request_facetime_handoff"],
   "reply_classification": "ambiguous",
-  "required_phrase": "yes",
+  "required_phrase": "yes connect",
   "live_approval_state": "approved_for_this_attempt",
   "contact_id": "contact_emergency_primary",
   "target_verification": "verified",

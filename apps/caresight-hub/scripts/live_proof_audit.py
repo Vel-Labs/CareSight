@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
-DEFAULT_CONFIG_PATH = ROOT_DIR / "config" / "v0.local.json"
+DEFAULT_CONFIG_PATH = ROOT_DIR / "config" / "v0.example.json"
 DEFAULT_MODEL_PATH = ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz"
 DEFAULT_DB_PATH = ROOT_DIR / "data" / "caresight-v0.sqlite3"
 

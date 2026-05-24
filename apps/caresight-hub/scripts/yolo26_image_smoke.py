@@ -9,7 +9,7 @@ YOLO_DIR = ROOT_DIR / "vendor" / "yolo-mlx"
 MODEL_PATH = YOLO_DIR / "models" / "yolo26n.npz"
 IMAGE_DIR = ROOT_DIR / "images"
 IMAGE_PATH = IMAGE_DIR / "bus.jpg"
-CONFIG_PATH = ROOT_DIR / "config" / "v0.local.json"
+CONFIG_PATH = ROOT_DIR / "config" / "v0.example.json"
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(YOLO_DIR))
 

@@ -1,0 +1,15 @@
+{
+  "schema": "model-manifest",
+  "model_id": "model_yolo26n_mlx",
+  "purpose_lane": "vision",
+  "source_url": "https://github.com/thewebAI/yolo-mlx",
+  "license": "AGPL-3.0-only",
+  "local_path": "apps/caresight-hub/vendor/yolo-mlx/models/yolo26n.npz",
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "expected_size_bytes": 1,
+  "runtime": "yolo26_mlx",
+  "allowed_uses": ["local person/object observations for bounded care events"],
+  "blocked_uses": ["medical_diagnosis", "autonomous_emergency_dispatch", "medication_administration_confirmation", "biometric_identity"],
+  "validation_command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/yolo26_image_smoke.py",
+  "last_validated_at": "2026-05-24T12:00:00Z"
+}

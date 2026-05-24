@@ -1,0 +1,11 @@
+{
+  "schema": "local-feed-exposure",
+  "feed_id": "feed_loopback_obs_preview",
+  "bind_host": "127.0.0.1",
+  "bind_scope": "loopback",
+  "auth_required": false,
+  "token_required": false,
+  "operator_approved": false,
+  "expires_at": "2026-05-24T16:00:00Z",
+  "privacy_warning_acknowledged": false
+}

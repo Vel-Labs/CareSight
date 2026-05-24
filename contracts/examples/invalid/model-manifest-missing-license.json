@@ -1,0 +1,14 @@
+{
+  "schema": "model-manifest",
+  "model_id": "model_missing_license",
+  "purpose_lane": "vision",
+  "source_url": "https://example.invalid/model",
+  "local_path": "apps/caresight-hub/models/example",
+  "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "expected_size_bytes": 1,
+  "runtime": "local_python",
+  "allowed_uses": ["local test only"],
+  "blocked_uses": ["medical_diagnosis"],
+  "validation_command": "python --version",
+  "last_validated_at": null
+}

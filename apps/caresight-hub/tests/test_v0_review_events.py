@@ -66,17 +66,22 @@ class V0ReviewEventsCliTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("human_confirmed", result.stdout)
+            self.assertIn("Purpose: initial_review", result.stdout)
             self.assertEqual(seed.store.get_event(seed.event_id)["status"], "human_confirmed")
 
             review = only_row(seed.db_path, "event_reviews")
             self.assertEqual(review["event_id"], seed.event_id)
             self.assertEqual(review["reviewer"], "steven")
             self.assertEqual(review["decision"], "human_confirmed")
+            self.assertEqual(review["review_purpose"], "initial_review")
+            self.assertEqual(review["previous_status"], "awaiting_human_confirmation")
 
             journal = only_row(seed.db_path, "journal_entries")
             self.assertEqual(journal["event_id"], seed.event_id)
             self.assertEqual(journal["entry_type"], "event_review")
             self.assertIn("human confirmed", journal["body"])
+            self.assertIn("Review purpose: initial_review.", journal["body"])
+            self.assertIn("Lifecycle transition: awaiting_human_confirmation -> human_confirmed.", journal["body"])
             self.assertIn("Checked snapshot", journal["body"])
 
             handoff = only_row(seed.db_path, "agent_handoffs")
@@ -85,6 +90,8 @@ class V0ReviewEventsCliTest(unittest.TestCase):
             self.assertEqual(payload["snapshot_path"], seed.snapshot_path)
             self.assertEqual(payload["reviewer"], "steven")
             self.assertEqual(payload["review_id"], review["review_id"])
+            self.assertEqual(payload["review_purpose"], "initial_review")
+            self.assertEqual(payload["previous_status"], "awaiting_human_confirmation")
             self.assertEqual(payload["journal_id"], journal["journal_id"])
             self.assertEqual(payload["reviewed_at"], review["reviewed_at"])
             self.assertIn("autonomous_emergency_dispatch", payload["blocked_actions"])
@@ -124,6 +131,24 @@ class V0ReviewEventsCliTest(unittest.TestCase):
             journal = only_row(seed.db_path, "journal_entries")
             self.assertIn("dismissed", journal["body"])
 
+    def test_final_state_change_requires_explicit_amendment(self) -> None:
+        with seeded_store() as seed:
+            first = seed.store.record_event_review(seed.event_id, reviewer="steven", decision="human_confirmed")
+
+            with self.assertRaisesRegex(ValueError, "final review states require an explicit amendment"):
+                seed.store.record_event_review(seed.event_id, reviewer="steven", decision="dismissed")
+
+            result = seed.store.record_event_review(
+                seed.event_id,
+                reviewer="steven",
+                decision="dismissed",
+                review_purpose="amendment",
+                amendment_of_review_id=first["review_id"],
+            )
+            self.assertEqual(result["previous_status"], "human_confirmed")
+            self.assertEqual(result["amendment_of_review_id"], first["review_id"])
+            self.assertEqual(seed.store.get_event(seed.event_id)["status"], "dismissed")
+
     def test_journal_command_renders_existing_human_entry(self) -> None:
         with seeded_store() as seed:
             seed.store.record_event_review(
@@ -139,6 +164,19 @@ class V0ReviewEventsCliTest(unittest.TestCase):
             self.assertIn("Care Journal", result.stdout)
             self.assertIn(seed.event_id, result.stdout)
             self.assertIn("False positive", result.stdout)
+
+    def test_journal_entries_default_to_local_only_export_classification(self) -> None:
+        with seeded_store() as seed:
+            seed.store.record_event_review(
+                seed.event_id,
+                reviewer="steven",
+                decision="dismissed",
+                note="False positive, standing near couch.",
+            )
+
+            journal = only_row(seed.db_path, "journal_entries")
+
+            self.assertEqual(journal["export_classification"], "local-only")
 
     def test_audit_command_renders_blackbox_chain(self) -> None:
         with seeded_store() as seed:

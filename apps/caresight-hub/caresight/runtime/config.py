@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 
 from caresight.runtime.cameras.sources import validate_camera_source
@@ -46,11 +46,15 @@ class RoomConfig:
 @dataclass(frozen=True)
 class TrackingConfig:
     occlusion_grace_seconds: float = 5.0
-    missing_seconds: float = 120.0
+    missing_seconds: float = 300.0
     dedupe_window_seconds: float = 90.0
     same_track_required: bool = True
     min_person_confidence: float = 0.35
     missing_severity: str = "medium"
+    per_camera_missing_seconds: dict[str, float] = field(default_factory=dict)
+    per_room_missing_seconds: dict[str, float] = field(default_factory=dict)
+    absence_expected_after_seconds: float = 600.0
+    quiet_hours: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -125,6 +129,13 @@ class StorageConfig:
 
 
 @dataclass(frozen=True)
+class SiteConfig:
+    name: str = "CareSight Local Demo"
+    mode: str = "Observation Mode"
+    label_source: str = "default_generic"
+
+
+@dataclass(frozen=True)
 class CareSightConfig:
     camera: CameraConfig
     room: RoomConfig
@@ -133,6 +144,7 @@ class CareSightConfig:
     tracking: TrackingConfig
     routines: tuple[RoutineConfig, ...]
     storage: StorageConfig
+    site: SiteConfig = field(default_factory=SiteConfig)
     cameras: tuple[CameraConfig, ...] = ()
     active_camera_id: str | None = None
     floor_zones: tuple[ZoneConfig, ...] = ()
@@ -200,6 +212,7 @@ class CareSightConfig:
             storage=StorageConfig(
                 database_path="apps/caresight-hub/data/caresight-v0.sqlite3",
             ),
+            site=SiteConfig(),
             cameras=(camera,),
             active_camera_id=camera.camera_id,
             floor_zones=(),
@@ -238,6 +251,7 @@ class CareSightConfig:
             tracking=TrackingConfig(**_normalize_tracking_config(data.get("tracking", {}))),
             routines=tuple(RoutineConfig(**item) for item in data.get("routines", [])),
             storage=StorageConfig(**data["storage"]),
+            site=SiteConfig(**data.get("site", {})),
             cameras=cameras,
             active_camera_id=selected_camera.camera_id,
             floor_zones=floor_zones,

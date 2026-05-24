@@ -11,6 +11,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from caresight.events.floor_stay import FloorStayDetector
 from caresight.runtime.config import CareSightConfig
 from caresight.storage.sqlite_store import SQLiteStore
+from caresight.storage.agent_assist import execution_attempt_identity
+from caresight.storage.appearance import appearance_profile_identity
+from caresight.storage.events import event_identity
+from caresight.storage.migrations import ensure_column
+from caresight.storage.observation_checks import observation_check_identity
 from caresight.vision.detections import Detection
 
 
@@ -97,6 +102,51 @@ class SQLiteStoreTest(unittest.TestCase):
 
             self.assertIn("track_id", columns)
             self.assertEqual(row, ("evt_legacy", "person", None))
+
+    def test_migration_identifier_validation_rejects_invalid_names(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            db_path = Path(tmpdir) / "legacy.sqlite3"
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            conn.execute("CREATE TABLE event_observations (event_id TEXT)")
+            with self.assertRaisesRegex(ValueError, "invalid SQLite table"):
+                ensure_column(conn, table="event_observations; DROP TABLE events", column="track_id", definition="TEXT")
+            with self.assertRaisesRegex(ValueError, "invalid SQLite column"):
+                ensure_column(conn, table="event_observations", column="track id", definition="TEXT")
+            conn.close()
+
+    def test_storage_module_identity_mappers_are_stable(self) -> None:
+        self.assertEqual(
+            event_identity({"event_id": "evt_1", "event_type": "possible_floor_stay", "status": "awaiting"}),
+            {"event_id": "evt_1", "event_type": "possible_floor_stay", "status": "awaiting"},
+        )
+        self.assertEqual(
+            execution_attempt_identity(
+                {
+                    "attempt_id": "attempt_1",
+                    "request_id": "request_1",
+                    "event_id": "evt_1",
+                    "execution_state": "dry_run",
+                }
+            )["execution_state"],
+            "dry_run",
+        )
+        self.assertEqual(
+            appearance_profile_identity(
+                {
+                    "appearance_profile_id": "appearance_1",
+                    "active_date": "2026-05-24",
+                    "descriptor_status": "available",
+                }
+            )["descriptor_status"],
+            "available",
+        )
+        self.assertEqual(
+            observation_check_identity(
+                {"check_id": "check_1", "check_type": "normal_presence_no_event", "status": "no_event_persisted"}
+            )["status"],
+            "no_event_persisted",
+        )
 
     def test_stores_observation_check_without_event_review_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

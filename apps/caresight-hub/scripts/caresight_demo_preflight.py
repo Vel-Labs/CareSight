@@ -13,6 +13,8 @@ from urllib.request import Request, urlopen
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT_DIR.parents[1]
+sys.path.insert(0, str(ROOT_DIR))
+from caresight.runtime.validation import current_timestamp
 DEFAULT_DB_PATH = ROOT_DIR / "data" / "caresight-v0.sqlite3"
 DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.local.json"
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
@@ -36,12 +38,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gemma-base-url", default=os.environ.get("CARESIGHT_GEMMA_BASE_URL", "http://127.0.0.1:8080/v1"))
     parser.add_argument("--gemma-model", default=os.environ.get("CARESIGHT_GEMMA_MODEL", str(DEFAULT_GEMMA_MODEL)))
     parser.add_argument("--tts-model", default=os.environ.get("CARESIGHT_TTS_MODEL", str(DEFAULT_TTS_MODEL)))
+    parser.add_argument(
+        "--heartbeat",
+        action="store_true",
+        help="Run non-invasive health checks only; does not send, call, play TTS, or open cameras.",
+    )
     parser.add_argument("--json", action="store_true", help="Print only JSON.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    started_at = current_timestamp()
     local_env = read_local_env(DEFAULT_LOCAL_ENV_PATH)
     checks = [
         file_check("sqlite_db", Path(args.db), required=False),
@@ -64,6 +72,7 @@ def main() -> None:
     payload = {
         "schema": "caresight-demo-preflight",
         "ready": all(check["ok"] or not check["required"] for check in checks),
+        "mode": "heartbeat" if args.heartbeat else "preflight",
         "checks": checks,
         "recommended_live_command": [
             "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python",
@@ -86,9 +95,43 @@ def main() -> None:
         ],
     }
     if args.json:
+        if args.heartbeat:
+            print(json.dumps(build_preflight_receipt(payload, started_at=started_at), indent=2, sort_keys=True))
+            return
         print(json.dumps(payload, indent=2, sort_keys=True))
         return
     print_human(payload)
+
+
+def build_preflight_receipt(payload: dict[str, object], *, started_at: str | None = None) -> dict[str, object]:
+    from caresight.runtime.validation import build_runtime_validation_receipt
+
+    checks = list(payload.get("checks", []))
+    required_blockers = [
+        {"code": str(check["name"]), "detail": str(check["detail"])}
+        for check in checks
+        if isinstance(check, dict) and check.get("required") and not check.get("ok")
+    ]
+    optional_warnings = [
+        {"code": str(check["name"]), "detail": str(check["detail"])}
+        for check in checks
+        if isinstance(check, dict) and not check.get("required") and not check.get("ok")
+    ]
+    status = "blocked" if required_blockers else ("warn" if optional_warnings else "pass")
+    return build_runtime_validation_receipt(
+        check_type="heartbeat" if payload.get("mode") == "heartbeat" else "demo_preflight",
+        target="local CareSight demo stack",
+        command="python apps/caresight-hub/scripts/caresight_demo_preflight.py --heartbeat --json",
+        status=status,
+        started_at=started_at,
+        result={
+            "ready": payload.get("ready"),
+            "checks": checks,
+            "live_actions_performed": False,
+        },
+        blockers=required_blockers,
+        safety_boundaries=["no_live_send", "no_facetime_call", "no_tts_playback", "local_probe_only"],
+    )
 
 
 def file_check(name: str, path: Path, *, required: bool) -> dict[str, object]:

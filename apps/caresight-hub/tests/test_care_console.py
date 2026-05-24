@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 import subprocess
 import sys
@@ -246,6 +247,94 @@ class CareConsoleTest(unittest.TestCase):
             self.assertEqual(payload["provider"], "fake")
             self.assertEqual(payload["validation_status"], "validated")
             self.assertEqual(len(seed.store.list_agent_drafts(seed.event_id)), 1)
+
+    def test_model_doctor_cli_validates_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            model_path = tmp / "model.bin"
+            model_path.write_bytes(b"care")
+            manifest_path = tmp / "manifest.json"
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "models": [
+                            {
+                                "schema": "model-manifest",
+                                "model_id": "model_test",
+                                "purpose_lane": "vision",
+                                "source_url": "https://example.invalid/model",
+                                "license": "test",
+                                "local_path": str(model_path),
+                                "sha256": hashlib.sha256(b"care").hexdigest(),
+                                "expected_size_bytes": 4,
+                                "runtime": "local_python",
+                                "allowed_uses": ["local test"],
+                                "blocked_uses": ["medical_diagnosis"],
+                                "validation_command": "python --version",
+                                "last_validated_at": None,
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [sys.executable, str(SCRIPT), "model-doctor", "--manifest", str(manifest_path)],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["schema"], "model-doctor-report")
+            self.assertEqual(payload["status"], "pass")
+
+    def test_journal_redact_cli_blocks_local_only_export_and_records_receipt(self) -> None:
+        with seeded_review_service() as seed:
+            seed.service.confirm_event(
+                seed.event_id,
+                reviewer="Steven",
+                note="Call me at +1 555 555 0123 after review.",
+            )
+            journal_id = seed.store.list_journal_entries(seed.event_id)[0]["journal_id"]
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--db",
+                    str(seed.db_path),
+                    "journal-redact",
+                    seed.event_id,
+                    "--journal-id",
+                    journal_id,
+                    "--export-classification",
+                    "local-only",
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["schema"], "journal-redaction-preview")
+            self.assertFalse(payload["classification"]["share_allowed"])
+            self.assertIn("phone_number", payload["redaction_receipt"]["labels_detected"])
+            self.assertIn("[redacted-phone]", payload["redacted_text"])
+            self.assertTrue(payload["canonical_text_preserved"])
+
+    def test_journal_redaction_receipt_requires_human_review(self) -> None:
+        from caresight.runtime.privacy import build_privacy_redaction_receipt
+
+        receipt = build_privacy_redaction_receipt(text="Caregiver email caregiver@example.com")
+
+        self.assertEqual(receipt["schema"], "privacy-redaction-receipt")
+        self.assertTrue(receipt["human_review_required"])
+        self.assertIn("email", receipt["labels_detected"])
+        self.assertIn("hipaa_compliance", receipt["not_claimed"])
 
     def test_action_request_cli_stages_without_execution(self) -> None:
         with seeded_review_service() as seed:

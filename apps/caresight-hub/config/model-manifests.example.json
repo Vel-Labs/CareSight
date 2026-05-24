@@ -1,0 +1,64 @@
+{
+  "models": [
+    {
+      "schema": "model-manifest",
+      "model_id": "model_yolo26n_mlx",
+      "purpose_lane": "vision",
+      "source_url": "https://github.com/thewebAI/yolo-mlx",
+      "license": "AGPL-3.0-only",
+      "local_path": "apps/caresight-hub/vendor/yolo-mlx/models/yolo26n.npz",
+      "sha256": "5974afd60de30a04dc5afd01330bc22acd608480aba0773ee9f6aaa284aacb41",
+      "expected_size_bytes": 10540168,
+      "runtime": "yolo26_mlx",
+      "allowed_uses": ["local person/object observations for bounded care events"],
+      "blocked_uses": ["medical_diagnosis", "autonomous_emergency_dispatch", "medication_administration_confirmation", "biometric_identity"],
+      "validation_command": "apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python apps/caresight-hub/scripts/yolo26_image_smoke.py",
+      "last_validated_at": null
+    },
+    {
+      "schema": "model-manifest",
+      "model_id": "model_gemma_mlx",
+      "purpose_lane": "reasoning",
+      "source_url": "https://huggingface.co/google/gemma-3n-E2B-it",
+      "license": "gemma",
+      "local_path": "apps/caresight-hub/models/reasoning/gemma/gemma-4-e2b-it-4bit",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "expected_size_bytes": 1,
+      "runtime": "mlx_vlm",
+      "allowed_uses": ["draft only caregiver summaries from SQLite-backed structured records"],
+      "blocked_uses": ["medical_diagnosis", "autonomous_emergency_dispatch", "medication_administration_confirmation", "hipaa_compliance_claim"],
+      "validation_command": "python apps/caresight-hub/scripts/caresight_demo_preflight.py --heartbeat --json",
+      "last_validated_at": null
+    },
+    {
+      "schema": "model-manifest",
+      "model_id": "model_holler_tts",
+      "purpose_lane": "tts",
+      "source_url": "https://huggingface.co/benjamin-paine/holler",
+      "license": "unknown-local-review-required",
+      "local_path": "apps/caresight-hub/models/tts/holler/holler-0.6b-6bit",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "expected_size_bytes": 1,
+      "runtime": "holler",
+      "allowed_uses": ["local playback of approved CareSight TTS utterances"],
+      "blocked_uses": ["medical_diagnosis", "autonomous_emergency_dispatch", "safety_guarantee", "hipaa_compliance_claim"],
+      "validation_command": "python apps/caresight-hub/scripts/caresight_tts.py --help",
+      "last_validated_at": null
+    },
+    {
+      "schema": "model-manifest",
+      "model_id": "model_openai_privacy_filter",
+      "purpose_lane": "privacy_filter",
+      "source_url": "https://huggingface.co/openai/privacy-filter",
+      "license": "apache-2.0",
+      "local_path": "apps/caresight-hub/models/privacy/openai-privacy-filter",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "expected_size_bytes": 1,
+      "runtime": "transformers",
+      "allowed_uses": ["local pii detection aid for text redaction review"],
+      "blocked_uses": ["hipaa_compliance_claim", "medical_diagnosis", "safety_guarantee", "autonomous_emergency_dispatch"],
+      "validation_command": "python apps/caresight-hub/scripts/care_console.py model-doctor --model-id model_openai_privacy_filter",
+      "last_validated_at": null
+    }
+  ]
+}

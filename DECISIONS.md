@@ -42,6 +42,12 @@ CareSight v0 review lifecycle actions route through `caresight.runtime.review.Re
 
 Rationale: a single review boundary keeps reviewer validation, SQLite blackbox writes, report-only agent handoffs, and forbidden automation actions consistent across operator surfaces.
 
+## 2026-05-24: Require Purpose for Review Lifecycle Mutations
+
+Event review mutations must include an explicit purpose such as `initial_review`, `followup_note`, `amendment`, or `correction`. Changing a final review state requires `review_purpose=amendment` and a prior review ID, while journal and handoff rows preserve previous status and purpose.
+
+Rationale: CareSight should preserve the bounded control loop and audit trail. Final human decisions must not be silently overwritten by a later CLI or service call.
+
 ## 2026-05-19: Keep Inference Adapter Fail-Closed and Observation-Normalized
 
 CareSight-owned inference code lives under `apps/caresight-hub/caresight/runtime/inference/`. The adapter loads YOLO26 MLX only when the configured model is present and importable, returns raw detections from actual model output, and normalizes those detections into observations with configured camera and room metadata.
@@ -77,6 +83,12 @@ Rationale: agent assistance can make the demo more useful, but it must remain do
 CareSight initialization applies additive SQLite schema upgrades such as adding `event_observations.track_id` to existing local databases. Upgrade logic must preserve prior rows and avoid destructive rewrites.
 
 Rationale: local SQLite is the blackbox source of truth. New sprint fields should not require deleting earlier event evidence.
+
+## 2026-05-24: Keep Local Config Ignored and Demo Config Generic
+
+Tracked camera/demo defaults live in `apps/caresight-hub/config/v0.example.json`. The runtime prefers ignored `v0.local.json` when present and falls back to the tracked example for demo-safe checks. OBS site labels default to `CareSight Local Demo` and record their label source.
+
+Rationale: repo defaults need to stay runnable without committing household-specific labels, local camera addresses, or private config.
 
 ## 2026-05-20: Make Live Proof Collection Bounded
 
@@ -133,6 +145,18 @@ Rationale: the first harness should prove user-visible service routing without w
 CareSight vendors Hermes as a pinned workspace dependency and configures it to use a local OpenAI-compatible endpoint for Gemma MLX by default. OpenRouter and other hosted routers remain explicit cloud fallback options only.
 
 Rationale: Hermes provides the service-capable agent surface, but CareSight still needs local-first privacy, SQLite provenance, and bounded staging. A local endpoint lets Hermes use the Gemma reasoning lane without sending care context to a hosted router by default.
+
+## 2026-05-24 - Runtime Validation Receipts and Model Manifests
+
+CareSight runtime readiness uses three separate proof layers: deterministic unit/contract gates, runtime probes for local dependencies, and non-invasive heartbeat receipts. Heartbeats and probes are governed by `runtime-validation-receipt` and must not send messages, open FaceTime, play TTS, dispatch help, or claim medical/compliance authority. Local MJPEG preview uses `local-feed-exposure`; loopback remains default, and LAN binding requires operator approval, token protection, expiration, and privacy-warning acknowledgement. Local model readiness uses `model-manifest` and `care_console.py model-doctor` before model-lane readiness claims.
+
+Rationale: the build had useful runtime scripts before their governance layer was explicit. Receipts and manifests keep local setup proof inspectable without turning probes into live actions or treating model files as interchangeable authority.
+
+## 2026-05-24 - Keep Phase 4 Care Intelligence Advisory and Human-Reviewed
+
+Reply-gated FaceTime now requires explicit approval phrases, while ambiguous and opportunity replies produce local follow-up context only. Pose, depth, and segmentation candidates are advisory evidence until evaluation receipts exist. Missing-off-camera uses contextual windows and likely-continuity suppression, and journal export/redaction previews remain human-reviewed aids that preserve the canonical local journal text.
+
+Rationale: CareSight can improve caregiver context without turning weak signals, generated summaries, or redaction models into stronger authority than the bounded human-review loop.
 
 ## 2026-05-21: Treat Hermes Upstream Files as External Vendor Content
 
@@ -257,6 +281,12 @@ Rationale: macOS camera ownership can make OpenCV and OBS fight over the same ca
 ## 2026-05-22: Keep Escalation Evidence Event-Scoped
 
 Each live or dry-run escalation attempt should be readable back through the originating `event_id`. The event-scoped escalation receipt links local event evidence, agent drafts, staged action requests, execution attempts, OBS overlay state, and the detector preview path without creating a new care event or exposing private contact targets.
+
+## 2026-05-24: Treat Text, Snapshot Follow-Up, and FaceTime as Shared Escalation Methods
+
+`possible_floor_stay` and `missing_off_camera_extended` are both event lanes that may require escalation planning, but they should not each own bespoke text, snapshot follow-up, or FaceTime code paths. Floor-stay covers a possible person-on-floor or fallen-person concern; missing-off-camera covers a contextual absence concern. Both should feed a shared escalation engine that selects methods such as caregiver text, event-scoped snapshot follow-up, reply-gated FaceTime, TTS, OBS update, or review-only handling according to event policy, severity, approval state, and human gates.
+
+Rationale: escalation methods are reusable delivery and handoff mechanisms, not the identity of the event. Keeping event detection separate from escalation-method execution preserves the bounded control loop while letting floor-stay and missing-off-camera evolve independently.
 
 ## 2026-05-24: Require Pre-Execution Receipts and Contract-Gated Live Handoffs
 

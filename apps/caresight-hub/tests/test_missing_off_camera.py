@@ -21,8 +21,8 @@ class MissingOffCameraDetectorTest(unittest.TestCase):
         )
 
         tracker.update([detection], now=100.0)
-        missing = tracker.missing_tracks(now=221.0, missing_seconds=config.tracking.missing_seconds)
-        event = detector.update(missing, now=221.0)
+        missing = tracker.missing_tracks(now=401.0, missing_seconds=config.tracking.missing_seconds)
+        event = detector.update(missing, now=401.0)
 
         self.assertIsNotNone(event)
         assert event is not None
@@ -30,11 +30,11 @@ class MissingOffCameraDetectorTest(unittest.TestCase):
         self.assertEqual(event["status"], "awaiting_human_confirmation")
         self.assertEqual(event["severity"], "low")
         self.assertEqual(event["evidence"]["track_id"], "track_1")
-        self.assertEqual(event["evidence"]["missed_seconds"], 121.0)
+        self.assertEqual(event["evidence"]["missed_seconds"], 301.0)
         self.assertEqual(event["evidence"]["escalation_stage"], "check_in_suggested")
         self.assertEqual(event["evidence"]["visibility_state"], "previously_seen_now_absent")
         self.assertEqual(event["evidence"]["indicator_label"], "Off-camera check-in suggested")
-        self.assertEqual(event["evidence"]["review_reason"], "tracked person no longer visible past configured missing window")
+        self.assertIn("contextual missing window", event["evidence"]["review_reason"])
         self.assertEqual(event["evidence"]["policy_version"], "missing_off_camera_v1_tracking_reliability")
         language = event["evidence"]["caregiver_language"].lower()
         self.assertIn("a tracked person", language)
@@ -54,17 +54,17 @@ class MissingOffCameraDetectorTest(unittest.TestCase):
         )
 
         tracker.update([detection], now=100.0)
-        missing = tracker.missing_tracks(now=221.0, missing_seconds=config.tracking.missing_seconds)
-        first_event = detector.update(missing, now=221.0)
-        second_event = detector.update(missing, now=240.0)
+        missing = tracker.missing_tracks(now=401.0, missing_seconds=config.tracking.missing_seconds)
+        first_event = detector.update(missing, now=401.0)
+        second_event = detector.update(missing, now=420.0)
 
         self.assertIsNotNone(first_event)
         self.assertIsNone(second_event)
 
-    def test_observe_only_before_two_minutes(self) -> None:
+    def test_short_room_exit_does_not_fire_before_contextual_window(self) -> None:
         detector = MissingOffCameraDetector(CareSightConfig.default())
 
-        event = detector.update([missing_track(119.0)], now=220.0)
+        event = detector.update([missing_track(299.0)], now=220.0)
 
         self.assertIsNone(event)
 
@@ -80,6 +80,35 @@ class MissingOffCameraDetectorTest(unittest.TestCase):
         self.assertIsNotNone(event)
         assert event is not None
         self.assertEqual(event["evidence"]["missed_seconds"], 31.0)
+
+    def test_per_room_missing_window_can_override_default(self) -> None:
+        base = CareSightConfig.default()
+        config = replace(
+            base,
+            tracking=replace(
+                base.tracking,
+                per_room_missing_seconds={"living_room": 45.0},
+            ),
+        )
+        detector = MissingOffCameraDetector(config)
+
+        self.assertIsNone(detector.update([missing_track(44.0)], now=220.0))
+        event = detector.update([missing_track(46.0)], now=230.0)
+
+        self.assertIsNotNone(event)
+        assert event is not None
+        self.assertEqual(event["evidence"]["missing_window_seconds"], 45.0)
+
+    def test_likely_continuity_from_second_camera_suppresses_indicator(self) -> None:
+        detector = MissingOffCameraDetector(CareSightConfig.default())
+
+        event = detector.update(
+            [missing_track(601.0)],
+            now=800.0,
+            likely_continuity_camera_id="kitchen_rtsp",
+        )
+
+        self.assertIsNone(event)
 
     def test_attention_language_after_recent_concern(self) -> None:
         detector = MissingOffCameraDetector(CareSightConfig.default())

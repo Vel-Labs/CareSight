@@ -1,0 +1,11 @@
+{
+  "schema": "privacy-redaction-receipt",
+  "receipt_id": "redaction_receipt_bad_claim",
+  "input_type": "caregiver_text",
+  "redaction_engine": "openai_privacy_filter",
+  "model_manifest_id": "model_openai_privacy_filter",
+  "labels_detected": ["person_name"],
+  "redaction_status": "completed",
+  "human_review_required": false,
+  "not_claimed": []
+}

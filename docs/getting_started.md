@@ -16,6 +16,12 @@ python3 apps/caresight-hub/scripts/caresight_install_all.py
 
 This installs the ignored runtime environment, default local models, and OBS where possible. Model weights, local SQLite, generated audio, and runtime logs stay out of Git.
 
+The tracked demo camera config is `apps/caresight-hub/config/v0.example.json`. To create the ignored local override used for household-specific camera and site labels:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_setup_fixtures.py --init-local-config --skip-stack-check
+```
+
 ## 2. Run a Bounded Vision Proof
 
 From the repo root:
@@ -107,6 +113,8 @@ Refresh overlay event data from SQLite:
 ```bash
 ./scripts/update_obs_overlay.sh --event-id evt_d9aa38bdc636459c92ea4e25f665cd0d
 ```
+
+Use `--site-name` and `--site-mode` for privacy-safe local labels. Tracked defaults stay generic.
 
 During live testing, keep the overlay following the latest SQLite event:
 

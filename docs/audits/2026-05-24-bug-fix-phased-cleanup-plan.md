@@ -10,25 +10,25 @@ Instruction boundary: this document is a planning/control artifact. It does not 
 
 ## Top-Level Awareness Statement
 
-Current status: 5 of 20 findings resolved in this plan.
+Current status: 20 of 20 findings resolved in this plan.
 
 Current validation status:
 
-- Latest known full gate: `npm run check` passed on 2026-05-24 after Phase 1 resolution notes and documentation updates.
+- Latest known full gate: `npm run check` passed on 2026-05-24 after Phase 5 documentation split and resolution notes.
 - Deterministic coverage currently includes scaffold validation, contract validation, TypeScript tests/typecheck, and Python unit tests.
 - Runtime integration gates still need more work: camera probes, OBS websocket/feed checks, Gemma endpoint, Hermes no-send, iMessage dry run, human-approved live send, FaceTime setup, TTS generation/playback, and periodic heartbeat checks are not all covered by the unit gate.
 
-More work remains: yes. This plan is ready for Codex execution in phases, but the findings below are still open until an implementation agent updates each `Resolution notes` section with exact code changes, commands run, receipts produced, and remaining risks.
+More work remains: runtime validation remains, but this phased cleanup plan is resolved. Phases 1, 2, 3, 4, and 5 now have per-finding notes. Remaining runtime gates are tracked in `docs/status/OPERATING_STATUS.md`.
 
 ## Phase Status Board
 
 | Phase | Findings | Theme | Status |
 | --- | --- | --- | --- |
 | Phase 1 | F001, F002, F003, F008, F010 | Live handoff authority, receipts, and media policy | Resolved |
-| Phase 2 | F004, F005, F006, F007, F016, F017 | Repo readability, storage/runtime boundaries, lifecycle correctness | Open |
-| Phase 3 | F011, F014, F015, F019 | Runtime validation, heartbeat checks, feed exposure, model governance, contracts | Open |
-| Phase 4 | F009, F012, F013, F018 | Care intelligence quality: replies, posture/depth/segmentation, missing context, privacy redaction | Open |
-| Phase 5 | F020 | Documentation visibility and operator usability | Open |
+| Phase 2 | F004, F005, F006, F007, F016, F017 | Repo readability, storage/runtime boundaries, lifecycle correctness | Resolved |
+| Phase 3 | F011, F014, F015, F019 | Runtime validation, heartbeat checks, feed exposure, model governance, contracts | Resolved |
+| Phase 4 | F009, F012, F013, F018 | Care intelligence quality: replies, posture/depth/segmentation, missing context, privacy redaction | Resolved |
+| Phase 5 | F020 | Documentation visibility and operator usability | Resolved |
 
 ## Required New or Expanded Schemas
 
@@ -426,7 +426,7 @@ Resolved 2026-05-24 in Phase 1. `agent_action_requests` remain immutable staged 
 
 ### F004 - `v0_floor_stay_live.py` should become an explicit event/escalation pipeline
 
-Status: Open
+Status: Resolved
 
 Phase: 2
 
@@ -475,11 +475,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 2. Added explicit runtime boundary modules for escalation planning, live-loop stop rules, post-event receipt formatting, and MJPEG preview ownership under `caresight/runtime/`. `v0_floor_stay_live.py` remains the operator CLI wrapper and preserves the existing flags, with deterministic help coverage still avoiding OpenCV/YOLO imports. New tests verify floor-stay escalation methods, review-only missing-off-camera behavior, config fallback, CLI help, and post-event receipt formatting. Commands run: `PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_sqlite_store.py apps/caresight-hub/tests/test_v0_floor_stay_live.py apps/caresight-hub/tests/test_v0_review_events.py apps/caresight-hub/tests/test_v0_config.py apps/caresight-hub/tests/test_inference_harness.py apps/caresight-hub/tests/test_demo_surface.py`; `npm run validate:contracts`; `npm run check`. Remaining risk: the large live detector wrapper still contains legacy drawing/camera-loop code and should be reduced further in a later phase, but Phase 2 now has explicit boundaries and deterministic tests without changing live behavior.
 
 ### F005 - `sqlite_store.py` should become a storage orchestrator with digestible stores
 
-Status: Open
+Status: Resolved
 
 Phase: 2
 
@@ -527,11 +527,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 2. `SQLiteStore` remains the compatibility facade while connection handling, additive migrations, review lifecycle policy, and focused storage identity helpers now live under `caresight/storage/`. Initialization uses `storage.migrations.ensure_column()` and `storage.connection.sqlite_connection()`, and architecture docs now include the storage facade diagram. Tests cover migration idempotence via existing initialization checks, strict identifier rejection, facade behavior, and stable helper mappings for event, agent-assist attempt, appearance profile, and observation-check records. Commands run: `PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_sqlite_store.py apps/caresight-hub/tests/test_v0_floor_stay_live.py apps/caresight-hub/tests/test_v0_review_events.py apps/caresight-hub/tests/test_v0_config.py apps/caresight-hub/tests/test_inference_harness.py apps/caresight-hub/tests/test_demo_surface.py`; `npm run validate:contracts`; `npm run check`. Remaining risk: broad SQL methods still live on the facade for compatibility; deeper extraction can continue in a later phase with narrower call-site churn.
 
 ### F006 - `v0.local.json` is tracked despite local-file policy
 
-Status: Open
+Status: Resolved
 
 Phase: 2
 
@@ -571,11 +571,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 2. The tracked demo config is now `apps/caresight-hub/config/v0.example.json`; `v0.local.json` remains ignored for household/local overrides. `v0_floor_stay_live.py` resolves `v0.local.json` when present and falls back to the tracked example, smoke/review scripts use the tracked example by default, and `caresight_setup_fixtures.py --init-local-config` can create the ignored local config. `scripts/validate-scaffold.ts` now fails if a non-example `apps/caresight-hub/config/*.local.json` file is tracked. Docs and file tree were updated. Commands run: `git ls-files 'apps/caresight-hub/config/*.local.json'`; focused Python unittest command; `npm run validate:contracts`; `npm run check`. Remaining risk: operator-owned ignored local configs can still contain private values; they remain intentionally outside Git and should be reviewed locally before live use.
 
 ### F007 - Hard-coded site labeling
 
-Status: Open
+Status: Resolved
 
 Phase: 2
 
@@ -613,11 +613,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 2. Site labels are now generic by default: `CareSight Local Demo` plus `Observation Mode`. `CareSightConfig` has a `site` config section, `v0_floor_stay_live.py` accepts `--site-name` and `--site-mode`, the OBS update tool accepts/preserves `--site-label-source`, and overlay fixture/fallback data no longer uses a residence-specific label. Tests verify config-driven/default label behavior through CLI/config and overlay payload fields. Commands run: focused Python unittest command; `npm run validate:contracts`; `npm run check`. Remaining risk: live operators can still choose private labels via local config or CLI; docs now direct tracked defaults to stay generic.
 
 ### F016 - `ensure_column()` should validate identifiers
 
-Status: Open
+Status: Resolved
 
 Phase: 2
 
@@ -651,11 +651,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 2. `ensure_column()` moved into `caresight/storage/migrations/__init__.py` with strict SQLite identifier validation before `PRAGMA` or `ALTER TABLE` string interpolation. `SQLiteStore.initialize()` still uses hard-coded migration targets, and tests verify valid initialization, invalid table identifiers, invalid column identifiers, and idempotent legacy migration behavior. Commands run: focused Python unittest command; `npm run validate:contracts`; `npm run check`. Remaining risk: column definitions remain hard-coded strings and should stay internal to migration code.
 
 ### F017 - Review state changes need explicit lifecycle purposes
 
-Status: Open
+Status: Resolved
 
 Phase: 2
 
@@ -696,13 +696,13 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 2. `contracts/lifecycle.md` now defines care-event review purposes and allowed transitions. The care-event schema recognizes `needs_followup` and optional review lifecycle metadata. `SQLiteStore.record_event_review()` records `review_purpose`, `previous_status`, and optional `amendment_of_review_id`; final-state changes are blocked unless they are explicit amendments. `ReviewService` and `v0_review_events.py` expose the same purpose/amendment path, and journal/handoff rows preserve transition metadata. Tests verify awaiting-to-confirmed, blocked confirmed-to-dismissed without amendment, explicit amendment behavior, reviewer gating, CLI output, journal text, and handoff payload metadata. Commands run: focused Python unittest command; `npm run validate:contracts`; `npm run check`. Remaining risk: existing local databases receive additive default review-purpose fields; older rows may have `initial_review` as a backfilled default because earlier versions did not record purpose.
 
 ## Phase 3 - Runtime Validation, Heartbeats, Feed Exposure, Model Governance, and Contracts
 
 ### F011 - Unit gates need real runtime probes and heartbeat validation
 
-Status: Open
+Status: Resolved
 
 Phase: 3
 
@@ -745,11 +745,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 3. Added `runtime-validation-receipt` schema plus camera-probe and heartbeat examples; mapped it through `packages/core/src/validate-contracts.ts` and the contract corpus test. `caresight_demo_preflight.py --heartbeat --json` now emits a non-invasive runtime receipt with `no_live_send`, `no_facetime_call`, and `no_tts_playback` boundaries; `caresight_camera_probe.py` now wraps the redacted camera probe result in a runtime receipt. Added `docs/status/OPERATING_STATUS.md` and updated CLI/local-model docs to separate unit gates, runtime probes, and heartbeat checks. Tests cover heartbeat no-live-action boundaries, blocked runtime dependencies, and camera-probe receipt shape. Commands run: focused Python unittest command; `npm run validate:contracts`; `npm run test:focused`; `python3 apps/caresight-hub/scripts/caresight_demo_preflight.py --heartbeat --json`; `python3 apps/caresight-hub/scripts/caresight_camera_probe.py --config apps/caresight-hub/config/tapo.local.example.json --dry-run`; `npm run check`. Remaining risk: heartbeat is a status receipt, not a substitute for operator-owned live camera/OBS/Gemma/Hermes/TTS validation; the sample heartbeat in this checkout warned because optional MJPEG/Aitum checks were not running/reachable.
 
 ### F014 - Local MJPEG feed needs explicit LAN exposure/auth policy
 
-Status: Open
+Status: Resolved
 
 Phase: 3
 
@@ -789,11 +789,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 3. Added `local-feed-exposure` schema with loopback-valid and LAN-without-token-invalid examples. `v0_floor_stay_live.py` now classifies preview bind scope, keeps loopback easy, and refuses non-loopback MJPEG preview unless `--allow-lan-preview`, `--preview-token`, and `--ack-lan-preview-risk` are all present. LAN startup emits a `local-feed-exposure` receipt and token-protected feed URLs. The shared preview helper in `caresight/runtime/preview/mjpeg.py` also accepts an optional token and rejects unauthenticated requests. CLI docs now document the LAN exposure boundary. Tests cover default loopback, blocked `0.0.0.0` without override, blocked LAN override without token, blocked missing privacy acknowledgement, and accepted token-protected LAN receipt. Commands run: focused Python unittest command; `npm run validate:contracts`; `npm run check`. Remaining risk: LAN preview token security is a local demo control, not a full web-auth system; operators should keep preview feeds on loopback unless LAN display is explicitly needed.
 
 ### F015 - Add model doctor and local model manifests
 
-Status: Open
+Status: Resolved
 
 Phase: 3
 
@@ -835,11 +835,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 3. Added `model-manifest` schema with YOLO26n and Privacy Filter valid examples plus a missing-license invalid example. Added tracked `apps/caresight-hub/config/model-manifests.example.json` for YOLO26n, Gemma, Holler, and Privacy Filter model lanes; the YOLO26n manifest records the actual local `yolo26n.npz` SHA-256 and size from this checkout. Added `caresight/runtime/model_doctor.py` and `care_console.py model-doctor` to verify required manifest metadata, local path existence, size, checksum, and optional validation commands. Tests cover valid manifest pass, missing manifest fields, checksum mismatch, and CLI report output. Commands run: `python3 apps/caresight-hub/scripts/care_console.py model-doctor --model-id model_yolo26n_mlx`; focused Python unittest command; `npm run validate:contracts`; `npm run check`. Remaining risk: Gemma/Holler/Privacy Filter entries remain example governance records until operators replace placeholder checksums/sizes with machine-specific values; `--run-validation-command` remains operator-owned.
 
 ### F019 - Add contracts for build-phase features that outran governance
 
-Status: Open
+Status: Resolved
 
 Phase: 3
 
@@ -886,13 +886,13 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 3 for the Phase 3 contract scope only. Added and mapped `runtime-validation-receipt`, `model-manifest`, `local-feed-exposure`, `retention-policy`, and `privacy-redaction-receipt` schemas with valid/invalid examples, while preserving the existing Phase 1 `media-sharing-policy` and `reply-gated-handoff` schemas. Updated `contracts/README.md`, `docs/architecture/ARCHITECTURE.md`, `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`, `docs/operations/local_model_operations.md`, `docs/cli/COMMANDS.md`, `docs/status/OPERATING_STATUS.md`, `DECISIONS.md`, `CHANGELOG.md`, and `docs/FILE_TREE.md`. Negative examples now prove unsafe LAN feed exposure, missing runtime boundaries, missing model license, unbounded clip sharing, and redaction compliance overclaims fail contract validation. Commands run: `npm run validate:contracts`; `npm run test:focused`; `npm run check`. Remaining risk: Phase 4 privacy-redaction runtime behavior is not implemented in this Phase 3 tranche; this change adds the governance surface and examples only.
 
 ## Phase 4 - Care Intelligence Quality: Replies, Posture, Missing Context, and Privacy Redaction
 
 ### F009 - Yes-like reply parsing needs explicit opportunity/intent classification
 
-Status: Open
+Status: Resolved
 
 Phase: 4
 
@@ -927,11 +927,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 4. `live_handoff.py` now classifies replies as `yes`, `no`, `ambiguous`, `opportunity`, or `timeout`; FaceTime approval requires an explicit phrase such as `yes connect` or `yes FaceTime`, and ambiguous/opportunity replies create a local follow-up draft instead of opening FaceTime. `reply-gated-handoff.schema.json` and examples now use the explicit classes, and receipts preserve `reply_classification`. Tests in `test_agent_assist.py` cover `yes connect`, `yes FaceTime`, `ok no`, `please wait`, `call later`, `start what`, `not now`, and `can you call me tomorrow`; the invalid contract example proves ambiguous replies cannot authorize live FaceTime. Commands run: `PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_agent_assist.py apps/caresight-hub/tests/test_missing_off_camera.py apps/caresight-hub/tests/test_floor_stay.py apps/caresight-hub/tests/test_v0_review_events.py apps/caresight-hub/tests/test_care_console.py`; `npm run validate:contracts`; `npm run check`. Remaining risk: real caregiver wording may need operator tuning, but ambiguous replies fail closed.
 
 ### F012 - Add pose/depth/segmentation as a measured value-add, not a fast claim
 
-Status: Open
+Status: Resolved
 
 Phase: 4
 
@@ -970,11 +970,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 4. `floor_stay.py` keeps YOLO box-derived posture as the baseline and records pose/depth/segmentation as advisory-only evidence that cannot confirm a fall, injury, or stronger claim. `runtime/inference/advisory_evidence.py` defines the candidate interface for future measured lanes, and `docs/evaluation/posture_pose_segmentation_plan.md` defines the scenario matrix and promotion rule before any model path changes. `test_floor_stay.py` verifies seated-on-floor remains a non-event and advisory evidence cannot strengthen claims, while lying-low floor-zone dwell still emits the existing bounded `possible_floor_stay`. Commands run: `PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_agent_assist.py apps/caresight-hub/tests/test_missing_off_camera.py apps/caresight-hub/tests/test_floor_stay.py apps/caresight-hub/tests/test_v0_review_events.py apps/caresight-hub/tests/test_care_console.py`; `npm run validate:contracts`; `npm run check`. Remaining risk: no pose/depth/segmentation model is claimed as validated; evaluation receipts are still required before product claim changes.
 
 ### F013 - Missing-off-camera needs contextual nuance and longer/localized windows
 
-Status: Open
+Status: Resolved
 
 Phase: 4
 
@@ -1016,11 +1016,11 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 4. `TrackingConfig` now supports default, per-camera, and per-room missing windows plus `absence_expected_after_seconds` and `quiet_hours`; the tracked example config uses longer normal defaults with demo-friendly localized overrides. `missing_off_camera.py` uses the contextual window, records `missing_window_seconds`, expected-absence and quiet-hour context, writes bounded review reasons, and suppresses missing-off-camera when another camera has likely continuity. `test_missing_off_camera.py` covers short exits, longer absence, per-room override, likely-continuity suppression, and bounded no-identity/no-danger language. Commands run: `PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_agent_assist.py apps/caresight-hub/tests/test_missing_off_camera.py apps/caresight-hub/tests/test_floor_stay.py apps/caresight-hub/tests/test_v0_review_events.py apps/caresight-hub/tests/test_care_console.py`; `npm run validate:contracts`; `npm run check`. Remaining risk: live multi-camera continuity still needs operator validation before production-readiness claims.
 
 ### F018 - Journal notes need redaction/export classification, optionally using OpenAI Privacy Filter
 
-Status: Open
+Status: Resolved
 
 Phase: 4
 
@@ -1065,13 +1065,13 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 4. `privacy-redaction-receipt` and the Privacy Filter model manifest were already present from the schema work; Phase 4 added `runtime/privacy/redaction.py`, journal export classifications, additive SQLite journal columns, and `care_console.py journal-redact` for local redaction previews before export. Journal entries default to `local-only`; the CLI emits a `journal-redaction-preview` with labels, redacted text, human-review-required receipt, and `not_claimed` boundaries while preserving canonical local text. `test_v0_review_events.py` verifies the local-only default, and `test_care_console.py` verifies local-only export blocking, phone/email label detection, redacted preview text, and human-review-required receipts. Docs explicitly state Privacy Filter is a PII detection/masking aid, not anonymization, HIPAA compliance, or a safety guarantee. Commands run: `PYTHONPATH=apps/caresight-hub python3 -m unittest apps/caresight-hub/tests/test_agent_assist.py apps/caresight-hub/tests/test_missing_off_camera.py apps/caresight-hub/tests/test_floor_stay.py apps/caresight-hub/tests/test_v0_review_events.py apps/caresight-hub/tests/test_care_console.py`; `npm run validate:contracts`; `npm run check`. Remaining risk: optional local Privacy Filter inference is manifest-governed but not downloaded or runtime-validated in this Phase 4 slice.
 
 ## Phase 5 - Documentation Visibility and Operator Usability
 
 ### F020 - Split operational docs and add short operating status
 
-Status: Open
+Status: Resolved
 
 Phase: 5
 
@@ -1117,7 +1117,7 @@ Tests required:
 
 Resolution notes:
 
-_Open. Codex should update this section after implementation with files changed, commands run, and any remaining risk._
+Resolved 2026-05-24 in Phase 5. Added/expanded `docs/status/OPERATING_STATUS.md` with current feature status, completed deterministic test layers, remaining runtime gates, heartbeat boundaries, and feed-exposure rules. Split the CLI surface into categorized docs under `docs/cli/README.md`, `setup.md`, `camera.md`, `detection.md`, `review.md`, `agent-handoff.md`, `obs-tts-facetime.md`, and `validation.md`, while keeping `docs/cli/COMMANDS.md` as the curated safety-class index that lists supported commands and classifies them as `agent-safe-read`, `manual-operator`, or `human-review-required`. Linked operating status from `README.md` and `docs/roadmaps/CURRENT_STATE_AND_NEXT.md`, updated `CHANGELOG.md`, and regenerated `docs/FILE_TREE.md`. Commands run: `npm run validate:scaffold`; `npm run validate:contracts`; `npm run test:focused`; `npm test`; `npm run typecheck`; `npm run py:check`; `npm run check`. Docs link check: no dedicated package script exists; performed scaffold/file-tree validation plus targeted grep/spot checks for the new CLI category links. Manual spot check: current demo command and remaining gates are visible from `docs/cli/COMMANDS.md` and `docs/status/OPERATING_STATUS.md` in under two minutes. Remaining risk: the docs now expose the gates clearly, but live camera, OBS, Gemma, Hermes, iMessage, FaceTime, TTS playback, and heartbeat runtime proofs still require operator-owned validation before production-readiness claims.
 
 ## Recommended Execution Order
 

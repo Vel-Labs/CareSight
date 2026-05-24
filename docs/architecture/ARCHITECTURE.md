@@ -67,6 +67,12 @@ The v1 foundation uses a deterministic local track state machine to attach stabl
 observations and event records. Tracking supports floor-stay dwell continuity through short occlusions and
 an initial `missing_off_camera_extended` policy, but it does not diagnose distress or trigger dispatch.
 
+The live event pipeline is split into explicit runtime boundaries. `runtime/live_loop.py` owns loop stop
+rules, `runtime/preview/mjpeg.py` owns the detector-served local browser feed, `runtime/escalation/`
+chooses local-only, dry-run, review-only, or human-approved handoff methods from persisted event context,
+and `runtime/post_event_pipeline.py` owns post-event receipt formatting. `v0_floor_stay_live.py` remains
+the operator CLI wrapper for the current hackathon path.
+
 The appearance boundary lives under `apps/caresight-hub/caresight/runtime/appearance/`.
 It derives coarse, same-day clothing descriptors from real event snapshots and person bounding boxes, stores
 local expiring profile rows in SQLite, and exposes only bounded caregiver context. It is not face recognition,
@@ -79,6 +85,38 @@ remain human-confirmed workflows, not proof of administration or medical state.
 Agent assistance is downstream of structured records. Agents can summarize, draft, and audit payloads with
 event provenance, but cannot confirm, dismiss, delete, dispatch, diagnose, confirm medication, or inspect raw
 video as the decision-maker.
+
+Runtime validation is contract-backed but non-authoritative. `runtime-validation-receipt` records camera,
+OBS/feed, Gemma, Hermes no-send, TTS-generation, database, disk, heartbeat, and demo-preflight checks while
+preserving no-send/no-call/no-playback boundaries. Local MJPEG preview exposure is governed by
+`local-feed-exposure`: loopback is the default, and LAN binding requires explicit operator approval, token
+protection, expiration, and privacy-warning acknowledgement. Local model dependencies are governed by
+`model-manifest` plus the model doctor; model availability does not grant authority to diagnose, dispatch, or
+confirm medication.
+
+SQLite storage remains the local blackbox behind the `SQLiteStore` facade, with focused helper modules for
+connection handling, migrations, event identity, review lifecycle policy, agent-assist attempt identity,
+appearance profile identity, and observation-check identity. Call sites should continue to use the facade
+unless they are inside the storage package.
+
+```mermaid
+flowchart LR
+  Store["SQLiteStore facade"]
+  Conn["connection.py"]
+  Mig["migrations"]
+  Events["events.py"]
+  Reviews["reviews.py"]
+  Agent["agent_assist.py"]
+  Appearance["appearance.py"]
+  Checks["observation_checks.py"]
+  Store --> Conn
+  Store --> Mig
+  Store --> Events
+  Store --> Reviews
+  Store --> Agent
+  Store --> Appearance
+  Store --> Checks
+```
 
 ## Fail-Closed Laws
 

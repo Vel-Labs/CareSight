@@ -1,0 +1,10 @@
+{
+  "schema": "retention-policy",
+  "policy_id": "retention_unbounded_clip_share",
+  "record_type": "clip",
+  "retention_days": 3650,
+  "deletion_mode": "retain_local_blackbox",
+  "export_allowed": true,
+  "share_allowed": true,
+  "audit_log_required": true
+}

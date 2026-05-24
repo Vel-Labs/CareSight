@@ -23,21 +23,9 @@ DEFAULT_LIVE_MESSAGE = (
     "Would you like to connect to CareSight?"
 )
 
-AFFIRMATIVE_TERMS = {
-    "yes",
-    "y",
-    "yeah",
-    "yep",
-    "sure",
-    "ok",
-    "okay",
-    "please",
-    "connect",
-    "call",
-    "facetime",
-    "start",
-    "go ahead",
-}
+FACETIME_APPROVAL_PHRASES = ("yes connect", "yes facetime")
+OPPORTUNITY_TERMS = ("tomorrow", "later", "after", "when", "call me", "can you call", "what time")
+AMBIGUOUS_TERMS = ("please wait", "wait", "hold on", "start what", "what?", "call later")
 
 NEGATIVE_TERMS = {
     "no",
@@ -51,14 +39,28 @@ NEGATIVE_TERMS = {
 }
 
 
-def is_yes_like_reply(text: str) -> bool:
+def classify_reply_intent(text: str, *, required_phrase: str | None = None) -> str:
     normalized = " ".join(text.casefold().strip().split())
     if not normalized:
-        return False
+        return "ambiguous"
     tokens = set(normalized.replace(".", " ").replace(",", " ").replace("!", " ").replace("?", " ").split())
     if any(_term_present(term, normalized, tokens) for term in NEGATIVE_TERMS):
-        return False
-    return any(_term_present(term, normalized, tokens) for term in AFFIRMATIVE_TERMS)
+        return "no"
+    required = (required_phrase or "").casefold().strip()
+    allowed_phrases = (required,) if required else FACETIME_APPROVAL_PHRASES
+    if any(phrase and phrase in normalized for phrase in allowed_phrases):
+        return "yes"
+    if any(term in normalized for term in AMBIGUOUS_TERMS):
+        return "ambiguous"
+    if any(term in normalized for term in OPPORTUNITY_TERMS):
+        return "opportunity"
+    if normalized in {"yes", "y", "yeah", "yep", "ok", "okay", "sure"}:
+        return "ambiguous"
+    return "ambiguous"
+
+
+def is_yes_like_reply(text: str) -> bool:
+    return classify_reply_intent(text) == "yes"
 
 
 def resolve_contact_target(
@@ -383,11 +385,22 @@ def execute_facetime_if_yes(
     target: str | None = None,
     live_approved: bool = False,
     dry_run: bool = False,
+    required_phrase: str | None = None,
 ) -> dict[str, Any]:
-    yes_like = is_yes_like_reply(reply_text)
-    if not yes_like:
-        request = store.get_agent_action_request(request_id)
-        draft = store.get_agent_draft(request["source_draft_id"])
+    request = store.get_agent_action_request(request_id)
+    draft = store.get_agent_draft(request["source_draft_id"])
+    phrase = required_phrase or "yes connect"
+    reply_classification = classify_reply_intent(reply_text, required_phrase=phrase)
+    reply_receipt = _reply_gated_handoff_receipt(
+        request=request,
+        contact_id=contact_id,
+        reply_text=reply_text,
+        required_phrase=phrase,
+        allowed_followup_actions=request.get("response_options", []),
+        reply_classification=reply_classification,
+        target_verification="not_checked",
+    )
+    if reply_classification != "yes":
         attempt = _build_live_attempt(
             request=request,
             draft=draft,
@@ -396,10 +409,16 @@ def execute_facetime_if_yes(
             target_source="not_resolved",
             channel="facetime",
             message="",
-            delivery={"status": "not_requested", "reply_interpreted_as_yes": False},
+            delivery={
+                "status": "not_requested",
+                "reply_interpreted_as_yes": False,
+                "reply_classification": reply_classification,
+            },
             dry_run=True,
-            result="facetime_not_requested_reply_not_yes_like",
+            result=f"facetime_not_requested_reply_{reply_classification}",
             external_action_performed=False,
+            reply_gated_handoff=reply_receipt,
+            followup_draft=_reply_followup_draft(reply_classification),
         )
         store.insert_agent_execution_attempt(attempt)
         return attempt
@@ -407,8 +426,6 @@ def execute_facetime_if_yes(
     if not live_approved and not dry_run:
         raise ValueError("live FaceTime handoff requires --live-approved")
 
-    request = store.get_agent_action_request(request_id)
-    draft = store.get_agent_draft(request["source_draft_id"])
     _validate_live_request(request, contact_id=contact_id, destination="imessage")
     if "request_facetime_handoff" not in request.get("response_options", []):
         raise ValueError("FaceTime handoff requires request_facetime_handoff response option")
@@ -422,8 +439,10 @@ def execute_facetime_if_yes(
         request=request,
         contact_id=contact_id,
         reply_text=reply_text,
-        required_phrase="yes",
+        required_phrase=phrase,
         allowed_followup_actions=request.get("response_options", []),
+        reply_classification=reply_classification,
+        target_verification="verified",
     )
     pending = _build_live_attempt(
         request=request,
@@ -433,7 +452,7 @@ def execute_facetime_if_yes(
         target_source=target_source,
         channel="facetime",
         message="",
-        delivery={"status": "pending_execution", "reply_interpreted_as_yes": True},
+        delivery={"status": "pending_execution", "reply_interpreted_as_yes": True, "reply_classification": "yes"},
         dry_run=dry_run,
         result="facetime_pending_execution",
         external_action_performed=False,
@@ -447,7 +466,7 @@ def execute_facetime_if_yes(
     except Exception as exc:
         failed = _finalize_live_attempt(
             pending,
-            delivery={"status": "failed", "reply_interpreted_as_yes": True},
+            delivery={"status": "failed", "reply_interpreted_as_yes": True, "reply_classification": "yes"},
             result="facetime_failed",
             execution_state="failed",
             external_action_performed=False,
@@ -456,6 +475,7 @@ def execute_facetime_if_yes(
         store.update_agent_execution_attempt(failed)
         raise
     delivery["reply_interpreted_as_yes"] = True
+    delivery["reply_classification"] = "yes"
     attempt = _build_live_attempt(
         request=request,
         draft=draft,
@@ -520,6 +540,7 @@ def wait_for_yes_reply(
                 "status": "reply_observed",
                 "reply_text": reply["text"],
                 "reply_interpreted_as_yes": is_yes_like_reply(reply["text"]),
+                "reply_classification": classify_reply_intent(reply["text"]),
                 "source": "macos_messages_db",
                 "target": _redacted_target(target),
             }
@@ -536,6 +557,7 @@ def wait_for_yes_reply(
     return {
         "status": "timeout",
         "reply_interpreted_as_yes": False,
+        "reply_classification": "timeout",
         "source": "macos_messages_db",
         "target": _redacted_target(target),
     }
@@ -590,6 +612,7 @@ def wait_for_yes_reply_with_imsg(
                     "status": "reply_observed",
                     "reply_text": text,
                     "reply_interpreted_as_yes": is_yes_like_reply(text),
+                    "reply_classification": classify_reply_intent(text),
                     "source": "imsg",
                     "target": _redacted_target(target),
                 }
@@ -607,6 +630,7 @@ def wait_for_yes_reply_with_imsg(
     return {
         "status": "timeout",
         "reply_interpreted_as_yes": False,
+        "reply_classification": "timeout",
         "source": "imsg",
         "target": _redacted_target(target),
     }
@@ -673,6 +697,7 @@ def _build_live_attempt(
     media_policy: dict[str, Any] | None = None,
     attachment_metadata: dict[str, Any] | None = None,
     reply_gated_handoff: dict[str, Any] | None = None,
+    followup_draft: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = build_hermes_handoff_payload(request, draft=draft)
     final_execution_state = execution_state or ("executed" if external_action_performed else "dry_run")
@@ -694,6 +719,8 @@ def _build_live_attempt(
         payload["attachment"] = attachment_metadata
     if reply_gated_handoff is not None:
         payload["reply_gated_handoff"] = reply_gated_handoff
+    if followup_draft is not None:
+        payload["reply_followup_draft"] = followup_draft
     return {
         "schema": "agent-execution-attempt",
         "attempt_id": attempt_id or f"attempt_{uuid4().hex}",
@@ -802,19 +829,37 @@ def _reply_gated_handoff_receipt(
     reply_text: str,
     required_phrase: str,
     allowed_followup_actions: list[str],
+    reply_classification: str,
+    target_verification: str,
 ) -> dict[str, Any]:
+    approved = reply_classification == "yes"
     return {
         "schema": "reply-gated-handoff",
         "handoff_id": f"handoff_{uuid4().hex}",
         "source_request_id": request["request_id"],
         "allowed_followup_actions": allowed_followup_actions,
-        "reply_classification": "affirmative",
+        "reply_classification": reply_classification,
         "required_phrase": required_phrase,
-        "live_approval_state": "approved_for_this_attempt",
+        "live_approval_state": "approved_for_this_attempt" if approved else "blocked",
         "contact_id": contact_id,
-        "target_verification": "verified",
+        "target_verification": target_verification if approved else "not_checked",
         "execution_receipt_required": True,
         "reply_text_sha256_prefix": hashlib.sha256(reply_text.encode("utf-8")).hexdigest()[:12],
+    }
+
+
+def _reply_followup_draft(reply_classification: str) -> dict[str, Any]:
+    if reply_classification == "opportunity":
+        text = "CareSight can draft a follow-up asking what time or channel the caregiver prefers."
+    elif reply_classification == "no":
+        text = "CareSight will not open FaceTime from this reply and can draft a local note for human review."
+    else:
+        text = "CareSight needs a clearer approval phrase before opening FaceTime."
+    return {
+        "schema": "reply-followup-draft",
+        "reply_classification": reply_classification,
+        "draft_text": text,
+        "external_action_performed": False,
     }
 
 

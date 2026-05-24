@@ -29,6 +29,8 @@ class ReviewStore(Protocol):
         reviewer: str,
         decision: str,
         note: str | None = None,
+        review_purpose: str = "initial_review",
+        amendment_of_review_id: str | None = None,
     ) -> dict[str, Any]: ...
 
 
@@ -63,12 +65,16 @@ class ReviewService:
         *,
         reviewer: str | None,
         note: str | None = None,
+        review_purpose: str = "initial_review",
+        amendment_of_review_id: str | None = None,
     ) -> dict[str, Any]:
         return self._record_human_review(
             event_id,
             reviewer=reviewer,
             decision="human_confirmed",
             note=note,
+            review_purpose=review_purpose,
+            amendment_of_review_id=amendment_of_review_id,
         )
 
     def dismiss_event(
@@ -77,12 +83,16 @@ class ReviewService:
         *,
         reviewer: str | None,
         note: str | None = None,
+        review_purpose: str = "initial_review",
+        amendment_of_review_id: str | None = None,
     ) -> dict[str, Any]:
         return self._record_human_review(
             event_id,
             reviewer=reviewer,
             decision="dismissed",
             note=note,
+            review_purpose=review_purpose,
+            amendment_of_review_id=amendment_of_review_id,
         )
 
     def list_journal_entries(self, event_id: str) -> list[dict[str, Any]]:
@@ -107,6 +117,8 @@ class ReviewService:
         reviewer: str | None,
         decision: str,
         note: str | None,
+        review_purpose: str,
+        amendment_of_review_id: str | None,
     ) -> dict[str, Any]:
         human_reviewer = validate_human_reviewer(reviewer)
         return self._store.record_event_review(
@@ -114,6 +126,8 @@ class ReviewService:
             reviewer=human_reviewer,
             decision=decision,
             note=note,
+            review_purpose=review_purpose,
+            amendment_of_review_id=amendment_of_review_id,
         )
 
 

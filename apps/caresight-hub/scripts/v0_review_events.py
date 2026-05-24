@@ -23,6 +23,16 @@ def parse_args() -> argparse.Namespace:
         review_parser.add_argument("event_id")
         review_parser.add_argument("--reviewer")
         review_parser.add_argument("--note")
+        review_parser.add_argument(
+            "--review-purpose",
+            default="initial_review",
+            choices=["initial_review", "followup_note", "amendment", "correction"],
+            help="Purpose for this lifecycle mutation.",
+        )
+        review_parser.add_argument(
+            "--amendment-of-review-id",
+            help="Prior review ID when --review-purpose amendment changes a final state.",
+        )
 
     journal_parser = subparsers.add_parser("journal", help="Show journal entries for an event.")
     journal_parser.add_argument("event_id")
@@ -57,17 +67,22 @@ def main() -> None:
                     args.event_id,
                     reviewer=args.reviewer,
                     note=args.note,
+                    review_purpose=args.review_purpose,
+                    amendment_of_review_id=args.amendment_of_review_id,
                 )
             else:
                 result = service.dismiss_event(
                     args.event_id,
                     reviewer=args.reviewer,
                     note=args.note,
+                    review_purpose=args.review_purpose,
+                    amendment_of_review_id=args.amendment_of_review_id,
                 )
         except ReviewServiceError as exc:
             raise SystemExit(str(exc)) from exc
         print(f"Event {result['event_id']} status: {result['decision']}")
         print(f"Review: {result['review_id']}")
+        print(f"Purpose: {result['review_purpose']}")
         print(f"Journal: {result['journal_id']}")
         print(f"Agent handoff: {result['handoff_id']} (report_only)")
         return

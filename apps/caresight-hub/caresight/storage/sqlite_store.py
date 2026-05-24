@@ -10,6 +10,9 @@ from typing import Any
 from uuid import uuid4
 
 from caresight.runtime.config import CareSightConfig
+from caresight.storage.connection import sqlite_connection
+from caresight.storage.migrations import SCHEMA_SQL, ensure_column
+from caresight.storage.reviews import validate_review_transition
 
 
 class SQLiteStore:
@@ -40,6 +43,26 @@ class SQLiteStore:
                 column="response_options_json",
                 definition="TEXT NOT NULL DEFAULT '[]'",
             )
+            ensure_column(
+                conn,
+                table="event_reviews",
+                column="review_purpose",
+                definition="TEXT NOT NULL DEFAULT 'initial_review'",
+            )
+            ensure_column(conn, table="event_reviews", column="amendment_of_review_id", definition="TEXT")
+            ensure_column(
+                conn,
+                table="event_reviews",
+                column="previous_status",
+                definition="TEXT NOT NULL DEFAULT 'awaiting_human_confirmation'",
+            )
+            ensure_column(
+                conn,
+                table="journal_entries",
+                column="export_classification",
+                definition="TEXT NOT NULL DEFAULT 'local-only'",
+            )
+            ensure_column(conn, table="journal_entries", column="redaction_receipt_json", definition="TEXT")
             self._rebuild_agent_execution_attempts_if_needed(conn)
 
     def _rebuild_agent_execution_attempts_if_needed(self, conn: sqlite3.Connection) -> None:
@@ -615,14 +638,14 @@ class SQLiteStore:
         reviewer: str,
         decision: str,
         note: str | None = None,
+        review_purpose: str = "initial_review",
+        amendment_of_review_id: str | None = None,
     ) -> dict[str, Any]:
         reviewer = reviewer.strip()
         if not reviewer:
             raise ValueError("reviewer is required")
         if is_automation_reviewer(reviewer):
             raise ValueError("reviewer must be an authorized human, not an agent or automation")
-        if decision not in {"human_confirmed", "dismissed", "needs_followup"}:
-            raise ValueError(f"unsupported decision: {decision}")
 
         reviewed_at = utc_now()
         review_id = f"review_{uuid4().hex}"
@@ -633,6 +656,13 @@ class SQLiteStore:
             ).fetchone()
             if event_row is None:
                 raise KeyError(event_id)
+            previous_status = str(event_row["status"])
+            transition = validate_review_transition(
+                previous_status=previous_status,
+                decision=decision,
+                review_purpose=review_purpose,
+                amendment_of_review_id=amendment_of_review_id,
+            )
 
             conn.execute(
                 "UPDATE events SET status = ? WHERE event_id = ?",
@@ -646,15 +676,38 @@ class SQLiteStore:
                   reviewer,
                   decision,
                   note,
+                  review_purpose,
+                  amendment_of_review_id,
+                  previous_status,
                   reviewed_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (review_id, event_id, reviewer, decision, note, reviewed_at),
+                (
+                    review_id,
+                    event_id,
+                    reviewer,
+                    decision,
+                    note,
+                    transition.review_purpose,
+                    transition.amendment_of_review_id,
+                    transition.previous_status,
+                    reviewed_at,
+                ),
             )
             event = event_from_row(event_row)
             event["status"] = decision
-            journal = self._insert_review_journal(conn, event, reviewer, decision, note, reviewed_at)
+            journal = self._insert_review_journal(
+                conn,
+                event,
+                reviewer,
+                decision,
+                note,
+                reviewed_at,
+                review_purpose=transition.review_purpose,
+                previous_status=transition.previous_status,
+                amendment_of_review_id=transition.amendment_of_review_id,
+            )
             handoff = self._insert_agent_handoff(
                 conn,
                 event,
@@ -663,6 +716,9 @@ class SQLiteStore:
                 review_id=review_id,
                 journal_id=journal["journal_id"],
                 reviewed_at=reviewed_at,
+                review_purpose=transition.review_purpose,
+                previous_status=transition.previous_status,
+                amendment_of_review_id=transition.amendment_of_review_id,
             )
 
         return {
@@ -671,6 +727,9 @@ class SQLiteStore:
             "reviewer": reviewer,
             "decision": decision,
             "note": note,
+            "review_purpose": review_purpose,
+            "amendment_of_review_id": amendment_of_review_id,
+            "previous_status": previous_status,
             "reviewed_at": reviewed_at,
             "journal_id": journal["journal_id"],
             "handoff_id": handoff["handoff_id"],
@@ -687,6 +746,23 @@ class SQLiteStore:
                 (event_id,),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def update_journal_redaction(
+        self,
+        journal_id: str,
+        *,
+        export_classification: str,
+        redaction_receipt: dict[str, Any],
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                UPDATE journal_entries
+                SET export_classification = ?, redaction_receipt_json = ?
+                WHERE journal_id = ?
+                """,
+                (export_classification, json.dumps(redaction_receipt, sort_keys=True), journal_id),
+            )
 
     def list_event_reviews(self, event_id: str) -> list[dict[str, Any]]:
         with self._connect() as conn:
@@ -1060,10 +1136,21 @@ class SQLiteStore:
         decision: str,
         note: str | None,
         created_at: str,
+        review_purpose: str,
+        previous_status: str,
+        amendment_of_review_id: str | None,
     ) -> dict[str, str]:
         journal_id = f"journal_{uuid4().hex}"
-        title = f"{event['event_type']} {decision}"
-        body = review_journal_body(event, reviewer, decision, note)
+        title = f"{event['event_type']} {review_purpose} {decision}"
+        body = review_journal_body(
+            event,
+            reviewer,
+            decision,
+            note,
+            review_purpose=review_purpose,
+            previous_status=previous_status,
+            amendment_of_review_id=amendment_of_review_id,
+        )
         conn.execute(
             """
             INSERT INTO journal_entries (
@@ -1073,11 +1160,12 @@ class SQLiteStore:
               title,
               body,
               created_at,
-              created_by
+              created_by,
+              export_classification
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (journal_id, event["event_id"], "event_review", title, body, created_at, reviewer),
+            (journal_id, event["event_id"], "event_review", title, body, created_at, reviewer, "local-only"),
         )
         return {"journal_id": journal_id, "body": body}
 
@@ -1090,6 +1178,9 @@ class SQLiteStore:
         review_id: str,
         journal_id: str,
         reviewed_at: str,
+        review_purpose: str,
+        previous_status: str,
+        amendment_of_review_id: str | None,
     ) -> dict[str, str]:
         handoff_id = f"handoff_{uuid4().hex}"
         evidence = event["evidence"]
@@ -1100,6 +1191,9 @@ class SQLiteStore:
             "review_id": review_id,
             "reviewer": reviewer,
             "reviewed_at": reviewed_at,
+            "review_purpose": review_purpose,
+            "previous_status": previous_status,
+            "amendment_of_review_id": amendment_of_review_id,
             "journal_id": journal_id,
             "snapshot_path": evidence.get("snapshot_path"),
             "requires_human_confirmation": event["requires_human_confirmation"],
@@ -1133,14 +1227,8 @@ class SQLiteStore:
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
-        conn = sqlite3.connect(self.database_path)
-        try:
-            conn.row_factory = sqlite3.Row
-            conn.execute("PRAGMA foreign_keys = ON")
-            with conn:
-                yield conn
-        finally:
-            conn.close()
+        with sqlite_connection(self.database_path) as conn:
+            yield conn
 
 
 def event_from_row(row: sqlite3.Row) -> dict[str, Any]:
@@ -1395,13 +1483,21 @@ def review_journal_body(
     reviewer: str,
     decision: str,
     note: str | None,
+    *,
+    review_purpose: str,
+    previous_status: str,
+    amendment_of_review_id: str | None,
 ) -> str:
     decision_text = decision.replace("_", " ")
     lines = [
         f"Event {event['event_id']} was {decision_text} by {reviewer}.",
         f"Event type: {event['event_type']}.",
+        f"Review purpose: {review_purpose}.",
+        f"Lifecycle transition: {previous_status} -> {decision}.",
         f"Status: {decision}.",
     ]
+    if amendment_of_review_id:
+        lines.append(f"Amends review: {amendment_of_review_id}.")
     if note:
         lines.append(f"Reviewer note: {note}")
     lines.append("Blocked actions remained blocked: " + ", ".join(event["blocked_actions"]) + ".")
@@ -1428,21 +1524,5 @@ def is_automation_reviewer(reviewer: str) -> bool:
     return normalized in automation_names
 
 
-def ensure_column(conn: sqlite3.Connection, *, table: str, column: str, definition: str) -> None:
-    columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
-    if column in columns:
-        return
-    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
-
-
 def utc_now() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
-
-
-MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
-SCHEMA_SQL = "\n".join(
-    [
-        (MIGRATIONS_DIR / "001_init.sql").read_text(encoding="utf-8"),
-        (MIGRATIONS_DIR / "003_appearance_profiles.sql").read_text(encoding="utf-8"),
-    ]
-)

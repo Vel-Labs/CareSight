@@ -1,5 +1,7 @@
 import { access, readFile, readdir } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import path from "node:path";
+import { promisify } from "node:util";
 
 type RepoProfile = {
   rootPolicy: {
@@ -15,6 +17,7 @@ type RepoProfile = {
 };
 
 const repoRoot = process.cwd();
+const execFileAsync = promisify(execFile);
 const errors: string[] = [];
 const profile = await readJson<RepoProfile>("REPO_PROFILE.json");
 const packageJson = await readJson<{ scripts?: Record<string, string> }>("package.json");
@@ -29,6 +32,7 @@ assertProfileCommandsExist(profile.commands, packageJson.scripts ?? {});
 await assertForbiddenRootDirsAbsent(profile.forbiddenRootDirectoriesBeforeProjectAdoption);
 await assertSkillFolders();
 await assertFileTreeCurrent();
+await assertNoTrackedLocalConfig();
 await assertOnlyAllowedPlaceholders(profile.allowedTemplatePlaceholders);
 
 if (errors.length > 0) {
@@ -153,6 +157,20 @@ async function assertOnlyAllowedPlaceholders(allowed: string[]): Promise<void> {
         errors.push(`${file} contains unregistered template placeholder ${placeholder}`);
       }
     }
+  }
+}
+
+async function assertNoTrackedLocalConfig(): Promise<void> {
+  const { stdout } = await execFileAsync("git", ["ls-files", "apps/caresight-hub/config/*.local.json"], {
+    cwd: repoRoot
+  });
+  const tracked = stdout
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((file) => !file.endsWith(".local.example.json"));
+  for (const file of tracked) {
+    errors.push(`tracked local config is not allowed: ${file}`);
   }
 }
 

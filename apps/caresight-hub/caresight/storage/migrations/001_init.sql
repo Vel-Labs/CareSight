@@ -75,6 +75,9 @@ CREATE TABLE IF NOT EXISTS event_reviews (
   reviewer TEXT NOT NULL,
   decision TEXT NOT NULL CHECK(decision IN ('human_confirmed', 'dismissed', 'needs_followup')),
   note TEXT,
+  review_purpose TEXT NOT NULL DEFAULT 'initial_review',
+  amendment_of_review_id TEXT,
+  previous_status TEXT NOT NULL DEFAULT 'awaiting_human_confirmation',
   reviewed_at TEXT NOT NULL
 );
 
@@ -85,7 +88,9 @@ CREATE TABLE IF NOT EXISTS journal_entries (
   title TEXT NOT NULL,
   body TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  created_by TEXT NOT NULL
+  created_by TEXT NOT NULL,
+  export_classification TEXT NOT NULL DEFAULT 'local-only',
+  redaction_receipt_json TEXT
 );
 
 CREATE TABLE IF NOT EXISTS agent_handoffs (

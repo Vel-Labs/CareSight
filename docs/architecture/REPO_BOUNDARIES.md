@@ -26,6 +26,8 @@ It should not contain YOLO, OpenCV, camera, SQLite runtime, dashboard, or alert 
 - local track state and track metadata under `caresight/runtime/tracking/`
 - non-biometric same-day appearance descriptors and SQLite profile read/write paths under `caresight/runtime/appearance/`
 - SQLite storage
+- storage helper modules under `caresight/storage/` for connection, migrations, events, reviews, agent-assist receipts, appearance rows, and observation checks, with `SQLiteStore` kept as the compatibility facade
+- live-loop orchestration boundaries under `caresight/runtime/live_loop.py`, `runtime/escalation/`, `runtime/preview/`, and `runtime/post_event_pipeline.py`
 - journal generation
 - alert adapters
 - OBS bridge

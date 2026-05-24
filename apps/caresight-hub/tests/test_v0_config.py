@@ -21,7 +21,7 @@ class V0ConfigTest(unittest.TestCase):
             self.assertEqual(loaded.storage.database_path, "apps/caresight-hub/data/caresight-v0.sqlite3")
 
     def test_select_configured_camera_preserves_camera_room_and_source_metadata(self) -> None:
-        config = CareSightConfig.load(Path("apps/caresight-hub/config/v0.local.json"))
+        config = CareSightConfig.load(Path("apps/caresight-hub/config/v0.example.json"))
 
         selected = select_configured_camera(config, camera_id="kitchen_rtsp")
 
@@ -74,7 +74,7 @@ class V0ConfigTest(unittest.TestCase):
         self.assertEqual(config.floor_zone.vertices[0], (0.2, 0.5))
 
     def test_select_configured_camera_rejects_unsupported_source_type(self) -> None:
-        config = CareSightConfig.load(Path("apps/caresight-hub/config/v0.local.json"))
+        config = CareSightConfig.load(Path("apps/caresight-hub/config/v0.example.json"))
 
         with self.assertRaisesRegex(ValueError, "no configured camera"):
             select_configured_camera(config, source_type="onvif")

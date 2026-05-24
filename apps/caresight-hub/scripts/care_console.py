@@ -13,6 +13,7 @@ DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.
 DEFAULT_RUNTIME_PYTHON = ROOT_DIR / ".venv" / "bin" / "python"
 DEFAULT_OBS_STATE_PATH = ROOT_DIR.parents[1] / "apps" / "obs-hub" / "config" / "current_event.json"
 DEFAULT_OBS_PREVIEW_PATH = ROOT_DIR.parents[1] / "apps" / "obs-hub" / "config" / "live_preview.jpg"
+DEFAULT_MODEL_MANIFESTS_PATH = ROOT_DIR / "config" / "model-manifests.example.json"
 
 
 def parse_args() -> argparse.Namespace:
@@ -206,6 +207,29 @@ def parse_args() -> argparse.Namespace:
         "hermes-config-plan",
         help="Render the workspace-local Hermes and local model serving plan.",
     )
+    model_doctor_parser = subparsers.add_parser(
+        "model-doctor",
+        help="Validate local model manifests, paths, checksums, licenses, and purpose lanes.",
+    )
+    model_doctor_parser.add_argument("--manifest", default=str(DEFAULT_MODEL_MANIFESTS_PATH))
+    model_doctor_parser.add_argument("--model-id", action="append", default=[])
+    model_doctor_parser.add_argument("--run-validation-command", action="store_true")
+    journal_redact_parser = subparsers.add_parser(
+        "journal-redact",
+        help="Classify and locally redact one journal entry before any external export.",
+    )
+    journal_redact_parser.add_argument("event_id")
+    journal_redact_parser.add_argument("--journal-id", required=True)
+    journal_redact_parser.add_argument(
+        "--export-classification",
+        choices=["local-only", "caregiver-shareable", "clinical-review", "do-not-share"],
+        default="local-only",
+    )
+    journal_redact_parser.add_argument(
+        "--engine",
+        choices=["local_rules", "openai_privacy_filter", "human_review_only"],
+        default="local_rules",
+    )
     return parser.parse_args()
 
 
@@ -248,10 +272,41 @@ def main() -> None:
         run_hermes_dry_run,
         stage_action_request,
     )
+    from caresight.runtime.model_doctor import check_model_manifest, load_model_manifests
+    from caresight.runtime.privacy import (
+        build_privacy_redaction_receipt,
+        classify_journal_export,
+        redact_text_for_export,
+    )
     from caresight.runtime.review import ReviewService
     from caresight.storage.sqlite_store import SQLiteStore
 
     args = parse_args()
+
+    if args.command == "model-doctor":
+        manifests = load_model_manifests(args.manifest)
+        selected = set(args.model_id)
+        if selected:
+            manifests = [manifest for manifest in manifests if manifest.get("model_id") in selected]
+        if selected and not manifests:
+            raise SystemExit("No matching model manifests found.")
+        results = [
+            check_model_manifest(manifest, run_validation=args.run_validation_command)
+            for manifest in manifests
+        ]
+        print(
+            json.dumps(
+                {
+                    "schema": "model-doctor-report",
+                    "manifest": args.manifest,
+                    "status": "pass" if all(result["status"] == "pass" for result in results) else "blocked",
+                    "results": results,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return
 
     if args.command == "hermes-config-plan":
         print(json.dumps(build_hermes_config_plan(), indent=2, sort_keys=True))
@@ -452,6 +507,41 @@ def main() -> None:
 
     if args.command == "list-execution-attempts":
         print(json.dumps(store.list_agent_execution_attempts(args.request_id), indent=2, sort_keys=True))
+        return
+
+    if args.command == "journal-redact":
+        entries = store.list_journal_entries(args.event_id)
+        entry = next((item for item in entries if item["journal_id"] == args.journal_id), None)
+        if entry is None:
+            raise SystemExit(f"journal entry not found for event: {args.journal_id}")
+        classification = classify_journal_export(entry, args.export_classification)
+        receipt = build_privacy_redaction_receipt(
+            text=entry["body"],
+            engine=args.engine,
+            model_manifest_id="model_openai_privacy_filter" if args.engine == "openai_privacy_filter" else None,
+        )
+        redacted_text, _labels = redact_text_for_export(entry["body"])
+        store.update_journal_redaction(
+            entry["journal_id"],
+            export_classification=args.export_classification,
+            redaction_receipt=receipt,
+        )
+        print(
+            json.dumps(
+                {
+                    "schema": "journal-redaction-preview",
+                    "event_id": args.event_id,
+                    "journal_id": entry["journal_id"],
+                    "classification": classification,
+                    "redaction_receipt": receipt,
+                    "redacted_text": redacted_text,
+                    "canonical_text_preserved": True,
+                    "not_claimed": receipt["not_claimed"],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
         return
 
 

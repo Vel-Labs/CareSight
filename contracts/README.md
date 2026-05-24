@@ -30,6 +30,19 @@ Anything that defines project meaning, lifecycle state, schema shape, example sh
 - `media-sharing-policy`: event-scoped approval for images, screenshots, clips, or text excerpts before they leave the local device. Phase 1 permits approved event-scoped snapshot metadata and blocks raw video by default.
 - `reply-gated-handoff`: receipt shape for text replies that authorize a bounded follow-up such as FaceTime. FaceTime continuation requires an allowed follow-up action, affirmative reply classification, target verification, and an execution receipt.
 
+## Phase 3 Runtime and Model Governance Contracts
+
+- `runtime-validation-receipt`: machine-readable proof for non-invasive runtime probes and heartbeat checks. Receipts distinguish unit gates from camera, OBS/feed, Gemma, Hermes no-send, TTS-generation, database, disk, and demo-preflight checks. Heartbeats must preserve `no_live_send`, `no_facetime_call`, and `no_tts_playback` boundaries.
+- `local-feed-exposure`: explicit policy for local MJPEG/browser preview feeds. Loopback preview remains the default; LAN binding requires operator approval, token protection, an expiration, and privacy-warning acknowledgement.
+- `model-manifest`: source, license, checksum, local path, runtime, purpose lane, validation command, allowed uses, and blocked uses for local models.
+- `retention-policy`: local retention/export/share policy for SQLite events, snapshots, clips, journal entries, model outputs, and execution attempts.
+- `privacy-redaction-receipt`: receipt for text redaction attempts. Privacy filters are PII detection/masking aids only; they are not anonymization, HIPAA compliance, or safety guarantees.
+
+## Phase 4 Care Intelligence Contracts
+
+- `reply-gated-handoff`: FaceTime continuation now uses explicit reply classes: `yes`, `no`, `ambiguous`, `opportunity`, and `timeout`. Only `yes` with the configured phrase can authorize a live handoff.
+- `privacy-redaction-receipt`: journal export review records labels, redaction status, and human-review-required boundaries while preserving the canonical local journal text.
+
 ## Sprint 03 Appearance Profile Contracts
 
 - `appearance-profile`: non-biometric, same-day local appearance descriptors for care context. The contract requires `identity_boundary: non_biometric_daily_appearance_only`, distinguishes runtime observations from seeded fixtures with `descriptor_source` and `descriptor_status`, permits only bounded role assignments, and forbids biometric identity, face recognition, named-person identification, and cross-day identity claims.

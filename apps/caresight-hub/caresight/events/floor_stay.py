@@ -138,6 +138,7 @@ class FloorStayDetector:
                     "low_posture": posture["low_posture"],
                     "posture_label": posture["posture_label"],
                     "posture_basis": posture["posture_basis"],
+                    "advisory_posture_evidence": posture["advisory_posture_evidence"],
                     "floor_stay_eligible": posture["floor_stay_eligible"],
                     "dwell_seconds": round(dwell_seconds, 2),
                 }
@@ -183,12 +184,13 @@ class FloorStayDetector:
                 "policy_version": "floor_stay_v1_tracking_reliability",
                 "posture_label": posture["posture_label"],
                 "posture_basis": posture["posture_basis"],
-                "posture_indicator": "wide low person box intersects configured floor zone",
+                "advisory_posture_evidence": posture["advisory_posture_evidence"],
+                "posture_indicator": "low person box intersects configured floor zone",
                 "not_claimed": [
                     "fall_confirmed",
                     "injury_detected",
                     "medical_emergency",
-                    "sitting_on_floor_not_floor_stay_by_itself",
+                    "fall_or_injury_confirmed_from_vision",
                 ],
                 "track_id": track.track_id,
                 "model": "yolo26n-mlx",
@@ -219,11 +221,12 @@ def posture_evidence(detection: Detection, *, in_floor_zone: bool) -> dict:
     center_y = ((y1 + y2) / 2.0) / detection.frame_height
     low_center = center_y >= 0.60
     wide_low = aspect_ratio >= 2.0 and low_center
+    floor_low = in_floor_zone and low_center
 
     if in_floor_zone and wide_low:
         posture_label = "laying_low_possible"
     elif in_floor_zone and low_center:
-        posture_label = "seated_on_floor_possible"
+        posture_label = "on_floor_possible"
     elif low_center:
         posture_label = "low_posture_possible"
     else:
@@ -232,8 +235,15 @@ def posture_evidence(detection: Detection, *, in_floor_zone: bool) -> dict:
     return {
         "posture_label": posture_label,
         "posture_basis": "yolo_box_geometry",
-        "low_posture": wide_low,
-        "floor_stay_eligible": in_floor_zone and wide_low,
+        "advisory_posture_evidence": {
+            "pose": "not_configured",
+            "depth": "not_configured",
+            "segmentation": "not_configured",
+            "authority": "advisory_only",
+            "claim_boundary": "cannot_confirm_fall_or_injury",
+        },
+        "low_posture": floor_low,
+        "floor_stay_eligible": floor_low,
     }
 
 

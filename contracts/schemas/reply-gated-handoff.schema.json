@@ -42,7 +42,7 @@
     },
     "reply_classification": {
       "type": "string",
-      "enum": ["affirmative", "negative", "ambiguous", "timeout"]
+      "enum": ["yes", "no", "ambiguous", "opportunity", "timeout"]
     },
     "required_phrase": {
       "type": "string",
@@ -69,7 +69,7 @@
       "if": {
         "properties": {
           "reply_classification": {
-            "const": "affirmative"
+            "const": "yes"
           }
         },
         "required": ["reply_classification"]
@@ -89,7 +89,7 @@
       "if": {
         "properties": {
           "reply_classification": {
-            "enum": ["negative", "ambiguous", "timeout"]
+            "enum": ["no", "ambiguous", "opportunity", "timeout"]
           }
         },
         "required": ["reply_classification"]

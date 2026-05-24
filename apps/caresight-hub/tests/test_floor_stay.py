@@ -44,7 +44,7 @@ class FloorStayDetectorTest(unittest.TestCase):
                 "fall_confirmed",
                 "injury_detected",
                 "medical_emergency",
-                "sitting_on_floor_not_floor_stay_by_itself",
+                "fall_or_injury_confirmed_from_vision",
             ],
         )
 
@@ -183,7 +183,20 @@ class FloorStayDetectorTest(unittest.TestCase):
         self.assertEqual(second_event["evidence"]["track_id"], "track_2")
 
     def test_seated_desk_posture_does_not_emit_floor_stay(self) -> None:
-        config = CareSightConfig.default()
+        default_config = CareSightConfig.default()
+        config = replace(
+            default_config,
+            floor_zone=ZoneConfig(
+                zone_id="floor_zone",
+                camera_id="living_room",
+                name="Calibrated Floor Plane Excluding Desk",
+                kind="floor_low",
+                x_min=0.55,
+                y_min=0.66,
+                x_max=1.0,
+                y_max=1.0,
+            ),
+        )
         detector = FloorStayDetector(config)
         detection = Detection(
             class_name="person",
@@ -197,8 +210,10 @@ class FloorStayDetectorTest(unittest.TestCase):
         event = detector.update([detection], now=109.0)
 
         self.assertIsNone(event)
+        diagnostic = detector.diagnostic()
+        self.assertFalse(diagnostic["people"][0]["in_floor_zone"])
 
-    def test_seated_on_floor_is_labeled_but_does_not_emit_floor_stay(self) -> None:
+    def test_person_on_floor_can_emit_floor_stay_after_dwell(self) -> None:
         config = CareSightConfig.default()
         detector = FloorStayDetector(config)
         detection = Detection(
@@ -212,10 +227,37 @@ class FloorStayDetectorTest(unittest.TestCase):
         detector.update([detection], now=100.0)
         event = detector.update([detection], now=109.0)
 
-        self.assertIsNone(event)
+        self.assertIsNotNone(event)
+        assert event is not None
+        self.assertEqual(event["event_type"], "possible_floor_stay")
+        self.assertEqual(event["evidence"]["posture_label"], "on_floor_possible")
         diagnostic = detector.diagnostic()
-        self.assertEqual(diagnostic["people"][0]["posture_label"], "seated_on_floor_possible")
-        self.assertFalse(diagnostic["people"][0]["floor_stay_eligible"])
+        self.assertEqual(diagnostic["people"][0]["posture_label"], "on_floor_possible")
+        self.assertTrue(diagnostic["people"][0]["floor_stay_eligible"])
+
+    def test_live_debug_on_floor_geometry_emits_after_dwell(self) -> None:
+        config = CareSightConfig.default()
+        detector = FloorStayDetector(config)
+        detection = Detection(
+            class_name="person",
+            confidence=0.39,
+            bbox_xyxy=(930.2, 597.7, 1461.3, 935.3),
+            frame_width=1920,
+            frame_height=1080,
+        )
+
+        detector.update([detection], now=100.0)
+        event = detector.update([detection], now=109.0)
+
+        self.assertIsNotNone(event)
+        assert event is not None
+        self.assertEqual(event["event_type"], "possible_floor_stay")
+        self.assertEqual(event["evidence"]["posture_label"], "on_floor_possible")
+        self.assertEqual(event["evidence"]["detection_confidence"], 0.39)
+        diagnostic = detector.diagnostic()
+        self.assertEqual(diagnostic["status"], "floor_stay_candidate_tracking")
+        self.assertTrue(diagnostic["people"][0]["floor_stay_eligible"])
+        self.assertGreaterEqual(diagnostic["people"][0]["aspect_ratio"], 1.5)
 
     def test_laying_low_candidate_reports_posture_and_active_dwell(self) -> None:
         config = CareSightConfig.default()
@@ -255,7 +297,30 @@ class FloorStayDetectorTest(unittest.TestCase):
         assert event is not None
         self.assertEqual(event["evidence"]["posture_label"], "laying_low_possible")
         self.assertEqual(event["evidence"]["posture_basis"], "yolo_box_geometry")
-        self.assertIn("sitting_on_floor_not_floor_stay_by_itself", event["evidence"]["not_claimed"])
+        self.assertEqual(event["evidence"]["advisory_posture_evidence"]["authority"], "advisory_only")
+        self.assertIn("fall_or_injury_confirmed_from_vision", event["evidence"]["not_claimed"])
+
+    def test_advisory_pose_depth_segmentation_cannot_strengthen_claim(self) -> None:
+        config = CareSightConfig.default()
+        detector = FloorStayDetector(config)
+        on_floor = Detection(
+            class_name="person",
+            confidence=0.95,
+            bbox_xyxy=(440, 360, 760, 715),
+            frame_width=1280,
+            frame_height=720,
+        )
+
+        detector.update([on_floor], now=100.0)
+        event = detector.update([on_floor], now=109.0)
+        diagnostic = detector.diagnostic()
+
+        self.assertIsNotNone(event)
+        assert event is not None
+        advisory = diagnostic["people"][0]["advisory_posture_evidence"]
+        self.assertEqual(advisory["authority"], "advisory_only")
+        self.assertEqual(advisory["claim_boundary"], "cannot_confirm_fall_or_injury")
+        self.assertIn("fall_confirmed", event["evidence"]["not_claimed"])
 
     def test_diagnostic_explains_non_floor_stay_person(self) -> None:
         config = CareSightConfig.default()

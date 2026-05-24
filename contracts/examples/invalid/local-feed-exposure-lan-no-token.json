@@ -1,0 +1,11 @@
+{
+  "schema": "local-feed-exposure",
+  "feed_id": "feed_lan_without_token",
+  "bind_host": "0.0.0.0",
+  "bind_scope": "lan",
+  "auth_required": false,
+  "token_required": false,
+  "operator_approved": true,
+  "expires_at": "2026-05-24T16:00:00Z",
+  "privacy_warning_acknowledged": true
+}

@@ -131,7 +131,7 @@ echo "It runs floor-stay, posture indicators, and missing-off-camera events for 
 echo "FaceTime handoff preserves the current OBS camera/scene selection."
 echo
 echo waiting > apps/caresight-hub/data/runtime/demo-status/living.status
-read -r -p "Press Enter to start Living Room detector, or Ctrl-C to cancel: "
+echo "Starting Living Room detector."
 $living_cleanup
 trap 'echo stopped > apps/caresight-hub/data/runtime/demo-status/living.status' EXIT
 echo running > apps/caresight-hub/data/runtime/demo-status/living.status
@@ -171,7 +171,7 @@ echo "This tab starts the Kitchen detector feed for OBS."
 echo "It runs floor-stay, posture indicators, and missing-off-camera events for tapo_kitchen."
 echo
 echo waiting > apps/caresight-hub/data/runtime/demo-status/kitchen.status
-read -r -p "Press Enter to start Kitchen detector, or Ctrl-C to cancel: "
+echo "Starting Kitchen detector."
 $kitchen_cleanup
 trap 'echo stopped > apps/caresight-hub/data/runtime/demo-status/kitchen.status' EXIT
 echo running > apps/caresight-hub/data/runtime/demo-status/kitchen.status

@@ -1,0 +1,11 @@
+{
+  "schema": "privacy-redaction-receipt",
+  "receipt_id": "redaction_receipt_privacy_filter_demo",
+  "input_type": "caregiver_text",
+  "redaction_engine": "openai_privacy_filter",
+  "model_manifest_id": "model_openai_privacy_filter",
+  "labels_detected": ["phone_number"],
+  "redaction_status": "completed",
+  "human_review_required": true,
+  "not_claimed": ["anonymization", "hipaa_compliance", "safety_guarantee"]
+}

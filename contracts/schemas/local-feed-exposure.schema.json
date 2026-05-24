@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/local-feed-exposure.schema.json",
+  "title": "LocalFeedExposure",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "feed_id",
+    "bind_host",
+    "bind_scope",
+    "auth_required",
+    "token_required",
+    "operator_approved",
+    "expires_at",
+    "privacy_warning_acknowledged"
+  ],
+  "properties": {
+    "schema": { "const": "local-feed-exposure" },
+    "feed_id": { "type": "string", "pattern": "^feed_[a-z0-9_-]+$" },
+    "bind_host": { "type": "string", "minLength": 2 },
+    "bind_scope": { "type": "string", "enum": ["loopback", "lan"] },
+    "auth_required": { "type": "boolean" },
+    "token_required": { "type": "boolean" },
+    "operator_approved": { "type": "boolean" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "privacy_warning_acknowledged": { "type": "boolean" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "bind_scope": { "const": "lan" } },
+        "required": ["bind_scope"]
+      },
+      "then": {
+        "properties": {
+          "auth_required": { "const": true },
+          "token_required": { "const": true },
+          "operator_approved": { "const": true },
+          "privacy_warning_acknowledged": { "const": true }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "bind_scope": { "const": "loopback" } },
+        "required": ["bind_scope"]
+      },
+      "then": {
+        "properties": {
+          "operator_approved": { "const": false },
+          "privacy_warning_acknowledged": { "const": false }
+        }
+      }
+    }
+  ]
+}

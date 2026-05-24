@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Added Phase 5 documentation visibility: a short operating status page, a curated CLI safety-class index, categorized command docs, and README/roadmap routing for current gates and operator usability.
+- Added a separate Phase 1-4 bug-fix validation pass with fresh gate results, runtime probe receipts, accepted/residual-risk classifications, and explicit remaining live-validation boundaries before Phase 5 documentation work.
+- Added Phase 4 cleanup: explicit reply intent classification, advisory-only pose/depth/segmentation evaluation scaffolding, contextual missing-off-camera windows, and journal redaction/export previews.
+- Added Phase 3 cleanup: runtime validation receipts, heartbeat status checks, MJPEG feed exposure policy, governed model manifests, and `care_console.py model-doctor`.
+- Updated camera/preflight runtime probes to emit contract-shaped, non-invasive receipts and preserve no-send/no-call/no-TTS-playback boundaries.
+- Guarded non-loopback MJPEG preview binding behind `--allow-lan-preview`, `--preview-token`, and `--ack-lan-preview-risk`.
+- Fixed the MJPEG OBS browser feed `/live.html` renderer so CSS braces are not interpreted as Python format placeholders.
+- Kept the approved live caregiver handoff chain scoped to possible floor-stay events, with event-specific text wording and zsh-safe demo launcher prompts.
+- Added Phase 2 cleanup: storage migration/connection/review helper boundaries behind the `SQLiteStore` facade, strict migration identifier validation, and focused storage identity helpers.
+- Added Phase 2 cleanup: explicit live-loop, escalation, preview, and post-event pipeline modules while preserving the current `v0_floor_stay_live.py` CLI surface.
+- Moved tracked v0 demo config to `v0.example.json`, kept `v0.local.json` ignored, added deterministic config fallback, and made OBS site labels generic/config-driven with `site_label_source`.
+- Review mutations now require explicit lifecycle purpose metadata, block silent final-state flips, and require amendment linkage for final-state changes.
 - Added Phase 1 live-handoff cleanup: allowlisted target matching, pre-execution pending receipts for live iMessage/FaceTime/TTS paths, media-policy-gated snapshot attachments, reply-gated FaceTime receipts, and derived latest action-attempt status.
 - Added report-only post-hackathon audit artifacts covering project bugs/risks, phased bug-fix cleanup planning, technical optimization roadmap, and business/grant commercialization paths.
 - Added GitHub-native README enhancements: hackathon demo callout, compact Mermaid care-loop diagrams, a bounded product-lane roadmap table, collapsible setup/safety sections, and a no-commit video link slot.

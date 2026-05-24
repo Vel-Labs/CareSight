@@ -14,6 +14,7 @@ from caresight.runtime.agent_assist import (
     build_harness_plan,
     build_hermes_config_plan,
     build_hermes_handoff_payload,
+    classify_reply_intent,
     GemmaLocalProvider,
     execute_facetime_if_yes,
     execute_live_imessage,
@@ -421,8 +422,10 @@ class AgentAssistTest(unittest.TestCase):
                 response_options=["request_facetime_handoff"],
             )
 
-            self.assertTrue(is_yes_like_reply("yes please connect"))
+            self.assertTrue(is_yes_like_reply("yes connect"))
+            self.assertTrue(is_yes_like_reply("yes FaceTime"))
             self.assertFalse(is_yes_like_reply("no not now"))
+            self.assertFalse(is_yes_like_reply("yes please"))
 
             no_attempt = execute_facetime_if_yes(
                 seed.store,
@@ -436,7 +439,7 @@ class AgentAssistTest(unittest.TestCase):
             yes_attempt = execute_facetime_if_yes(
                 seed.store,
                 request_id=request["request_id"],
-                reply_text="yes please",
+                reply_text="yes connect",
                 contact_id="contact_emergency_primary",
                 allowlist_config=allowlist,
                 target="+15555550123",
@@ -444,11 +447,27 @@ class AgentAssistTest(unittest.TestCase):
                 dry_run=True,
             )
 
-            self.assertEqual(no_attempt["result"], "facetime_not_requested_reply_not_yes_like")
+            self.assertEqual(no_attempt["result"], "facetime_not_requested_reply_no")
             self.assertFalse(no_attempt["external_action_performed"])
             self.assertEqual(yes_attempt["result"], "facetime_live_dry_run")
             self.assertTrue(yes_attempt["payload"]["delivery"]["reply_interpreted_as_yes"])
+            self.assertEqual(yes_attempt["payload"]["reply_gated_handoff"]["reply_classification"], "yes")
             self.assertEqual(yes_attempt["payload"]["reply_gated_handoff"]["target_verification"], "verified")
+
+    def test_reply_classification_blocks_ambiguous_and_opportunity_replies(self) -> None:
+        cases = {
+            "yes connect": "yes",
+            "yes FaceTime": "yes",
+            "ok no": "no",
+            "please wait": "ambiguous",
+            "call later": "ambiguous",
+            "start what?": "ambiguous",
+            "not now": "no",
+            "can you call me tomorrow": "opportunity",
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(classify_reply_intent(text), expected)
 
     def test_facetime_requires_followup_option(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
@@ -469,7 +488,7 @@ class AgentAssistTest(unittest.TestCase):
                 execute_facetime_if_yes(
                     seed.store,
                     request_id=request["request_id"],
-                    reply_text="yes please",
+                    reply_text="yes connect",
                     contact_id="contact_emergency_primary",
                     allowlist_config=allowlist,
                     target="+15555550123",

@@ -1,4 +1,5 @@
 from .adapter import InferenceError, InferenceUnavailableError, ModelLoadError, Yolo26MlxAdapter
+from .advisory_evidence import AdvisoryEvidence, default_advisory_evidence
 from .config import InferenceRuntimeConfig
 from .harness import CareSightInferenceHarness, InferenceRunResult
 from .types import (
@@ -12,6 +13,7 @@ from .types import (
 
 __all__ = [
     "BoundingBox",
+    "AdvisoryEvidence",
     "CameraMetadata",
     "CareSightInferenceHarness",
     "Detection",
@@ -23,5 +25,6 @@ __all__ = [
     "Observation",
     "RoomMetadata",
     "Yolo26MlxAdapter",
+    "default_advisory_evidence",
     "normalize_detections",
 ]

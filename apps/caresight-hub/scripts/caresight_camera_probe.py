@@ -9,7 +9,9 @@ from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT_DIR.parents[1]
 sys.path.insert(0, str(ROOT_DIR))
+from caresight.runtime.validation import build_runtime_validation_receipt, current_timestamp
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,6 +24,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    started_at = current_timestamp()
     camera = _load_camera(Path(args.config))
     parsed = urlparse(str(camera["source_uri"]))
     redacted_uri = _redact_uri(str(camera["source_uri"]))
@@ -41,7 +44,7 @@ def main() -> None:
         "blocker": None,
     }
     if args.dry_run:
-        print(json.dumps(receipt, indent=2, sort_keys=True))
+        print(json.dumps(_runtime_receipt(receipt, args=args, started_at=started_at), indent=2, sort_keys=True))
         return
 
     if camera["source_type"] == "rtsp":
@@ -80,7 +83,7 @@ def main() -> None:
             receipt["first_frame_received"] = False
             receipt["blocker"] = "probe_error"
             receipt["error"] = str(error)
-    print(json.dumps(receipt, indent=2, sort_keys=True))
+    print(json.dumps(_runtime_receipt(receipt, args=args, started_at=started_at), indent=2, sort_keys=True))
 
 
 def _load_camera(path: Path) -> dict:
@@ -106,6 +109,26 @@ def _redact_uri(uri: str) -> str:
 def _tcp_reachable(hostname: str | None, port: int, timeout: float) -> bool:
     if not hostname:
         return False
+
+
+def _runtime_receipt(receipt: dict, *, args: argparse.Namespace, started_at: str) -> dict[str, object]:
+    blocked = []
+    if receipt.get("blocker"):
+        blocked.append({"code": str(receipt["blocker"]), "detail": str(receipt.get("error") or receipt.get("blocker"))})
+    if receipt.get("first_frame_received") is False:
+        blocked.append({"code": "first_frame_missing", "detail": "camera stream did not return a frame"})
+    status = "not_attempted" if args.dry_run else ("blocked" if blocked else "pass")
+    return build_runtime_validation_receipt(
+        check_type="camera_probe",
+        target=str(receipt.get("camera_id") or "camera"),
+        command=f"python {Path(__file__).resolve().relative_to(REPO_ROOT)} --config {args.config}"
+        + (" --dry-run" if args.dry_run else ""),
+        status=status,
+        started_at=started_at,
+        result=receipt,
+        blockers=blocked,
+        safety_boundaries=["local_probe_only", "redacted_output", "no_live_send", "no_facetime_call", "no_tts_playback"],
+    )
     try:
         with socket.create_connection((hostname, port), timeout=timeout):
             return True

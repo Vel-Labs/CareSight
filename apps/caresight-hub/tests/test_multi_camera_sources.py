@@ -192,11 +192,13 @@ class MultiCameraSourcesTest(unittest.TestCase):
                 text=True,
             )
             payload = json.loads(result.stdout)
+            probe = payload["result"]
 
-            self.assertEqual(payload["camera_id"], "tapo_living_room")
-            self.assertEqual(payload["redacted_uri"], "rtsp://***:***@192.0.2.55:554/stream1")
+            self.assertEqual(payload["schema"], "runtime-validation-receipt")
+            self.assertEqual(probe["camera_id"], "tapo_living_room")
+            self.assertEqual(probe["redacted_uri"], "rtsp://***:***@192.0.2.55:554/stream1")
             self.assertNotIn("secret", result.stdout)
-            self.assertEqual(payload["stream_opened"], "not_attempted")
+            self.assertEqual(probe["stream_opened"], "not_attempted")
 
     def test_camera_probe_reports_missing_cv2_next_command(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -230,9 +232,10 @@ class MultiCameraSourcesTest(unittest.TestCase):
                 text=True,
             )
             payload = json.loads(result.stdout)
+            probe = payload["result"]
 
-            if payload["blocker"] == "missing_cv2":
-                self.assertIn("vendor/yolo-mlx/.venv/bin/python", payload["next_command"])
+            if probe["blocker"] == "missing_cv2":
+                self.assertIn("vendor/yolo-mlx/.venv/bin/python", probe["next_command"])
                 self.assertNotIn("secret", result.stdout)
 
     def test_camera_view_reports_missing_cv2_guidance(self) -> None:

@@ -15,7 +15,7 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - Smoke checkpoint: `docs/audits/2026-05-18-yolo26-mlx-smoke-checkpoint.md`.
 - v0 eventization implementation: `docs/audits/2026-05-18-v0-eventization-implementation.md`.
 - v0 review and acknowledgement CLI: `apps/caresight-hub/scripts/v0_review_events.py`.
-- Durable CLI registry: `docs/cli/COMMANDS.md`.
+- Durable CLI registry: `docs/cli/COMMANDS.md`, with categorized command docs under `docs/cli/`.
 - v0 SQLite audit command: `python apps/caresight-hub/scripts/v0_review_events.py audit <event_id>`.
 - CareSight-owned inference harness: `apps/caresight-hub/caresight/runtime/inference/`.
 - Deterministic tracking foundation: `apps/caresight-hub/caresight/runtime/tracking/` with `track_id` event-observation persistence.
@@ -28,6 +28,10 @@ CareSight Hub has adopted the project scaffold as its governance backbone:
 - The Sprint 02 fake provider is a safety proof, not the finished provider: validated and blocked agent drafts are stored in SQLite through `agent_drafts`, with forbidden-claim reasons and safe rewrites for blocked drafts.
 - Sprint 02 action-request staging is implemented as a pre-execution gate: `care_console.py agent-draft`, `stage-action-request`, and `list-action-requests` write and inspect local SQLite rows only. Staged requests remain `not_executed` and require human approval.
 - Phase 1 live-handoff cleanup now requires allowlisted target matching, pre-execution `pending_execution` receipts before live iMessage/FaceTime/TTS actions, explicit `media-sharing-policy` approval for event snapshot attachments, and `reply-gated-handoff` receipts for FaceTime continuation.
+- Phase 2 cleanup now resolves repo readability, storage/runtime boundaries, local config policy, site-label privacy, migration identifier validation, and review lifecycle purpose checks. Runtime boundaries now include `runtime/live_loop.py`, `runtime/escalation/`, `runtime/preview/`, and `runtime/post_event_pipeline.py`; storage remains behind the `SQLiteStore` facade with helper modules for connection, migrations, reviews, and focused row identity. The tracked demo config is `apps/caresight-hub/config/v0.example.json`; ignored `v0.local.json` is used only for local overrides.
+- Phase 3 cleanup now adds contract-backed runtime validation, heartbeat receipts, MJPEG feed exposure policy, and governed model manifests. `caresight_demo_preflight.py --heartbeat --json` emits a non-invasive `runtime-validation-receipt`; `caresight_camera_probe.py` emits a redacted runtime receipt; `v0_floor_stay_live.py` keeps MJPEG preview loopback-only unless a token-protected LAN override is explicitly acknowledged; and `care_console.py model-doctor` checks local model manifests before readiness claims.
+- Phase 4 cleanup now tightens care-intelligence quality without broadening authority: FaceTime reply gating requires explicit `yes connect` / `yes FaceTime` style approval, pose/depth/segmentation are advisory-only evaluation lanes, missing-off-camera uses contextual windows and continuity suppression, and journal redaction/export previews preserve canonical local text while recording privacy-redaction receipts.
+- Phase 5 documentation visibility now adds the short operating status page at `docs/status/OPERATING_STATUS.md` and splits command guidance into categorized CLI docs while preserving `docs/cli/COMMANDS.md` as the safety-class index.
 - Local model candidates have been downloaded under ignored purpose lanes for follow-up provider benchmarking: `models/vision/yolo26-mlx/`, `models/reasoning/gemma/`, and `models/tts/holler/`.
 - Hermes is vendored as a pinned workspace submodule at `apps/caresight-hub/vendor/hermes-agent`; OpenClaw remains uninstalled and available as the policy-heavy gateway fallback.
 - Hermes is now the preferred first harness trial for staged iMessage/Notes/FaceTime-style actions. `care_console.py agent-harness-plan` renders non-executing routing plans only.
@@ -85,6 +89,8 @@ Primary sprint entrypoint: [`docs/roadmaps/caresight_sprint_pack/00-master-codex
 
 Current production-validation gate: [`docs/roadmaps/caresight_sprint_pack/09-sprint-01-02-production-validation.md`](caresight_sprint_pack/09-sprint-01-02-production-validation.md).
 
+Short operating status: [`docs/status/OPERATING_STATUS.md`](../status/OPERATING_STATUS.md).
+
 The v0 review and acknowledgement loop is now proven for the confirmed live proof event:
 
 ```text
@@ -118,7 +124,7 @@ python3 apps/caresight-hub/scripts/care_console.py blackbox-receipt evt_d9aa38bd
 ## v0 Resolution Order
 
 1. Run `python apps/caresight-hub/scripts/v0_floor_stay_live.py`.
-2. Tune `apps/caresight-hub/config/v0.local.json` if the floor zone is too large or too small.
+2. Tune ignored `apps/caresight-hub/config/v0.local.json` if the floor zone is too large or too small; use tracked `apps/caresight-hub/config/v0.example.json` as the repo-safe demo baseline.
 3. Confirm `event_persisted` prints once per continuous same-track floor-zone dwell.
 4. Inspect `apps/caresight-hub/data/caresight-v0.sqlite3`.
 5. Run `python apps/caresight-hub/scripts/v0_review_events.py list`.

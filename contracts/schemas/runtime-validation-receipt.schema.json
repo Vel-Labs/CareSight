@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/runtime-validation-receipt.schema.json",
+  "title": "RuntimeValidationReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "check_type",
+    "started_at",
+    "completed_at",
+    "status",
+    "target",
+    "command",
+    "result",
+    "safety_boundaries",
+    "blockers",
+    "next_check_after"
+  ],
+  "properties": {
+    "schema": { "const": "runtime-validation-receipt" },
+    "receipt_id": { "type": "string", "pattern": "^runtime_receipt_[a-z0-9_-]+$" },
+    "check_type": {
+      "type": "string",
+      "enum": ["camera_probe", "obs_feed", "gemma_endpoint", "hermes_no_send", "tts_generation", "heartbeat", "demo_preflight", "database_health", "disk_health"]
+    },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "status": { "type": "string", "enum": ["pass", "warn", "blocked", "not_attempted"] },
+    "target": { "type": "string", "minLength": 2 },
+    "command": { "type": "string", "minLength": 2 },
+    "result": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "safety_boundaries": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["no_live_send", "no_facetime_call", "no_tts_playback", "no_camera_open", "local_probe_only", "redacted_output", "no_raw_video_export"]
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "detail"],
+        "properties": {
+          "code": { "type": "string", "minLength": 2 },
+          "detail": { "type": "string", "minLength": 2 }
+        }
+      }
+    },
+    "next_check_after": { "type": "string", "format": "date-time" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "blocked" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": { "blockers": { "type": "array", "minItems": 1 } }
+      }
+    },
+    {
+      "not": {
+        "properties": {
+          "safety_boundaries": {
+            "type": "array",
+            "contains": { "enum": ["live_send_allowed", "facetime_call_allowed", "tts_playback_allowed"] }
+          }
+        }
+      }
+    }
+  ]
+}

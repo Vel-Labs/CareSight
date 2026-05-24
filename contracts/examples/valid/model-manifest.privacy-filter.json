@@ -1,0 +1,15 @@
+{
+  "schema": "model-manifest",
+  "model_id": "model_openai_privacy_filter",
+  "purpose_lane": "privacy_filter",
+  "source_url": "https://huggingface.co/openai/privacy-filter",
+  "license": "apache-2.0",
+  "local_path": "apps/caresight-hub/models/privacy/openai-privacy-filter",
+  "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+  "expected_size_bytes": 1,
+  "runtime": "transformers",
+  "allowed_uses": ["local pii detection aid for text redaction review"],
+  "blocked_uses": ["hipaa_compliance_claim", "medical_diagnosis", "safety_guarantee", "autonomous_emergency_dispatch"],
+  "validation_command": "python apps/caresight-hub/scripts/care_console.py model-doctor --model-id model_openai_privacy_filter",
+  "last_validated_at": null
+}

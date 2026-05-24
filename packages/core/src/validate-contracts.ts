@@ -22,7 +22,12 @@ const schemaByName = new Map([
   ["routine", "routine.schema.json"],
   ["tts-utterance", "tts-utterance.schema.json"],
   ["llm-provider", "llm-provider.schema.json"],
+  ["local-feed-exposure", "local-feed-exposure.schema.json"],
   ["media-sharing-policy", "media-sharing-policy.schema.json"],
+  ["model-manifest", "model-manifest.schema.json"],
+  ["privacy-redaction-receipt", "privacy-redaction-receipt.schema.json"],
+  ["retention-policy", "retention-policy.schema.json"],
+  ["runtime-validation-receipt", "runtime-validation-receipt.schema.json"],
   ["reply-gated-handoff", "reply-gated-handoff.schema.json"]
 ]);
 

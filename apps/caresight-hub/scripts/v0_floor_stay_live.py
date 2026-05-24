@@ -1,8 +1,11 @@
 import argparse
+from html import escape as html_escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import ipaddress
 import json
 import os
 import re
+import secrets
 import sys
 import threading
 import time
@@ -17,7 +20,9 @@ REPO_ROOT = ROOT_DIR.parents[1]
 YOLO_DIR = ROOT_DIR / "vendor" / "yolo-mlx"
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(YOLO_DIR))
-DEFAULT_CONFIG_PATH = ROOT_DIR / "config" / "v0.local.json"
+DEFAULT_LOCAL_CONFIG_PATH = ROOT_DIR / "config" / "v0.local.json"
+DEFAULT_EXAMPLE_CONFIG_PATH = ROOT_DIR / "config" / "v0.example.json"
+DEFAULT_CONFIG_PATH = DEFAULT_LOCAL_CONFIG_PATH
 DEFAULT_MODEL_PATH = ROOT_DIR / "vendor" / "yolo-mlx" / "models" / "yolo26n.npz"
 WINDOW_NAME = "CareSight v0 Floor Stay"
 DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_preview.jpg"
@@ -29,7 +34,11 @@ DISPLAY_LABELS = {"person", "cat", "dog", "bird"}
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run CareSight v0 possible-floor-stay loop.")
-    parser.add_argument("--config", default=str(DEFAULT_CONFIG_PATH), help="CareSight v0 config JSON.")
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="CareSight v0 config JSON. Defaults to ignored v0.local.json when present, else tracked v0.example.json.",
+    )
     parser.add_argument("--model", default=str(DEFAULT_MODEL_PATH), help="YOLO26 MLX .npz model path.")
     parser.add_argument("--conf", type=float, default=0.25, help="YOLO confidence threshold.")
     parser.add_argument("--camera-id", help="Configured camera_id to select from config.cameras.")
@@ -71,6 +80,17 @@ def parse_args():
     )
     parser.add_argument("--obs-browser-feed-host", default=DEFAULT_BROWSER_FEED_HOST)
     parser.add_argument("--obs-browser-feed-port", type=int, default=DEFAULT_BROWSER_FEED_PORT)
+    parser.add_argument(
+        "--allow-lan-preview",
+        action="store_true",
+        help="Allow a non-loopback MJPEG preview bind. Requires --preview-token and --ack-lan-preview-risk.",
+    )
+    parser.add_argument("--preview-token", help="Bearer/query token required for LAN MJPEG preview exposure.")
+    parser.add_argument(
+        "--ack-lan-preview-risk",
+        action="store_true",
+        help="Acknowledge that LAN preview can expose event-scoped home video to local-network viewers.",
+    )
     parser.add_argument(
         "--obs-live-preview-path",
         default=str(DEFAULT_OBS_PREVIEW_PATH),
@@ -151,11 +171,8 @@ def parse_args():
     )
     parser.add_argument(
         "--live-message",
-        default=(
-            "CareSight alert. Possible floor stay observed in the Living Room. Needs review. "
-            "Would you like to connect to CareSight?"
-        ),
-        help="Approved live iMessage body.",
+        default=None,
+        help="Approved live iMessage body. Defaults to bounded event-specific caregiver wording.",
     )
     parser.add_argument(
         "--auto-facetime-on-reply",
@@ -234,7 +251,15 @@ def parse_args():
         action="store_true",
         help="Stop the live loop if the no-send post-event agent pipeline fails.",
     )
+    parser.add_argument("--site-name", help="Privacy-safe site label for OBS overlay receipts.")
+    parser.add_argument("--site-mode", help="Privacy-safe site mode label for OBS overlay receipts.")
     return parser.parse_args()
+
+
+def resolve_default_config_path() -> Path:
+    if DEFAULT_LOCAL_CONFIG_PATH.exists():
+        return DEFAULT_LOCAL_CONFIG_PATH
+    return DEFAULT_EXAMPLE_CONFIG_PATH
 
 
 def class_name(names, cls_id: int) -> str:
@@ -437,7 +462,23 @@ def _box_label(name: str, confidence: float, posture: dict | None) -> str:
 
 
 def should_run_live_handoff(event: dict) -> bool:
+    if event.get("status") != "awaiting_human_confirmation":
+        return False
+    allowed_actions = set(event.get("allowed_actions") or [])
+    if "caregiver_alert" not in allowed_actions:
+        return False
     return event.get("event_type") == "possible_floor_stay"
+
+
+def live_message_for_event(event: dict, override: str | None = None) -> str:
+    if override:
+        return override
+    evidence = event.get("evidence") or {}
+    room = evidence.get("room_name") or event.get("room_name") or event.get("camera_id") or "the monitored room"
+    return (
+        f"CareSight alert. A possible floor-stay event needs review in {room}. "
+        "This is not a medical or emergency claim. Would you like to connect to CareSight?"
+    )
 
 
 def draw_appearance_overlay(cv2, display, rgb_frame, bbox_xyxy):
@@ -563,9 +604,10 @@ def read_frame_with_reconnect(
 
 
 class MjpegPreviewServer:
-    def __init__(self, *, host: str, port: int):
+    def __init__(self, *, host: str, port: int, token: str | None = None):
         self.host = host
         self.port = port
+        self.token = token
         self._condition = threading.Condition()
         self._jpeg: bytes | None = None
         self._updated_at = ""
@@ -576,6 +618,28 @@ class MjpegPreviewServer:
     @property
     def url(self) -> str:
         return f"http://{self.host}:{self.port}/live.html"
+
+    def _html_body(self, request_path: str) -> bytes:
+        stream_src = "/stream.mjpg"
+        if self.token is not None and "token=" in request_path:
+            supplied = request_path.split("token=", 1)[1].split("&", 1)[0]
+            stream_src = "/stream.mjpg?token=" + supplied
+        body = (
+            "<!doctype html>\n"
+            "<html>\n"
+            "<head>\n"
+            '  <meta charset="utf-8" />\n'
+            "  <style>\n"
+            "    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #02060b; }\n"
+            "    img { width: 100vw; height: 100vh; object-fit: contain; background: #02060b; }\n"
+            "  </style>\n"
+            "</head>\n"
+            "<body>\n"
+            f'  <img src="{html_escape(stream_src, quote=True)}" alt="" />\n'
+            "</body>\n"
+            "</html>\n"
+        )
+        return body.encode("utf-8")
 
     def start(self) -> None:
         self._thread.start()
@@ -609,10 +673,14 @@ class MjpegPreviewServer:
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:  # noqa: N802 - stdlib handler API.
-                if self.path in {"/", "/live.html"}:
+                if not self._authorized():
+                    self.send_error(401, "Missing or invalid preview token")
+                    return
+                route = self.path.split("?", 1)[0]
+                if route in {"/", "/live.html"}:
                     self._write_html()
                     return
-                if self.path == "/health":
+                if route == "/health":
                     jpeg, updated_at, sequence = owner._snapshot()
                     self._write_json(
                         {
@@ -623,10 +691,10 @@ class MjpegPreviewServer:
                         }
                     )
                     return
-                if self.path == "/snapshot.jpg":
+                if route == "/snapshot.jpg":
                     self._write_snapshot()
                     return
-                if self.path == "/stream.mjpg":
+                if route == "/stream.mjpg":
                     self._write_stream()
                     return
                 self.send_error(404)
@@ -634,21 +702,20 @@ class MjpegPreviewServer:
             def log_message(self, _format: str, *_args) -> None:
                 return
 
+            def _authorized(self) -> bool:
+                if owner.token is None:
+                    return True
+                header = self.headers.get("Authorization", "")
+                if header.startswith("Bearer ") and secrets.compare_digest(header.removeprefix("Bearer ").strip(), owner.token):
+                    return True
+                token_marker = "token="
+                if token_marker in self.path:
+                    supplied = self.path.split(token_marker, 1)[1].split("&", 1)[0]
+                    return secrets.compare_digest(supplied, owner.token)
+                return False
+
             def _write_html(self) -> None:
-                body = b"""<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>
-    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #02060b; }
-    img { width: 100vw; height: 100vh; object-fit: contain; background: #02060b; }
-  </style>
-</head>
-<body>
-  <img src="/stream.mjpg" alt="" />
-</body>
-</html>
-"""
+                body = owner._html_body(self.path)
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Cache-Control", "no-store")
@@ -723,6 +790,38 @@ def resolve_runtime_path(path_value: str | Path) -> Path:
     if path.is_absolute():
         return path
     return REPO_ROOT / path
+
+
+def preview_bind_scope(host: str) -> str:
+    if host in {"localhost", "::1"}:
+        return "loopback"
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return "lan"
+    return "loopback" if address.is_loopback else "lan"
+
+
+def validate_preview_exposure(*, host: str, allow_lan: bool, token: str | None, acknowledged: bool) -> dict[str, object]:
+    bind_scope = preview_bind_scope(host)
+    if bind_scope == "lan":
+        if not allow_lan:
+            raise SystemExit("Refusing non-loopback MJPEG preview bind without --allow-lan-preview.")
+        if not token:
+            raise SystemExit("Refusing LAN MJPEG preview without --preview-token.")
+        if not acknowledged:
+            raise SystemExit("Refusing LAN MJPEG preview without --ack-lan-preview-risk.")
+    return {
+        "schema": "local-feed-exposure",
+        "feed_id": f"feed_{uuid4().hex}",
+        "bind_host": host,
+        "bind_scope": bind_scope,
+        "auth_required": bind_scope == "lan",
+        "token_required": bind_scope == "lan",
+        "operator_approved": bind_scope == "lan",
+        "expires_at": (datetime.now(UTC) + timedelta(hours=4)).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "privacy_warning_acknowledged": bind_scope == "lan",
+    }
 
 
 def format_started_line(config, database_path: Path) -> str:
@@ -1009,6 +1108,8 @@ def run_post_event_agent_dry_run(
     gemma_model: str,
     allowed_contact_id: str,
     allowlist_config: str,
+    site_name: str | None = None,
+    site_mode: str | None = None,
 ) -> dict:
     from caresight.runtime.agent_assist import (
         GemmaLocalProvider,
@@ -1019,7 +1120,7 @@ def run_post_event_agent_dry_run(
         stage_action_request,
     )
 
-    update_obs_overlay(event_id)
+    update_obs_overlay(event_id, site_name=site_name, site_mode=site_mode)
     draft = build_agent_draft(
         store,
         event_id,
@@ -1061,7 +1162,7 @@ def run_post_event_agent_live_run(
     gemma_model: str,
     allowed_contact_id: str,
     allowlist_config: str,
-    live_message: str,
+    live_message: str | None,
     live_imessage_target: str | None,
     live_approved: bool,
     auto_facetime_on_reply: bool,
@@ -1078,9 +1179,13 @@ def run_post_event_agent_live_run(
     tts_repeat_delay_seconds: float,
     tts_after_facetime_delay_seconds: float,
     post_facetime_hold_seconds: float,
+    site_name: str | None = None,
+    site_mode: str | None = None,
 ) -> dict:
     from caresight.runtime.agent_assist import execute_facetime_if_yes, execute_live_imessage, wait_for_yes_reply
 
+    event = store.get_event(event_id)
+    approved_live_message = live_message_for_event(event, live_message)
     receipt = run_post_event_agent_dry_run(
         store=store,
         event_id=event_id,
@@ -1088,12 +1193,14 @@ def run_post_event_agent_live_run(
         gemma_model=gemma_model,
         allowed_contact_id=allowed_contact_id,
         allowlist_config=allowlist_config,
+        site_name=site_name,
+        site_mode=site_mode,
     )
     reply_watch_started_at = time.time()
     live_attempt = execute_live_imessage(
         store,
         request_id=receipt["request_id"],
-        message=live_message,
+        message=approved_live_message,
         contact_id=allowed_contact_id,
         allowlist_config=allowlist_config,
         target=live_imessage_target,
@@ -1128,7 +1235,6 @@ def run_post_event_agent_live_run(
     live_receipt["reply_watch"] = reply
     if not reply.get("reply_interpreted_as_yes"):
         if no_response_escalation_seconds > 0 and reply.get("status") == "timeout":
-            event = store.get_event(event_id)
             snapshot_path = escalation_attachment_path(event)
             media_policy = build_event_snapshot_media_policy(event_id, snapshot_path) if snapshot_path else None
             escalation_attempt = execute_live_imessage(
@@ -1445,7 +1551,7 @@ def play_tts(
     }
 
 
-def update_obs_overlay(event_id: str) -> None:
+def update_obs_overlay(event_id: str, *, site_name: str | None = None, site_mode: str | None = None) -> None:
     tool_path = REPO_ROOT / "apps" / "obs-hub" / "tools" / "update_obs_event.py"
     if not tool_path.exists():
         raise FileNotFoundError(tool_path)
@@ -1462,8 +1568,9 @@ def update_obs_overlay(event_id: str) -> None:
         event_id=event_id,
         output=str(REPO_ROOT / "apps" / "obs-hub" / "config" / "current_event.json"),
         js_output=str(REPO_ROOT / "apps" / "obs-hub" / "config" / "current_event.js"),
-        site_name="Maple Residence",
-        site_mode="Observation Mode",
+        site_name=site_name or "CareSight Local Demo",
+        site_mode=site_mode or "Observation Mode",
+        site_label_source="cli_or_config" if site_name or site_mode else "default_generic",
         recent_limit=4,
         live_preview=str(DEFAULT_OBS_PREVIEW_PATH),
         sample=False,
@@ -1566,8 +1673,9 @@ def main() -> None:
     from caresight.runtime.config import CareSightConfig
     from caresight.storage.sqlite_store import SQLiteStore
 
+    config_path = Path(args.config) if args.config else resolve_default_config_path()
     config = select_configured_camera(
-        CareSightConfig.load(args.config),
+        CareSightConfig.load(config_path),
         camera_id=args.camera_id,
         source_type=args.source_type,
     )
@@ -1591,11 +1699,33 @@ def main() -> None:
     print(format_started_line(config, database_path))
     mjpeg_server = None
     if args.obs_browser_feed:
-        mjpeg_server = MjpegPreviewServer(host=args.obs_browser_feed_host, port=args.obs_browser_feed_port)
+        exposure = validate_preview_exposure(
+            host=args.obs_browser_feed_host,
+            allow_lan=args.allow_lan_preview,
+            token=args.preview_token,
+            acknowledged=args.ack_lan_preview_risk,
+        )
+        mjpeg_server = MjpegPreviewServer(
+            host=args.obs_browser_feed_host,
+            port=args.obs_browser_feed_port,
+            token=args.preview_token if exposure["bind_scope"] == "lan" else None,
+        )
         mjpeg_server.start()
+        stream_path = "/stream.mjpg"
+        page_path = "/live.html"
+        if exposure["bind_scope"] == "lan":
+            stream_path += f"?token={args.preview_token}"
+            page_path += f"?token={args.preview_token}"
         print(
             "obs_browser_feed_started "
-            + json.dumps({"url": mjpeg_server.url, "stream_url": f"http://{args.obs_browser_feed_host}:{args.obs_browser_feed_port}/stream.mjpg"}, sort_keys=True)
+            + json.dumps(
+                {
+                    "url": f"http://{args.obs_browser_feed_host}:{args.obs_browser_feed_port}{page_path}",
+                    "stream_url": f"http://{args.obs_browser_feed_host}:{args.obs_browser_feed_port}{stream_path}",
+                    "exposure": exposure,
+                },
+                sort_keys=True,
+            )
         )
 
     use_preview_window = args.show_window or (not args.no_window and not args.obs_browser_feed)
@@ -1656,6 +1786,8 @@ def main() -> None:
                     tts_repeat_delay_seconds=args.tts_repeat_delay_seconds,
                     tts_after_facetime_delay_seconds=args.tts_after_facetime_delay_seconds,
                     post_facetime_hold_seconds=args.post_facetime_hold_seconds,
+                    site_name=args.site_name or config.site.name,
+                    site_mode=args.site_mode or config.site.mode,
                 )
                 print(format_post_event_agent_live_line(receipt), flush=True)
             except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
@@ -1801,6 +1933,8 @@ def main() -> None:
                                 tts_repeat_delay_seconds=args.tts_repeat_delay_seconds,
                                 tts_after_facetime_delay_seconds=args.tts_after_facetime_delay_seconds,
                                 post_facetime_hold_seconds=args.post_facetime_hold_seconds,
+                                site_name=args.site_name or config.site.name,
+                                site_mode=args.site_mode or config.site.mode,
                             )
                             print(format_post_event_agent_live_line(receipt))
                         except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.
@@ -1817,6 +1951,8 @@ def main() -> None:
                             gemma_model=args.gemma_model,
                             allowed_contact_id=args.allowed_contact_id,
                             allowlist_config=args.allowlist_config,
+                            site_name=args.site_name or config.site.name,
+                            site_mode=args.site_mode or config.site.mode,
                         )
                         print(format_post_event_agent_line(receipt))
                     except Exception as exc:  # noqa: BLE001 - terminal receipt must include failure.

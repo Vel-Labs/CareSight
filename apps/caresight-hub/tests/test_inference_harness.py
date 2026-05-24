@@ -17,7 +17,7 @@ from caresight.runtime.inference.adapter import ModelLoadError, Yolo26MlxAdapter
 class InferenceHarnessTest(unittest.TestCase):
     def test_config_loads_model_camera_and_room_metadata(self) -> None:
         config = InferenceRuntimeConfig.load(
-            Path(__file__).resolve().parents[1] / "config" / "v0.local.json"
+            Path(__file__).resolve().parents[1] / "config" / "v0.example.json"
         )
 
         self.assertEqual(config.model.model_id, "yolo26n")

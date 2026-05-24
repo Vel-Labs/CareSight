@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/retention-policy.schema.json",
+  "title": "RetentionPolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "policy_id", "record_type", "retention_days", "deletion_mode", "export_allowed", "share_allowed", "audit_log_required"],
+  "properties": {
+    "schema": { "const": "retention-policy" },
+    "policy_id": { "type": "string", "pattern": "^retention_[a-z0-9_-]+$" },
+    "record_type": { "type": "string", "enum": ["sqlite_event", "snapshot", "clip", "journal_entry", "model_output", "execution_attempt"] },
+    "retention_days": { "type": "integer", "minimum": 1, "maximum": 3650 },
+    "deletion_mode": { "type": "string", "enum": ["local_delete_after_export", "local_delete", "retain_local_blackbox"] },
+    "export_allowed": { "type": "boolean" },
+    "share_allowed": { "type": "boolean" },
+    "audit_log_required": { "const": true }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "record_type": { "const": "clip" } },
+        "required": ["record_type"]
+      },
+      "then": {
+        "properties": {
+          "share_allowed": { "const": false },
+          "export_allowed": { "const": false }
+        }
+      }
+    }
+  ]
+}

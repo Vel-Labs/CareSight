@@ -4,22 +4,30 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS = REPO_ROOT / "apps" / "caresight-hub" / "scripts"
+CONFIG_DIR = REPO_ROOT / "apps" / "caresight-hub" / "config"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Set up local CareSight fixtures/readiness receipts.")
     parser.add_argument("--skip-stack-check", action="store_true")
+    parser.add_argument("--init-local-config", action="store_true", help="Copy v0.example.json to ignored v0.local.json if missing.")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.init_local_config:
+        local_config = CONFIG_DIR / "v0.local.json"
+        if not local_config.exists():
+            shutil.copyfile(CONFIG_DIR / "v0.example.json", local_config)
+            print(f"local_config_created {local_config}")
     subprocess.run(["npm", "run", "check"], cwd=REPO_ROOT, check=True)
     if not args.skip_stack_check:
         subprocess.run(["python3", str(SCRIPTS / "caresight_stack_start.py")], cwd=REPO_ROOT, check=True)

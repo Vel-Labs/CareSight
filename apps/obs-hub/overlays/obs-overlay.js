@@ -1,7 +1,8 @@
 const fallbackData = {
   site: {
-    name: "Maple Residence",
-    mode: "Observation Mode"
+    name: "CareSight Local Demo",
+    mode: "Observation Mode",
+    label_source: "default_generic"
   },
   current_event: {
     event_id: "EVT-2026-05-21-0042",

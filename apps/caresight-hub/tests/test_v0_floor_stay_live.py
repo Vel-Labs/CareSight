@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from caresight.runtime.config import CareSightConfig
+from caresight.runtime.escalation import plan_escalation
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "v0_floor_stay_live.py"
 spec = importlib.util.spec_from_file_location("v0_floor_stay_live", SCRIPT)
@@ -31,6 +32,9 @@ class V0FloorStayLiveTest(unittest.TestCase):
         self.assertIn("--live-approved", result.stdout)
         self.assertIn("--obs-live-preview", result.stdout)
         self.assertIn("--obs-browser-feed", result.stdout)
+        self.assertIn("--allow-lan-preview", result.stdout)
+        self.assertIn("--preview-token", result.stdout)
+        self.assertIn("--ack-lan-preview-risk", result.stdout)
         self.assertIn("--appearance-overlay", result.stdout)
         self.assertIn("--missing-off-camera-events", result.stdout)
         self.assertIn("--auto-facetime-on-reply", result.stdout)
@@ -43,6 +47,7 @@ class V0FloorStayLiveTest(unittest.TestCase):
         self.assertIn("--max-seconds", result.stdout)
         self.assertIn("--camera-id", result.stdout)
         self.assertIn("--source-type", result.stdout)
+        self.assertIn("--site-name", result.stdout)
 
     def test_stop_after_event_when_event_persisted(self) -> None:
         self.assertTrue(
@@ -196,9 +201,151 @@ class V0FloorStayLiveTest(unittest.TestCase):
         for label in ["chair", "couch", "tv", "bottle", "cup", "remote"]:
             self.assertFalse(module.should_draw_detection_label(label), label)
 
-    def test_live_handoff_runs_only_for_floor_stay_events(self) -> None:
-        self.assertTrue(module.should_run_live_handoff({"event_type": "possible_floor_stay"}))
-        self.assertFalse(module.should_run_live_handoff({"event_type": "missing_off_camera_extended"}))
+    def test_live_handoff_runs_only_for_approved_floor_stay_events(self) -> None:
+        self.assertTrue(
+            module.should_run_live_handoff(
+                {
+                    "event_type": "possible_floor_stay",
+                    "status": "awaiting_human_confirmation",
+                    "allowed_actions": ["journal_entry", "caregiver_alert", "facetime_handoff"],
+                }
+            )
+        )
+        self.assertFalse(
+            module.should_run_live_handoff(
+                {
+                    "event_type": "missing_off_camera_extended",
+                    "status": "awaiting_human_confirmation",
+                    "allowed_actions": ["journal_entry", "caregiver_alert", "facetime_handoff"],
+                }
+            )
+        )
+        self.assertFalse(
+            module.should_run_live_handoff(
+                {
+                    "event_type": "missing_off_camera_extended",
+                    "status": "awaiting_human_confirmation",
+                    "allowed_actions": ["journal_entry"],
+                }
+            )
+        )
+
+    def test_live_message_uses_floor_stay_context(self) -> None:
+        message = module.live_message_for_event(
+            {
+                "event_type": "possible_floor_stay",
+                "camera_id": "tapo_living_room",
+                "evidence": {"room_name": "Living Room"},
+            }
+        )
+
+        self.assertIn("possible floor-stay event", message)
+        self.assertIn("Living Room", message)
+        self.assertIn("not a medical or emergency claim", message)
+
+    def test_live_message_override_is_preserved(self) -> None:
+        self.assertEqual(
+            module.live_message_for_event({"event_type": "missing_off_camera_extended"}, "Approved operator text."),
+            "Approved operator text.",
+        )
+
+    def test_default_config_resolution_falls_back_to_tracked_example(self) -> None:
+        self.assertEqual(module.resolve_default_config_path().name, "v0.example.json")
+
+    def test_escalation_orchestrator_selects_floor_stay_methods(self) -> None:
+        plan = plan_escalation(
+            {
+                "event_id": "evt_floor",
+                "event_type": "possible_floor_stay",
+                "severity": "high",
+                "status": "awaiting_human_confirmation",
+            }
+        )
+
+        self.assertEqual(plan.escalation_level, "urgent_handoff")
+        self.assertIn("no_send_agent_dry_run", [method.method_id for method in plan.methods])
+        self.assertIn("obs_overlay_update", [method.method_id for method in plan.methods])
+
+    def test_missing_off_camera_can_be_review_only(self) -> None:
+        plan = plan_escalation(
+            {
+                "event_id": "evt_missing",
+                "event_type": "missing_off_camera_extended",
+                "severity": "medium",
+                "status": "awaiting_human_confirmation",
+            },
+            missing_off_camera_review_only=True,
+        )
+
+        self.assertEqual(plan.escalation_level, "review_only")
+        self.assertEqual([method.method_id for method in plan.methods], ["review_only"])
+
+    def test_default_loopback_preview_exposure_is_allowed(self) -> None:
+        receipt = module.validate_preview_exposure(
+            host="127.0.0.1",
+            allow_lan=False,
+            token=None,
+            acknowledged=False,
+        )
+
+        self.assertEqual(receipt["schema"], "local-feed-exposure")
+        self.assertEqual(receipt["bind_scope"], "loopback")
+        self.assertFalse(receipt["auth_required"])
+
+    def test_lan_preview_bind_is_blocked_without_override(self) -> None:
+        with self.assertRaises(SystemExit):
+            module.validate_preview_exposure(
+                host="0.0.0.0",
+                allow_lan=False,
+                token=None,
+                acknowledged=False,
+            )
+
+    def test_lan_preview_override_requires_token(self) -> None:
+        with self.assertRaises(SystemExit):
+            module.validate_preview_exposure(
+                host="0.0.0.0",
+                allow_lan=True,
+                token=None,
+                acknowledged=True,
+            )
+
+    def test_lan_preview_override_requires_privacy_acknowledgement(self) -> None:
+        with self.assertRaises(SystemExit):
+            module.validate_preview_exposure(
+                host="0.0.0.0",
+                allow_lan=True,
+                token="test-token",
+                acknowledged=False,
+            )
+
+    def test_lan_preview_with_token_emits_exposure_receipt(self) -> None:
+        receipt = module.validate_preview_exposure(
+            host="0.0.0.0",
+            allow_lan=True,
+            token="test-token",
+            acknowledged=True,
+        )
+
+        self.assertEqual(receipt["bind_scope"], "lan")
+        self.assertTrue(receipt["auth_required"])
+        self.assertTrue(receipt["token_required"])
+        self.assertTrue(receipt["privacy_warning_acknowledged"])
+
+    def test_obs_browser_live_html_renders_css_without_interpreting_braces(self) -> None:
+        server = object.__new__(module.MjpegPreviewServer)
+        server.token = None
+        body = server._html_body("/live.html").decode("utf-8")
+
+        self.assertIn("html, body { width: 100%;", body)
+        self.assertIn('src="/stream.mjpg"', body)
+
+    def test_obs_browser_live_html_preserves_preview_token_for_stream(self) -> None:
+        server = object.__new__(module.MjpegPreviewServer)
+        server.token = "secret-token"
+        body = server._html_body("/live.html?token=secret-token").decode("utf-8")
+
+        self.assertIn('src="/stream.mjpg?token=secret-token"', body)
 
 
 if __name__ == "__main__":

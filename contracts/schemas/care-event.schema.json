@@ -63,8 +63,35 @@
         "likely_observed",
         "awaiting_human_confirmation",
         "human_confirmed",
-        "dismissed"
+        "dismissed",
+        "needs_followup"
       ]
+    },
+    "review_lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_purpose", "previous_status", "reviewed_at", "reviewer"],
+      "properties": {
+        "review_purpose": {
+          "type": "string",
+          "enum": ["initial_review", "followup_note", "amendment", "correction"]
+        },
+        "previous_status": {
+          "$ref": "#/properties/status"
+        },
+        "amendment_of_review_id": {
+          "type": "string",
+          "pattern": "^review_[a-z0-9_-]+$"
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 2
+        }
+      }
     },
     "requires_human_confirmation": {
       "type": "boolean"

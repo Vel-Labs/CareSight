@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/privacy-redaction-receipt.schema.json",
+  "title": "PrivacyRedactionReceipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "input_type",
+    "redaction_engine",
+    "model_manifest_id",
+    "labels_detected",
+    "redaction_status",
+    "human_review_required",
+    "not_claimed"
+  ],
+  "properties": {
+    "schema": { "const": "privacy-redaction-receipt" },
+    "receipt_id": { "type": "string", "pattern": "^redaction_receipt_[a-z0-9_-]+$" },
+    "input_type": { "type": "string", "enum": ["caregiver_text", "journal_text", "snapshot_caption", "event_excerpt"] },
+    "redaction_engine": { "type": "string", "enum": ["openai_privacy_filter", "local_rules", "human_review_only"] },
+    "model_manifest_id": { "type": ["string", "null"], "pattern": "^model_[a-z0-9_-]+$" },
+    "labels_detected": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 2 }
+    },
+    "redaction_status": { "type": "string", "enum": ["completed", "blocked", "not_attempted"] },
+    "human_review_required": { "const": true },
+    "not_claimed": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["anonymization", "hipaa_compliance", "safety_guarantee", "medical_privacy_clearance"]
+      }
+    }
+  }
+}

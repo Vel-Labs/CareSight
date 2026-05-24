@@ -1,6 +1,8 @@
 import tempfile
 import unittest
 from datetime import UTC, datetime
+import importlib.util
+import argparse
 from pathlib import Path
 
 from caresight.events.floor_stay import FloorStayDetector
@@ -16,6 +18,13 @@ from caresight.runtime.demo_surface import (
 from caresight.runtime.review import ReviewService
 from caresight.storage.sqlite_store import SQLiteStore
 from caresight.vision.detections import Detection
+
+OBS_UPDATE_TOOL = Path(__file__).resolve().parents[2] / "obs-hub" / "tools" / "update_obs_event.py"
+obs_spec = importlib.util.spec_from_file_location("update_obs_event", OBS_UPDATE_TOOL)
+assert obs_spec is not None
+obs_module = importlib.util.module_from_spec(obs_spec)
+assert obs_spec.loader is not None
+obs_spec.loader.exec_module(obs_module)
 
 
 class DemoSurfaceTest(unittest.TestCase):
@@ -95,6 +104,22 @@ class DemoSurfaceTest(unittest.TestCase):
             self.assertIn("Escalation stage: early_concern", receipt_markdown)
             self.assertIn("CareSight did not dispatch emergency services", receipt_markdown)
             self.assertIn("SQLite is source of truth", receipt_markdown)
+
+    def test_obs_sample_overlay_uses_generic_site_label_with_source(self) -> None:
+        payload = obs_module.build_payload(
+            argparse.Namespace(
+                sample=True,
+                db="unused.sqlite3",
+                event_id=None,
+                site_name="CareSight Local Demo",
+                site_mode="Observation Mode",
+                site_label_source="default_generic",
+                recent_limit=4,
+            )
+        )
+
+        self.assertEqual(payload["site"]["name"], "CareSight Local Demo")
+        self.assertEqual(payload["site"]["label_source"], "default_generic")
 
 
 class Seed:

@@ -33,3 +33,26 @@ draft
 ## Blocking rule
 
 When lifecycle state is missing, unknown, or unsupported, consumers must fail closed.
+
+## Care Event Review Transitions
+
+Runtime review changes use a separate event-review lifecycle purpose so final state changes are not silent overwrites.
+
+Allowed purposes:
+
+- `initial_review`: first authorized human review of an awaiting event.
+- `followup_note`: additional human context that does not silently replace the original review.
+- `amendment`: explicit change to a previous review; must name the amended `review_id`.
+- `correction`: human correction that keeps the prior state visible in the audit trail.
+
+Allowed status transitions:
+
+- `awaiting_human_confirmation` -> `human_confirmed`
+- `awaiting_human_confirmation` -> `dismissed`
+- `awaiting_human_confirmation` -> `needs_followup`
+- `needs_followup` -> `human_confirmed`
+- `needs_followup` -> `dismissed`
+- `human_confirmed` -> `dismissed` only with `review_purpose=amendment`
+- `dismissed` -> `human_confirmed` only with `review_purpose=amendment`
+
+Every mutation must preserve `previous_status`, `review_purpose`, reviewer, timestamp, note when provided, and the amendment target when applicable.

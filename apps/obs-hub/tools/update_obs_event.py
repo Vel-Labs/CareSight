@@ -33,8 +33,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--event-id", help="Event ID to publish. Defaults to latest event.")
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT), help="Overlay JSON path to write.")
     parser.add_argument("--js-output", default=str(DEFAULT_JS_OUTPUT), help="Overlay JavaScript path to write.")
-    parser.add_argument("--site-name", default="Maple Residence")
+    parser.add_argument("--site-name", default="CareSight Local Demo")
     parser.add_argument("--site-mode", default="Observation Mode")
+    parser.add_argument("--site-label-source", default="default_generic")
     parser.add_argument("--recent-limit", type=int, default=4)
     parser.add_argument("--sample", action="store_true", help="Copy sample fixture data into current_event.json.")
     parser.add_argument(
@@ -472,6 +473,7 @@ def build_overlay_state(conn: sqlite3.Connection, args: argparse.Namespace) -> d
         "site": {
             "name": args.site_name,
             "mode": args.site_mode,
+            "label_source": args.site_label_source,
         },
         "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "source": {

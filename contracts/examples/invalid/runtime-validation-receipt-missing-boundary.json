@@ -1,0 +1,14 @@
+{
+  "schema": "runtime-validation-receipt",
+  "receipt_id": "runtime_receipt_bad_boundary",
+  "check_type": "heartbeat",
+  "started_at": "2026-05-24T12:00:00Z",
+  "completed_at": "2026-05-24T12:00:01Z",
+  "status": "blocked",
+  "target": "local demo stack",
+  "command": "python apps/caresight-hub/scripts/caresight_demo_preflight.py --heartbeat --json",
+  "result": {},
+  "safety_boundaries": [],
+  "blockers": [],
+  "next_check_after": "2026-05-24T12:15:00Z"
+}

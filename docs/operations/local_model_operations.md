@@ -45,6 +45,16 @@ apps/caresight-hub/data/
 apps/caresight-hub/.venv/
 ```
 
+Tracked model governance lives in `apps/caresight-hub/config/model-manifests.example.json`. The example manifest records each model lane's source URL, license, local path, checksum, expected size, runtime, allowed uses, blocked uses, validation command, and last validation status. Local operators should copy or override it with machine-specific checksums before claiming a model lane is ready.
+
+Run the model doctor:
+
+```bash
+python apps/caresight-hub/scripts/care_console.py model-doctor --manifest apps/caresight-hub/config/model-manifests.example.json
+```
+
+The doctor checks manifest completeness, local path existence, size, and SHA-256. Add `--run-validation-command` only when the operator wants to execute the manifest's local validation command.
+
 ## Gemma Endpoint
 
 Start the local OpenAI-compatible Gemma endpoint:
@@ -321,13 +331,25 @@ When `post_event_agent_live_run` prints, copy its `request_id`. If the caregiver
 ```bash
 python3 apps/caresight-hub/scripts/caresight_live_handoff.py \
   facetime-if-yes <request_id> \
-  --reply-text "yes please" \
+  --reply-text "yes connect" \
   --live-approved
 ```
 
+FaceTime approval requires an explicit phrase such as `yes connect` or `yes FaceTime`. Ambiguous or opportunity replies create follow-up context but do not authorize the live handoff.
+
 The repo does not poll the macOS Messages database by default. Reply polling would require a separate privacy decision because it usually needs Full Disk Access.
 
-For the hackathon live demo, the detector can run the full approved flow:
+## Privacy Redaction Lane
+
+`model_openai_privacy_filter` is listed as an optional privacy-filter manifest for local PII detection review. CareSight treats it as a redaction aid only, not anonymization, HIPAA compliance, safety proof, or medical privacy clearance. Journal export review can run through:
+
+```bash
+python3 apps/caresight-hub/scripts/care_console.py journal-redact <event_id> \
+  --journal-id <journal_id> \
+  --export-classification local-only
+```
+
+For the hackathon live demo, the detector can run the full approved flow for bounded `possible_floor_stay` events that are awaiting human confirmation:
 
 ```bash
 apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
@@ -349,7 +371,7 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --post-facetime-hold-seconds 30
 ```
 
-This prefers `imsg` for a yes-like reply after the alert send, then falls back to the scoped SQLite reader. `imsg` and the fallback both need macOS Full Disk Access to read Messages. If access is blocked, the command fails closed and no FaceTime/TTS step runs automatically. After FaceTime is requested, the command waits briefly before TTS playback and then keeps running for a bounded review window so the OBS feed does not disappear immediately.
+This prefers `imsg` for a yes-like reply after the alert send, then falls back to the scoped SQLite reader. `imsg` and the fallback both need macOS Full Disk Access to read Messages. If access is blocked, the command fails closed after the text/snapshot stage and no FaceTime/TTS step runs automatically. After FaceTime is requested, the command waits briefly before TTS playback and then keeps running for a bounded review window so the OBS feed does not disappear immediately. Missing-off-camera remains a separate review/escalation lane and should not reuse the floor-stay live call path.
 
 The stable handoff path does not rely on FaceTime receiving OBS video. OBS remains the local operator/review surface, iMessage carries the alert and optional snapshot evidence, and FaceTime is used for the reply-gated call plus approved TTS audio. The experimental Aitum portrait bridge can be enabled with `CARESIGHT_AITUM_VERTICAL_MODE=auto`, but it is not required for sprint validation because FaceTime may distort that virtual-camera output.
 
@@ -423,6 +445,14 @@ python3 apps/caresight-hub/scripts/caresight_demo_preflight.py
 ```
 
 This checks the local contact allowlist, YOLO runtime/model, OBS scene tooling, Gemma endpoint, BlackHole switcher, live preview file, and whether the current shell has `OBS_WEBSOCKET_PASSWORD`.
+
+For a repeatable non-invasive runtime status receipt, run:
+
+```bash
+python3 apps/caresight-hub/scripts/caresight_demo_preflight.py --heartbeat --json
+```
+
+The heartbeat emits `runtime-validation-receipt` JSON and keeps live actions out of scope: no iMessage send, no FaceTime call, no camera-opening probe, and no TTS playback. Treat this as a runtime health layer, not as a replacement for `npm run check`.
 
 After any event escalation, generate a local receipt:
 
