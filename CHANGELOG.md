@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Clarified that the live vision lane currently uses `yolo26n.npz`, the YOLO26n nano detection variant for MLX, while larger and segmentation variants remain future comparison paths.
 - Clarified that off-network caregiver escalation is optional and configured, while local observation, review, and diary workflows can stay local-only.
 - Clarified that SQLite is the local blackbox record and that setup time is a target needing clean-room validation, not a proven install claim.
 - Expanded the hackathon README demo cut to spell out the local model/tooling chain: YOLO26 MLX, SQLite, Gemma 4 E2B MLX, Hermes, OBS, and Holler TTS with Dakota voice.

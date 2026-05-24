@@ -6,7 +6,7 @@ The hero demo is the local care observation engine:
 
 ```text
 Local Care Observation Engine
-  -> YOLO26 MLX local perception
+  -> YOLO26n MLX local perception, using the nano detection model
   -> bounded care event, such as possible floor-stay / suspected fall or missing-off-camera
   -> local SQLite memory and snapshot
   -> human-readable review prepared with local Gemma 4 E2B MLX
@@ -38,7 +38,7 @@ The product direction is a practical home bundle: Mac mini, accessible cameras, 
 
 ```text
 local camera feeds
-  -> YOLO26 MLX detector workers on the Mac
+  -> YOLO26n MLX detector workers on the Mac
   -> calibrated floor-plane overlay and bounded event policies
   -> SQLite local memory, event receipt, and snapshot
   -> Gemma 4 E2B MLX local review/draft layer
@@ -48,6 +48,8 @@ local camera feeds
 ```
 
 The current hardware path uses owner-authorized local Tapo RTSP cameras because they are cheap, available, and enough to prove the home-bundle concept. They are replaceable inputs, not the center of the architecture.
+
+The current vision model is `yolo26n.npz`: the YOLO26n nano detection variant converted for MLX. That is the smallest/default CareSight vision model and is used because the demo prioritizes real-time local operation on a Mac mini class machine. Larger `yolo26s`, `yolo26m`, `yolo26l`, `yolo26x`, and segmentation variants are present as future comparison paths, but they are not the current live-demo model.
 
 The important privacy and trust boundary is that raw camera context, event memory, model drafting, and proof receipts are designed to run locally first. The SQLite store acts like a local blackbox: events, observations, reviews, drafts, snapshots, and execution attempts are structured records that agents can read from and add to through bounded services, but they are not supposed to delete records or rewrite history.
 
@@ -107,7 +109,7 @@ Local model and agent lanes:
 
 | Lane | Tooling | Boundary |
 | --- | --- | --- |
-| Vision | YOLO26 MLX | Detects people/objects locally and feeds bounded event policy. |
+| Vision | YOLO26n MLX | Runs the nano detection model locally and feeds bounded event policy. |
 | Memory | SQLite | Stores event receipts, snapshots, reviews, drafts, and execution attempts as a local blackbox. |
 | Drafting | Gemma 4 E2B MLX | Prepares human-readable review and caregiver alert wording from SQLite-derived context. |
 | Handoff harness | Hermes | Stages and records caregiver handoff payloads instead of bypassing CareSight policy. |
