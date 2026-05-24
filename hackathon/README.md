@@ -30,9 +30,9 @@ Example small-domicile setup:
 | Mac mini class machine, 16 GB | about `$600` | Local appliance for YOLO26 MLX, SQLite, local models, and handoff services |
 | Accessible RTSP cameras | about `$50` each | Room views for a 2-3 camera home setup |
 | Existing home internet | household-dependent | Caregiver message/call path, not raw-video cloud storage by default |
-| Setup time | target: under 1 hour; current: plan for a couple hours | Model downloads, camera account setup, room labels, and floor-plane calibration |
+| Setup time | not clean-room validated yet | Current target is under 1 hour, but a first-time setup should still budget a couple hours for model downloads, camera account setup, room labels, and floor-plane calibration. |
 
-The product direction is a practical home bundle: Mac mini, accessible cameras, local models, clear setup commands, and enough audit structure that a household can track possible care instances, keep a local diary, and escalate to a loved one or caregiver.
+The product direction is a practical home bundle: Mac mini, accessible cameras, local models, clear setup commands, and enough audit structure that a household can track possible care instances, keep a local diary, and escalate to a loved one or caregiver. The setup-time target still needs a clean-room install test before it should be treated as a proven claim.
 
 ## Current Demo Cut
 
@@ -49,7 +49,7 @@ local camera feeds
 
 The current hardware path uses owner-authorized local Tapo RTSP cameras because they are cheap, available, and enough to prove the home-bundle concept. They are replaceable inputs, not the center of the architecture.
 
-The important privacy and trust boundary is that raw camera context, event memory, model drafting, and proof receipts are designed to run locally first. The handoff path should expose only the event-scoped context that a caregiver needs: message text, a screenshot when approved, and a live feed only when the operator chooses that escalation path.
+The important privacy and trust boundary is that raw camera context, event memory, model drafting, and proof receipts are designed to run locally first. The SQLite store acts like a local blackbox: events, observations, reviews, drafts, snapshots, and execution attempts are structured records that agents can read from and add to through bounded services, but they are not supposed to delete records or rewrite history. The handoff path should expose only the event-scoped context that a caregiver needs: message text, a screenshot when approved, and a live feed only when the operator chooses that escalation path.
 
 ## Three Visible Lanes
 
@@ -106,12 +106,12 @@ Local model and agent lanes:
 | Lane | Tooling | Boundary |
 | --- | --- | --- |
 | Vision | YOLO26 MLX | Detects people/objects locally and feeds bounded event policy. |
-| Memory | SQLite | Stores event receipts, snapshots, reviews, drafts, and execution attempts locally. |
+| Memory | SQLite | Stores event receipts, snapshots, reviews, drafts, and execution attempts as a local blackbox. |
 | Drafting | Gemma 4 E2B MLX | Prepares human-readable review and caregiver alert wording from SQLite-derived context. |
 | Handoff harness | Hermes | Stages and records caregiver handoff payloads instead of bypassing CareSight policy. |
 | Visual handoff | OBS | Presents the local live/review surface and optional FaceTime feed source. |
 | Audio handoff | Holler TTS, Dakota voice | Plays approved local handoff audio only after explicit operator approval. |
 
-Agents may summarize events, draft caregiver text, update OBS presentation state, and prepare handoff payloads. They must not confirm or dismiss events, diagnose, claim medical certainty, dispatch help, or upload raw video as a default path. That boundary is what lets the repo be highly agentic while still respecting the human care loop.
+Agents may summarize events, draft caregiver text, update OBS presentation state, and prepare handoff payloads through contract-shaped records. They must not confirm or dismiss events, delete records, rewrite the blackbox history, diagnose, claim medical certainty, dispatch help, or upload raw video as a default path. That boundary is what lets the repo be highly agentic while still respecting the human care loop.
 
 The project uses open-source components and local-first defaults so the work can be inspected, reused, and improved for general good rather than hidden behind an opaque cloud-only care pipeline.
