@@ -60,9 +60,19 @@ The system should quietly observe configured care-relevant signals, store struct
 
 ---
 
-# 1. Product concept roadmap
+# 1. Product lane index
 
-## Lane A — Home care / local operated
+These lanes are product directions, not readiness claims. Every lane must preserve the bounded loop: local observation, structured memory, human review, audit trail, and no autonomous emergency dispatch.
+
+| Lane | Potential features / implementations | What must be true before it becomes a real product claim |
+| --- | --- | --- |
+| Home Care | appliance setup, camera health, calibrated floor-plane setup, local dashboard, household diary, privacy mode, retention controls, launchd auto-start | clean-room install proof, multi-day reliability receipts, household usability review |
+| Remote Caregiver Practice | caregiver roles, allowlisted alerts, acknowledgement flow, no-response follow-up, event-scoped screenshot/clip sharing, shared daily journal, temporary access | explicit household approval, contact allowlists, external-action receipts, privacy-safe sharing defaults |
+| Care Homes / Medical Facilities | multi-room configuration, staff handoff queues, facility dashboard, retention policy, audit export, deployment/update tooling, hardware support | stricter validation, operational trials, legal/regulatory review, and clear separation from medical-device or HIPAA compliance claims |
+
+# 2. Product concept roadmap
+
+## Lane A — Home Care
 
 Goal:
 
@@ -86,7 +96,7 @@ Primary buyer/user:
 household running CareSight on owned hardware
 ```
 
-## Lane B — Home care / external caregivers
+## Lane B — Remote Caregiver Practice
 
 Goal:
 
@@ -111,7 +121,7 @@ Primary buyer/user:
 family caregiver network, care worker, sitter, or temporary helper
 ```
 
-## Lane C — Business / facility utilization
+## Lane C — Care Homes / Medical Facilities
 
 Goal:
 
@@ -137,7 +147,7 @@ in-home care agency, assisted living operator, memory care operator, small nursi
 
 ---
 
-# 2. Version roadmap
+# 3. Version roadmap
 
 ## v3 — Home pilot
 
@@ -259,7 +269,7 @@ Remote access should expose care events first, not continuous surveillance by de
 
 ---
 
-# 3. Enterprise roadmap
+# 4. Enterprise roadmap
 
 ## Enterprise wedge
 
@@ -349,7 +359,7 @@ Enterprise expectations:
 
 ---
 
-# 3. Care home / nursing home roadmap
+# 5. Care home / nursing home roadmap
 
 ## Chain of care, not chain of custody
 
@@ -438,7 +448,7 @@ Potential capabilities:
 
 ---
 
-# 4. Quality-of-life roadmap
+# 6. Quality-of-life roadmap
 
 CareSight should not only handle severe events. It should make ordinary care easier.
 
@@ -491,7 +501,7 @@ Capabilities:
 
 ---
 
-# 5. HIPAA, privacy, security, and compliance roadmap
+# 7. HIPAA, privacy, security, and compliance roadmap
 
 Note: the correct spelling is **HIPAA**.
 
@@ -593,7 +603,7 @@ CareSight can claim:
 
 ---
 
-# 6. Camera and integration roadmap
+# 8. Camera and integration roadmap
 
 ## Local-first camera sources
 
@@ -641,7 +651,7 @@ but the local-first product should not depend on consumer cloud camera APIs.
 
 ---
 
-# 7. OBS, FaceTime, and live-view roadmap
+# 9. OBS, FaceTime, and live-view roadmap
 
 ## OBS role
 
@@ -679,7 +689,7 @@ FaceTime handoff is not emergency dispatch and should not be the only escalation
 
 ---
 
-# 8. Agent and language-model roadmap
+# 10. Agent and language-model roadmap
 
 ## Local Gemma role
 
@@ -723,7 +733,7 @@ The deterministic policy engine decides what actions are allowed.
 
 ---
 
-# 9. Model and performance roadmap
+# 11. Model and performance roadmap
 
 ## Model variants
 
@@ -767,7 +777,7 @@ Custom models need precision/recall evaluation before being trusted for alerts.
 
 ---
 
-# 10. Data, memory, and analytics roadmap
+# 12. Data, memory, and analytics roadmap
 
 ## Local memory
 
@@ -807,7 +817,7 @@ Do not turn ordinary care analytics into diagnosis claims.
 
 ---
 
-# 11. Commercial roadmap
+# 13. Commercial roadmap
 
 ## Phase 1 — open-source showcase
 
@@ -878,7 +888,7 @@ Mac mini or equivalent edge device
 
 ---
 
-# 12. Research and validation roadmap
+# 14. Research and validation roadmap
 
 Before high-stakes deployments, validate:
 
@@ -908,7 +918,7 @@ controlled staged events
 
 ---
 
-# 13. Long-term product vision
+# 15. Long-term product vision
 
 CareSight becomes:
 

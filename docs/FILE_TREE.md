@@ -131,6 +131,7 @@ apps/caresight-hub/tests/test_agent_policy.py
 apps/caresight-hub/tests/test_appearance_profiles.py
 apps/caresight-hub/tests/test_care_console.py
 apps/caresight-hub/tests/test_demo_surface.py
+apps/caresight-hub/tests/test_demo_terminal_launcher.py
 apps/caresight-hub/tests/test_event_snapshots.py
 apps/caresight-hub/tests/test_floor_stay.py
 apps/caresight-hub/tests/test_inference_harness.py
@@ -345,6 +346,7 @@ docs/architecture/camera_integration_strategy.md
 docs/architecture/caresight_runtime_architecture.md
 docs/architecture/obs_facetime_live_view.md
 docs/assets/caresight-readme-loop.svg
+docs/assets/caresight-video-poster.jpg
 docs/audits/2026-04-26-contract-core-stability-baseline.md
 docs/audits/2026-05-12-llm-provider-scaffold-baseline.md
 docs/audits/2026-05-18-v0-eventization-implementation.md

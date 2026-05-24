@@ -19,6 +19,35 @@ CareSight is not a medical device, certified fall detector, HIPAA compliance cla
 
 This folder is the judge and operator entrypoint for the current demo. It points to the short path first, then links back to the deeper repo evidence.
 
+## Demo Video
+
+<p align="center">
+  <img src="../docs/assets/caresight-video-poster.jpg" alt="CareSight vertical demo poster showing caregiver alert and live handoff context." width="320">
+</p>
+
+Direct GitHub video upload slot:
+
+```text
+Paste the uploaded GitHub video asset URL here after the MP4 is uploaded through GitHub's Markdown editor.
+```
+
+The current source video is kept outside Git because it is a 57 MB H.264 vertical demo. GitHub direct Markdown video uploads support `.mp4`, `.mov`, and `.webm`, but upload limits depend on the repository/account plan. Use H.264 for the broadest browser compatibility.
+
+```mermaid
+sequenceDiagram
+  participant Home as Local home feed
+  participant Vision as YOLO26n MLX
+  participant Store as SQLite blackbox
+  participant Review as Human review
+  participant Caregiver as Caregiver handoff
+
+  Home->>Vision: local camera frames
+  Vision->>Store: possible event + snapshot metadata
+  Store->>Review: review packet and audit receipt
+  Review->>Caregiver: approved alert / handoff path
+  Caregiver-->>Store: acknowledgement and follow-up state
+```
+
 ## Affordable Home Bundle Concept
 
 The camera hardware is not the product story; it is the accessibility story. Low-cost RTSP cameras make it possible to assemble a small local care-awareness setup without specialized equipment.
@@ -85,6 +114,9 @@ The command starts one detector worker per configured local camera and exposes O
 
 ## Human Review Surfaces
 
+<details>
+<summary>Operator commands for review and receipts</summary>
+
 Use these surfaces for the recorded demo once an event exists:
 
 ```bash
@@ -95,6 +127,8 @@ python3 apps/caresight-hub/scripts/care_console.py narrative --format markdown
 ```
 
 SQLite remains the canonical local record. OBS and Markdown are presentation layers.
+
+</details>
 
 ## Agentic-Ready Architecture
 

@@ -2,7 +2,17 @@
 
 ## Unreleased
 
+- Added GitHub-native README enhancements: hackathon demo callout, Mermaid care-loop diagrams, a bounded product-lane roadmap table, collapsible setup/safety sections, and a video upload slot with a poster image.
 - Added an animated README banner showing the bounded CareSight loop from possible floor-stay observation to human review, caregiver help confirmation, and assisted recovery.
+- Changed the live demo FaceTime handoff to preserve the operator-selected OBS scene/camera, disabled Aitum vertical automation in the launcher, and restored BlackHole as the default TTS route for the call path.
+- Switched no-response screenshot escalation to prefer `imsg --file` when available so text-plus-image delivery no longer relies on AppleScript attachment sends.
+- Filtered the live OBS detector overlay to people plus home-pet classes while keeping clothing review as appearance subregions inside person boxes, reducing furniture/object box noise during demos.
+- Restored the live caregiver handoff flags on the primary Living Room detector tab while keeping Kitchen as detection/review only, and gated live handoff execution to `possible_floor_stay` events.
+- Tightened the documented Tapo floor-plane calibration example so overhead/downward camera views use conservative spatial floor polygons instead of a flat lower-half screen cut.
+- Updated the demo terminal launcher from five tabs to six tabs by splitting live detection into separate Living Room and Kitchen detector tabs, each running floor-stay plus missing-off-camera policies for its camera feed.
+- Added YOLO-box-derived posture labels and OBS/MJPEG dwell-timer overlays for floor-stay debugging, distinguishing `seated_on_floor_possible` from `laying_low_possible` while keeping seated-on-floor as non-event context.
+- Added structured missing-off-camera indicator evidence with visibility state, caregiver-facing indicator label, and bounded review reason.
+- Updated the roadmap to state that OBS is the current intermediary visual/review surface and a dedicated CareSight camera dashboard is future implementation.
 - Clarified that the live vision lane currently uses `yolo26n.npz`, the YOLO26n nano detection variant for MLX, while larger and segmentation variants remain future comparison paths.
 - Clarified that off-network caregiver escalation is optional and configured, while local observation, review, and diary workflows can stay local-only.
 - Clarified that SQLite is the local blackbox record and that setup time is a target needing clean-room validation, not a proven install claim.

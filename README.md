@@ -14,7 +14,18 @@ The current hackathon build uses the project scaffold as the repo backbone for g
 
 CareSight is not a medical device, certified fall detector, alarm service, emergency dispatch product, or HIPAA-compliant clinical system. The MVP creates local care observations that authorized humans can acknowledge, confirm, or dismiss.
 
-## Why CareSight Exists
+## Hackathon Demo
+
+The current judged demo path lives in [`hackathon/README.md`](hackathon/README.md). Start there for the vertical demo cut, operator journey, proof trail, and current command path.
+
+| Entry | Use it for |
+| --- | --- |
+| [`hackathon/README.md`](hackathon/README.md) | Demo story, current video slot, and judge/operator orientation |
+| [`hackathon/DEMO_JOURNEY.md`](hackathon/DEMO_JOURNEY.md) | Step-by-step operator path for setup, running, and review |
+| [`hackathon/AUDIT_DIGEST.md`](hackathon/AUDIT_DIGEST.md) | Proof receipts, validation boundaries, and remaining gates |
+
+<details>
+<summary>Why CareSight exists</summary>
 
 Many care moments are stressful because the people responsible for helping do not have continuity. They may not know when something happened, where someone was last seen, what they were wearing, whether an event was already reviewed, or what the next appropriate handoff should be.
 
@@ -24,7 +35,10 @@ It acts like a local black box for care-relevant observations: raw video stays l
 
 In a perfect-world product footprint, this runs on the lowest-cost practical Apple hardware, such as a Mac mini, and becomes a quiet home appliance for local care awareness.
 
-## Why Local Models
+</details>
+
+<details>
+<summary>Why local models</summary>
 
 Caregiving data is deeply personal. A camera in the home can reveal routines, vulnerability, visitors, mobility changes, pets, children, sleep patterns, and moments of distress. CareSight is built around the idea that this context should belong first to the household, not to a remote platform.
 
@@ -32,13 +46,19 @@ The default architecture keeps raw video, structured events, review history, jou
 
 This does not make CareSight a privacy guarantee or compliance product by itself. It does make privacy a design constraint: minimize external dependencies, keep raw media local by default, make every event auditable, and require explicit human approval before sensitive handoffs leave the device.
 
-## Project Ethos
+</details>
+
+<details>
+<summary>Project ethos</summary>
 
 CareSight is being built in public because trust, safety, privacy, and caregiving should be accessible to people who are willing to learn, assemble, and run local tools for their own families. The open-source hackathon build should be capable enough to help real households experiment with local-first care awareness without waiting for a commercial gatekeeper.
 
 That does not mean every future product layer must be free or unmanaged. A sustainable CareSight business would likely focus on reliable packaging, installation, support, managed updates, hardware compatibility, caregiver workflows, and other value-added services. The baseline loop should remain understandable and inspectable: observe locally, create bounded events, ask humans to confirm, journal what happened, and preserve auditability.
 
-## License
+</details>
+
+<details>
+<summary>License posture</summary>
 
 CareSight Hub is licensed under `AGPL-3.0-only` for the public hackathon repository.
 
@@ -46,21 +66,30 @@ This posture is deliberate. The current runtime uses the `thewebAI/yolo-mlx` Git
 
 See `LICENSE`, `NOTICE.md`, and `docs/legal/LICENSE_NOTES.md`.
 
+</details>
+
 ## Current Ship Goal
 
 Build the v1/v2 hackathon MVP:
 
-```text
-camera input
-  -> YOLO26 MLX local perception
-  -> bounded event rules and confidence scoring
-  -> SQLite local memory
-  -> daily care journal
-  -> caregiver alert
-  -> optional OBS / FaceTime handoff
+```mermaid
+flowchart LR
+  Camera["Local camera input"]
+  Vision["YOLO26 MLX perception"]
+  Policy["Bounded event policy"]
+  Memory["SQLite local memory"]
+  Review["Human review"]
+  Handoff["Caregiver handoff"]
+
+  Camera --> Vision --> Policy --> Memory --> Review --> Handoff
 ```
 
-## Repo Shape
+$$
+\text{CareSight loop} = \text{local observation} + \text{bounded policy} + \text{human review}
+$$
+
+<details>
+<summary>Repo shape</summary>
 
 - `contracts/`: canonical schemas, examples, lifecycle, and fail-closed behavior.
 - `packages/core/`: TypeScript validation and contract enforcement helpers.
@@ -68,7 +97,12 @@ camera input
 - `apps/caresight-hub/`: bounded Python runtime for YOLO26 MLX, camera handling, SQLite, alerts, and dashboard work.
 - `docs/`: project brief, architecture, hackathon docs, roadmaps, references, and the imported docs pack.
 
+</details>
+
 ## Start Here
+
+<details>
+<summary>Local setup and validation commands</summary>
 
 1. Clone with submodules:
 
@@ -109,6 +143,8 @@ For the current recorded hackathon demo, use the judge/operator entrypoint:
 - `hackathon/DEMO_JOURNEY.md`
 - `hackathon/AUDIT_DIGEST.md`
 
+</details>
+
 ## Roadmaps
 
 - Hackathon plan: `docs/hackathon/hackathon_roadmap.md`
@@ -118,6 +154,27 @@ For the current recorded hackathon demo, use the judge/operator entrypoint:
 - Local model operations: `docs/operations/local_model_operations.md`
 - Imported docs pack: `docs/caresight_hub_docs_pack/`
 
+### Potential Product Lanes
+
+These are roadmap lanes, not readiness claims. Each lane keeps the same baseline: local-first observation, structured records, human review, and no autonomous emergency dispatch.
+
+| Lane | Near-term implementation ideas | Product direction |
+| --- | --- | --- |
+| Home Care | local appliance setup, calibrated floor zones, local dashboard, household diary, privacy controls | A family-owned home awareness hub for one residence |
+| Remote Caregiver Practice | caregiver roles, allowlisted alerts, acknowledgement, event-scoped screenshots, daily summaries | A bounded handoff layer for family caregivers, care workers, sitters, and helpers |
+| Care Homes / Medical Facilities | multi-room configuration, staff handoff queues, retention policy, audit export, deployment/support tooling | A future operational workflow lane that would require stricter validation, policy review, and compliance work before real use |
+
 ## Safety Posture
 
 CareSight events use language like `possible_floor_stay` and `medication_routine_likely_observed`. Vision alone must not confirm medication administration, diagnose a condition, or trigger autonomous emergency dispatch. Human confirmation is part of the product boundary.
+
+<details>
+<summary>What CareSight does not claim</summary>
+
+- It is not a medical device.
+- It does not claim HIPAA compliance.
+- It does not autonomously dispatch emergency services.
+- It does not confirm medication administration from vision alone.
+- It does not make dashboards, agents, OBS, or generated text canonical truth.
+
+</details>
