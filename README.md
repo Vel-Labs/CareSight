@@ -73,15 +73,19 @@ See `LICENSE`, `NOTICE.md`, and `docs/legal/LICENSE_NOTES.md`.
 Build the v1/v2 hackathon MVP:
 
 ```mermaid
-flowchart LR
-  Camera["Local camera input"]
-  Vision["YOLO26 MLX perception"]
+flowchart TD
+  Camera["Local camera"]
+  Vision["YOLO26 MLX"]
   Policy["Bounded event policy"]
-  Memory["SQLite local memory"]
+  Memory["SQLite memory"]
   Review["Human review"]
   Handoff["Caregiver handoff"]
 
-  Camera --> Vision --> Policy --> Memory --> Review --> Handoff
+  Camera --> Vision
+  Vision --> Policy
+  Policy --> Memory
+  Memory --> Review
+  Review --> Handoff
 ```
 
 $$

@@ -63,7 +63,8 @@ while true; do
   stack_status="$(read_status stack)"
   overlay_status="$(read_status overlay)"
   check_status="$(read_status check)"
-  live_status="$(read_status live)"
+  living_status="$(read_status living)"
+  kitchen_status="$(read_status kitchen)"
 
   clear
   printf '\033]0;%s\007' "CareSight Status Board"
@@ -74,7 +75,8 @@ while true; do
   echo "Terminal 1 - CareSight Stack: $(status_icon "$stack_status")"
   echo "Terminal 2 - OBS Overlay Watch: $(status_icon "$overlay_status")"
   echo "Terminal 3 - OBS/Feed Check: $(status_icon "$check_status")"
-  echo "Terminal 4 - Live Detector + Handoff: $(status_icon "$live_status")"
+  echo "Terminal 4 - Living Room Detector: $(status_icon "$living_status")"
+  echo "Terminal 5 - Kitchen Detector: $(status_icon "$kitchen_status")"
   echo
   if [[ "$stack_status" =~ ^(ready|running|online)$ && "$overlay_status" =~ ^(ready|running|online)$ ]]; then
     echo "CareSight Hub: Online, view feeds in OBS"

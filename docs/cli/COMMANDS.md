@@ -199,16 +199,27 @@ OBS Browser Source URLs:
       "name": "Living Room Calibrated Floor Plane",
       "kind": "floor_low",
       "x_min": 0.0,
-      "y_min": 0.44,
+      "y_min": 0.54,
       "x_max": 1.0,
       "y_max": 1.0,
-      "vertices": [[0.0, 0.44], [0.52, 0.43], [0.78, 0.45], [1.0, 0.48], [1.0, 1.0], [0.0, 1.0]]
+      "vertices": [[0.0, 0.58], [0.28, 0.54], [0.48, 0.56], [0.62, 0.61], [0.78, 0.64], [1.0, 0.60], [1.0, 1.0], [0.0, 1.0]]
+    },
+    {
+      "zone_id": "floor_zone",
+      "camera_id": "tapo_kitchen",
+      "name": "Kitchen Calibrated Floor Plane",
+      "kind": "floor_low",
+      "x_min": 0.0,
+      "y_min": 0.55,
+      "x_max": 1.0,
+      "y_max": 1.0,
+      "vertices": [[0.0, 0.59], [0.22, 0.56], [0.45, 0.55], [0.62, 0.57], [0.80, 0.61], [1.0, 0.62], [1.0, 1.0], [0.0, 1.0]]
     }
   ]
 }
 ```
 
-This is camera calibration, not metric depth. It gives the detector and OBS overlay a perspective-aware floor surface for each camera; true distance/depth would require a depth sensor, stereo camera pair, or an additional monocular-depth model with its own validation.
+This is camera calibration, not metric depth. It gives the detector and OBS overlay a perspective-aware floor surface for each camera; true distance/depth would require a depth sensor, stereo camera pair, or an additional monocular-depth model with its own validation. For high/downward camera views, keep the polygon conservative: the top edge should follow the visible floor boundary around furniture and cabinets, not the whole lower half of the image.
 
 Do not run both processes with the default `--obs-live-preview` path unless each process also gets a distinct `--obs-live-preview-path`; otherwise both cameras will overwrite the same `apps/obs-hub/config/live_preview.jpg`. Browser-feed ports are the preferred dual-camera OBS path.
 
@@ -367,14 +378,14 @@ Inputs: same private iMessage/FaceTime handles as the live iMessage test, `imsg`
 
 Outputs: `post_event_agent_live_run` with reply-watch status, FaceTime attempt ID if opened, and TTS playback status if attempted.
 
-The default live handoff does not depend on FaceTime receiving the OBS video feed. OBS remains the local operator/review surface, iMessage carries the alert and optional snapshot evidence, and FaceTime is used for the reply-gated call plus approved TTS audio. This avoids macOS FaceTime stretching or mirroring OBS/Aitum virtual-camera output during the demo.
+The default live handoff does not depend on FaceTime receiving the OBS video feed. OBS remains the local operator/review surface, iMessage carries the alert and optional snapshot evidence, and FaceTime is used for the reply-gated call plus approved TTS audio. The demo launcher disables Aitum vertical automation and preserves the operator-selected OBS camera/scene instead of rewriting the video canvas during the FaceTime handoff.
 
 To keep that stable default explicit:
 
 ```bash
 export CARESIGHT_AITUM_VERTICAL_MODE="off"
-export CARESIGHT_OBS_FACETIME_SCENE="CareSight Hub - Escalation"
-export CARESIGHT_OBS_FACETIME_VIDEO_MODE="landscape"
+export CARESIGHT_OBS_FACETIME_SCENE=""
+export CARESIGHT_OBS_FACETIME_VIDEO_MODE=""
 ```
 
 The experimental Aitum portrait bridge is still available for investigation by setting `CARESIGHT_AITUM_VERTICAL_MODE=auto`, but it is not a production-validation gate for this sprint.
@@ -413,7 +424,7 @@ This is an automated CareSight message. A possible floor stay was observed in th
 
 `--obs-live-preview` still writes `apps/obs-hub/config/live_preview.jpg` as a fallback/snapshot-style local artifact. It is not the primary live video path.
 
-`--tts-repeat-count 2` plays the approved Dakota handoff message twice after the FaceTime call is requested. The BlackHole audio route now holds the temporary route briefly after playback so the route is not restored mid-message.
+`--tts-repeat-count 2` plays the approved Dakota handoff message twice after the FaceTime call is requested. Use `--tts-audio-route blackhole` for the normal FaceTime demo path so playback is routed through the alternate channel instead of desktop speakers. Use `--tts-audio-route system` only for local speaker debugging.
 
 Agent safety: `human-review-required`. This prefers `imsg` when installed, otherwise reads only the local Messages database for the configured contact target after the alert is sent. If macOS blocks database access, it fails closed with setup instructions; it does not bypass Full Disk Access, dispatch help, diagnose, or send raw video to an agent.
 
@@ -474,9 +485,9 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --debug-floor-stay
 ```
 
-Purpose: print one `floor_stay_debug` JSON line per second showing the observed person boxes, whether each bottom-center is inside the configured floor zone, whether the box passes low-posture shape checks, and the current dwell seconds.
+Purpose: print one `floor_stay_debug` JSON line per second showing the observed person boxes, whether each bottom-center is inside the configured floor zone, the YOLO-box posture label, whether the box is floor-stay eligible, and the current dwell seconds.
 
-Use this when a live test appears not to trigger. A valid possible-floor-stay event requires a same tracked person detection that is both inside the floor zone and low-posture for the configured dwell window. Sprint 04 tracking-reliability evidence adds `escalation_stage`, `same_track_dwell_seconds`, `occlusion_grace_seconds`, `dedupe_window_seconds`, `policy_version`, and `not_claimed` to the event evidence while keeping the event type bounded as `possible_floor_stay`.
+Use this when a live test appears not to trigger. A valid possible-floor-stay event requires a same tracked person detection that is inside the floor zone and `laying_low_possible` for the configured dwell window. `seated_on_floor_possible` is displayed as context but does not create a floor-stay event by itself. Sprint 04 tracking-reliability evidence adds `escalation_stage`, `same_track_dwell_seconds`, `occlusion_grace_seconds`, `dedupe_window_seconds`, `posture_label`, `policy_version`, and `not_claimed` to the event evidence while keeping the event type bounded as `possible_floor_stay`.
 
 Sprint 04 bounded validation run:
 
@@ -1232,12 +1243,17 @@ Tabs:
 - `CareSight Stack`: starts Gemma/Hermes readiness.
 - `OBS Overlay Watch`: keeps `current_event.js/json` refreshed from SQLite.
 - `OBS Feed Check`: runs the live-feed/OBS sanity check once and leaves a shell open.
-- `Live Detector + Handoff`: waits for Enter before starting the camera, approved iMessage, reply-gated FaceTime, and TTS path.
+- `Living Room Detector`: waits for Enter before starting `tapo_living_room` on `http://127.0.0.1:8766/live.html`.
+- `Kitchen Detector`: waits for Enter before starting `tapo_kitchen` on `http://127.0.0.1:8767/live.html`.
 - `CareSight Status Board`: renders a clean status dashboard and curated event feed from local status files and `current_event.json`.
 
 Inputs: macOS Terminal, local `apps/caresight-hub/config/live-demo.local` when present, and the same runtime prerequisites as the individual commands.
 
-Validation: `bash -n scripts/open_demo_terminals.sh` and `bash -n scripts/demo_status_dashboard.sh`.
+Each detector tab runs the live feed as the module host: floor-stay policy is always active, and `--missing-off-camera-events` enables the missing-off-camera policy in the same process. Posture labels, the floor-zone dwell timer, and optional appearance review overlays are drawn on the OBS browser feed. The visible OBS boxes are intentionally filtered to people plus home-pet classes (`person`, `cat`, `dog`, `bird`) so furniture and routine-object detections do not crowd the demo feed; clothing remains represented by the appearance subregions drawn inside person boxes.
+
+The live caregiver handoff chain is enabled only on the Living Room detector tab by default. That path sends the approved iMessage, sends one no-response follow-up with the local snapshot when configured, watches for a yes-like reply, then opens FaceTime and plays approved TTS. Missing-off-camera events remain logged/reviewable but do not trigger the live text/call chain from this launcher.
+
+Validation: `bash -n scripts/open_demo_terminals.sh`, `bash -n scripts/demo_status_dashboard.sh`, and `python3 -m unittest discover -s apps/caresight-hub/tests -t apps/caresight-hub -p 'test_demo_terminal_launcher.py'`.
 
 Agent safety: `manual-operator`. The launcher opens the live detector terminal but pauses before executing the live caregiver flow. macOS may ask for Automation/Accessibility permission when `--tabs` is used.
 

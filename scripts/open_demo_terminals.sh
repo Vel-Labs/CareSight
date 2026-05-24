@@ -31,7 +31,8 @@ rm -f "$STATUS_DIR"/*.status
 printf "loading\n" > "$STATUS_DIR/stack.status"
 printf "loading\n" > "$STATUS_DIR/overlay.status"
 printf "loading\n" > "$STATUS_DIR/check.status"
-printf "loading\n" > "$STATUS_DIR/live.status"
+printf "loading\n" > "$STATUS_DIR/living.status"
+printf "loading\n" > "$STATUS_DIR/kitchen.status"
 
 terminal_command() {
   local title="$1"
@@ -44,6 +45,50 @@ source apps/caresight-hub/config/live-demo.local 2>/dev/null || true
 clear
 echo "== $title =="
 $command_body
+EOF
+}
+
+detector_cleanup_snippet() {
+  local camera_id="$1"
+  local port="$2"
+  cat <<EOF
+cleanup_detector() {
+  local camera_id="$1"
+  local port="$2"
+  local pid_path="apps/caresight-hub/data/runtime/\${camera_id}_detector.pid"
+  if [[ -f "\$pid_path" ]]; then
+    local pid
+    pid="\$(tr -d '[:space:]' < "\$pid_path" || true)"
+    if [[ "\$pid" =~ ^[0-9]+$ ]] && kill -0 "\$pid" 2>/dev/null; then
+      echo "Stopping previous \$camera_id detector pid \$pid"
+      kill "\$pid" 2>/dev/null || true
+      sleep 1
+      if kill -0 "\$pid" 2>/dev/null; then
+        echo "Previous \$camera_id detector still running; forcing stop"
+        kill -9 "\$pid" 2>/dev/null || true
+      fi
+    fi
+    rm -f "\$pid_path"
+  fi
+  while IFS= read -r pid; do
+    [[ -z "\$pid" ]] && continue
+    local command
+    command="\$(ps -p "\$pid" -o command= 2>/dev/null || true)"
+    if [[ "\$command" == *"v0_floor_stay_live.py"* ]]; then
+      echo "Stopping CareSight process on port \$port pid \$pid"
+      kill "\$pid" 2>/dev/null || true
+      sleep 1
+      if kill -0 "\$pid" 2>/dev/null; then
+        echo "CareSight process on port \$port still running; forcing stop"
+        kill -9 "\$pid" 2>/dev/null || true
+      fi
+    else
+      echo "Port \$port is in use by a non-CareSight process pid \$pid; refusing to kill it."
+      return 1
+    fi
+  done < <(lsof -tiTCP:"\$port" -sTCP:LISTEN 2>/dev/null || true)
+}
+cleanup_detector "$camera_id" "$port"
 EOF
 }
 
@@ -69,7 +114,7 @@ for attempt in 1 2 3 4 5 6 7 8 9 10; do
   fi
   if [[ "$attempt" -lt 10 ]]; then
     echo waiting > apps/caresight-hub/data/runtime/demo-status/check.status
-    echo "OBS/feed check waiting ($attempt/10). Start Terminal 4 when ready."
+    echo "OBS/feed check waiting ($attempt/10). Start Terminal 4 and Terminal 5 when ready."
     sleep 2
   else
     echo blocked > apps/caresight-hub/data/runtime/demo-status/check.status
@@ -79,18 +124,29 @@ echo
 echo "Rerun check with: apps/obs-hub/tools/check_obs_live_feed.py"
 exec "$SHELL" -l')"
 
-live_cmd="$(terminal_command "Live Detector + Handoff" 'echo "This tab starts the live camera/text/reply/FaceTime/TTS flow."
-echo "Confirm OBS is open, the OBS feed is visible, and the caregiver test is approved."
+living_cleanup="$(detector_cleanup_snippet "tapo_living_room" "8766")"
+living_body="$(cat <<EOF
+echo "This tab starts the Living Room detector feed for OBS."
+echo "It runs floor-stay, posture indicators, and missing-off-camera events for tapo_living_room."
+echo "FaceTime handoff preserves the current OBS camera/scene selection."
 echo
-echo waiting > apps/caresight-hub/data/runtime/demo-status/live.status
-read -r -p "Press Enter to start live detector, or Ctrl-C to cancel: "
-echo running > apps/caresight-hub/data/runtime/demo-status/live.status
+echo waiting > apps/caresight-hub/data/runtime/demo-status/living.status
+read -r -p "Press Enter to start Living Room detector, or Ctrl-C to cancel: "
+$living_cleanup
+trap 'echo stopped > apps/caresight-hub/data/runtime/demo-status/living.status' EXIT
+echo running > apps/caresight-hub/data/runtime/demo-status/living.status
+export CARESIGHT_AITUM_VERTICAL_MODE=off
+export CARESIGHT_OBS_FACETIME_SCENE=""
+export CARESIGHT_OBS_FACETIME_VIDEO_MODE=""
 apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   apps/caresight-hub/scripts/v0_floor_stay_live.py \
-  --camera-id living_room \
+  --config apps/caresight-hub/config/tapo-runtime.local.json \
+  --camera-id tapo_living_room \
   --max-seconds 600 \
   --obs-browser-feed \
-  --obs-live-preview \
+  --obs-browser-feed-port 8766 \
+  --appearance-overlay \
+  --missing-off-camera-events \
   --debug-floor-stay \
   --auto-agent-live-run \
   --live-approved \
@@ -103,19 +159,49 @@ apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
   --tts-repeat-count 2 \
   --tts-repeat-delay-seconds 1.5 \
   --tts-after-facetime-delay-seconds 16 \
-  --post-facetime-hold-seconds 30')"
+  --post-facetime-hold-seconds 30 \
+  --no-window
+EOF
+)"
+living_cmd="$(terminal_command "Living Room Detector" "$living_body")"
+
+kitchen_cleanup="$(detector_cleanup_snippet "tapo_kitchen" "8767")"
+kitchen_body="$(cat <<EOF
+echo "This tab starts the Kitchen detector feed for OBS."
+echo "It runs floor-stay, posture indicators, and missing-off-camera events for tapo_kitchen."
+echo
+echo waiting > apps/caresight-hub/data/runtime/demo-status/kitchen.status
+read -r -p "Press Enter to start Kitchen detector, or Ctrl-C to cancel: "
+$kitchen_cleanup
+trap 'echo stopped > apps/caresight-hub/data/runtime/demo-status/kitchen.status' EXIT
+echo running > apps/caresight-hub/data/runtime/demo-status/kitchen.status
+apps/caresight-hub/vendor/yolo-mlx/.venv/bin/python \
+  apps/caresight-hub/scripts/v0_floor_stay_live.py \
+  --config apps/caresight-hub/config/tapo-runtime.local.json \
+  --camera-id tapo_kitchen \
+  --max-seconds 600 \
+  --obs-browser-feed \
+  --obs-browser-feed-port 8767 \
+  --appearance-overlay \
+  --missing-off-camera-events \
+  --debug-floor-stay \
+  --no-window
+EOF
+)"
+kitchen_cmd="$(terminal_command "Kitchen Detector" "$kitchen_body")"
 
 status_cmd="$(terminal_command "CareSight Status Board" './scripts/demo_status_dashboard.sh')"
 
 export STACK_CMD="$stack_cmd"
 export OVERLAY_CMD="$overlay_cmd"
 export CHECK_CMD="$check_cmd"
-export LIVE_CMD="$live_cmd"
+export LIVING_CMD="$living_cmd"
+export KITCHEN_CMD="$kitchen_cmd"
 export STATUS_CMD="$status_cmd"
 
 if [[ "$MODE" == "--print" ]]; then
   cat <<EOF
-Open five terminal tabs and paste one block into each.
+Open six terminal tabs and paste one block into each.
 
 ### Terminal 1 - CareSight Stack
 $stack_cmd
@@ -126,10 +212,13 @@ $overlay_cmd
 ### Terminal 3 - OBS/Feed Check
 $check_cmd
 
-### Terminal 4 - Live Detector + Handoff
-$live_cmd
+### Terminal 4 - Living Room Detector
+$living_cmd
 
-### Terminal 5 - CareSight Status Board
+### Terminal 5 - Kitchen Detector
+$kitchen_cmd
+
+### Terminal 6 - CareSight Status Board
 $status_cmd
 EOF
   exit 0
@@ -150,7 +239,9 @@ runCommandInNewWindow($(python3 -c 'import json, os; print(json.dumps(os.environ
 delay 1
 runCommandInNewWindow($(python3 -c 'import json, os; print(json.dumps(os.environ["CHECK_CMD"]))'))
 delay 1
-runCommandInNewWindow($(python3 -c 'import json, os; print(json.dumps(os.environ["LIVE_CMD"]))'))
+runCommandInNewWindow($(python3 -c 'import json, os; print(json.dumps(os.environ["LIVING_CMD"]))'))
+delay 1
+runCommandInNewWindow($(python3 -c 'import json, os; print(json.dumps(os.environ["KITCHEN_CMD"]))'))
 delay 1
 runCommandInNewWindow($(python3 -c 'import json, os; print(json.dumps(os.environ["STATUS_CMD"]))'))
 OSA
@@ -186,7 +277,9 @@ runCommandInNewTab($(python3 -c 'import json, os; print(json.dumps(os.environ["O
 delay 1
 runCommandInNewTab($(python3 -c 'import json, os; print(json.dumps(os.environ["CHECK_CMD"]))'))
 delay 1
-runCommandInNewTab($(python3 -c 'import json, os; print(json.dumps(os.environ["LIVE_CMD"]))'))
+runCommandInNewTab($(python3 -c 'import json, os; print(json.dumps(os.environ["LIVING_CMD"]))'))
+delay 1
+runCommandInNewTab($(python3 -c 'import json, os; print(json.dumps(os.environ["KITCHEN_CMD"]))'))
 delay 1
 runCommandInNewTab($(python3 -c 'import json, os; print(json.dumps(os.environ["STATUS_CMD"]))'))
 OSA

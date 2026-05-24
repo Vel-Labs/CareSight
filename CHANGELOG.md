@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added GitHub-native README enhancements: hackathon demo callout, Mermaid care-loop diagrams, a bounded product-lane roadmap table, collapsible setup/safety sections, and a video upload slot with a poster image.
+- Added GitHub-native README enhancements: hackathon demo callout, compact Mermaid care-loop diagrams, a bounded product-lane roadmap table, collapsible setup/safety sections, and a no-commit video link slot.
 - Added an animated README banner showing the bounded CareSight loop from possible floor-stay observation to human review, caregiver help confirmation, and assisted recovery.
 - Changed the live demo FaceTime handoff to preserve the operator-selected OBS scene/camera, disabled Aitum vertical automation in the launcher, and restored BlackHole as the default TTS route for the call path.
 - Switched no-response screenshot escalation to prefer `imsg --file` when available so text-plus-image delivery no longer relies on AppleScript attachment sends.

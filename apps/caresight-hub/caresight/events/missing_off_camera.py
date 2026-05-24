@@ -57,6 +57,9 @@ class MissingOffCameraDetector:
                 "raw_video_stays_local": True,
                 "track_id": track.track_id,
                 "missed_seconds": track.missed_seconds,
+                "visibility_state": "previously_seen_now_absent",
+                "indicator_label": _indicator_for_stage(stage),
+                "review_reason": "tracked person no longer visible past configured missing window",
                 "escalation_stage": stage,
                 "caregiver_language": language,
                 "policy_version": "missing_off_camera_v1_tracking_reliability",
@@ -71,6 +74,14 @@ class MissingOffCameraDetector:
                 "room_name": self.config.room.name,
             },
         }
+
+
+def _indicator_for_stage(stage: str) -> str:
+    if stage == "urgent_handoff_suggested":
+        return "Off-camera urgent handoff suggested"
+    if stage == "attention_suggested":
+        return "Off-camera attention suggested"
+    return "Off-camera check-in suggested"
 
 
 def _stage_for_missing(

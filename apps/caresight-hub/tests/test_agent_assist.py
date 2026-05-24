@@ -2,6 +2,7 @@ import tempfile
 import threading
 import unittest
 import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from unittest.mock import patch
@@ -25,6 +26,7 @@ from caresight.runtime.agent_assist import (
 from caresight.runtime.config import CareSightConfig
 from caresight.runtime.agent_assist.live_handoff import (
     _imessage_command,
+    send_imessage,
     switch_aitum_vertical_scene,
     switch_obs_to_facetime_scene,
 )
@@ -314,9 +316,10 @@ class AgentAssistTest(unittest.TestCase):
         command = _imessage_command("+15555550123", "CareSight follow-up", Path("/tmp/evt_snapshot.jpg"))
         script = command[2]
 
+        self.assertIn('activate', script)
         self.assertIn("POSIX file attachmentPath as alias", script)
         self.assertIn("send attachmentFile to targetBuddy", script)
-        self.assertIn("delay 1", script)
+        self.assertIn("delay 2", script)
         self.assertEqual(command[-1], "/tmp/evt_snapshot.jpg")
 
     def test_facetime_handoff_is_reply_gated(self) -> None:
@@ -408,6 +411,45 @@ class AgentAssistTest(unittest.TestCase):
             self.assertEqual(result["video_mode"], "landscape")
             self.assertIn("--video-mode", run.call_args.args[0])
             self.assertIn("landscape", run.call_args.args[0])
+
+    def test_facetime_default_preserves_operator_selected_obs_scene(self) -> None:
+        with patch.dict(
+            "os.environ",
+            {
+                "CARESIGHT_AITUM_VERTICAL_MODE": "off",
+            },
+            clear=False,
+        ):
+            os.environ.pop("CARESIGHT_OBS_FACETIME_SCENE", None)
+            os.environ.pop("CARESIGHT_OBS_FACETIME_VIDEO_MODE", None)
+            with patch("subprocess.run") as run:
+                run.return_value.returncode = 0
+                run.return_value.stdout = "ready"
+                run.return_value.stderr = ""
+
+                result = switch_obs_to_facetime_scene()
+
+            self.assertEqual(result["status"], "not_requested")
+            run.assert_not_called()
+
+    def test_imessage_auto_backend_uses_imsg_file_for_snapshot_attachment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot = Path(tmp) / "evt_snapshot.jpg"
+            snapshot.write_bytes(b"fake image")
+            with patch.dict("os.environ", {"CARESIGHT_IMESSAGE_BACKEND": "auto"}, clear=False):
+                with patch("shutil.which", return_value="/opt/homebrew/bin/imsg"):
+                    with patch("subprocess.run") as run:
+                        run.return_value.returncode = 0
+                        run.return_value.stdout = ""
+                        run.return_value.stderr = ""
+
+                        delivery = send_imessage("+15555550123", "CareSight follow-up", attachment_path=snapshot)
+
+            command = run.call_args.args[0]
+            self.assertEqual(delivery["platform"], "imsg")
+            self.assertEqual(delivery["attachment"]["name"], "evt_snapshot.jpg")
+            self.assertIn("--file", command)
+            self.assertIn(str(snapshot), command)
 
     def test_reply_watch_times_out_without_messages_access_or_reply(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

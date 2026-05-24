@@ -96,6 +96,18 @@ and remains there for N seconds,
 create possible_floor_stay event.
 ```
 
+The v0/v1 floor-stay rule is YOLO-box-derived. It should expose the posture boundary instead of pretending to have pose certainty:
+
+```text
+standing_likely
+seated_on_floor_possible
+laying_low_possible
+floor_stay_candidate with dwell timer
+possible_floor_stay after threshold
+```
+
+Sitting on the ground is visible context, but it is not by itself a floor-stay event. A `possible_floor_stay` requires a wide low person box in the calibrated floor zone for the configured dwell window and still requires human review.
+
 ### Storage
 
 Write the event to SQLite:
@@ -186,7 +198,7 @@ Recommended model order:
 
 ### 3. Two care events
 
-Build exactly two v1 events:
+Build exactly two primary v1 events:
 
 #### Event A — possible_floor_stay
 
@@ -201,7 +213,7 @@ Example logic:
 ```text
 person detected
 + bounding box center in floor zone
-+ low vertical position or configured zone overlap
++ YOLO-box posture evidence: laying_low_possible
 + dwell time >= 20–30 seconds
 = possible_floor_stay
 ```
@@ -214,7 +226,34 @@ Person has been low/in the floor zone for 31 seconds.
 Status: awaiting caregiver acknowledgement.
 ```
 
-#### Event B — medication_routine_likely_observed
+#### Event B — missing_off_camera_extended
+
+Purpose:
+
+```text
+Detect that a previously visible tracked person is no longer visible past the configured missing window.
+```
+
+Example logic:
+
+```text
+person previously tracked
++ now absent from the camera
++ absence duration >= configured missing window
+= missing_off_camera_extended
+```
+
+Output wording:
+
+```text
+Off-camera check-in suggested.
+Last seen in Living Room at 10:22 AM.
+Status: awaiting caregiver review.
+```
+
+This event does not claim identity, danger, injury, medical emergency, or dispatch. It is a structured prompt for caregiver review.
+
+#### Deferred support event — medication_routine_likely_observed
 
 Purpose:
 
@@ -304,7 +343,9 @@ Apple Shortcut sends caregiver alert.
 
 ### 7. Local dashboard
 
-The dashboard should show:
+For the hackathon path, OBS browser-source overlays are the current intermediary dashboard and handoff surface. CareSight owns the detector, event policy, SQLite audit records, and local MJPEG/browser feed; OBS presents those outputs for local review, recording, and optional FaceTime/virtual-camera experiments.
+
+A dedicated CareSight dashboard is future implementation once the OBS-mediated path is stable. That dashboard should show:
 
 - live camera feed
 - detection overlay
@@ -314,6 +355,10 @@ The dashboard should show:
 - model variant
 - hardware used
 - raw video policy: local only
+- calibrated floor-zone editor
+- posture indicator and floor-zone dwell timer
+- missing-off-camera review state
+- event replay and audit navigation
 
 ## v1 acceptance criteria
 

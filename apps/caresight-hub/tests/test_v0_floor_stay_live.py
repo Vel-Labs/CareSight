@@ -186,6 +186,20 @@ class V0FloorStayLiveTest(unittest.TestCase):
         self.assertEqual(payload["status"], "post_event_agent_dry_run_failed")
         self.assertFalse(payload["external_action_performed"])
 
+    def test_obs_overlay_draw_filter_keeps_people_and_home_pets(self) -> None:
+        self.assertTrue(module.should_draw_detection_label("person"))
+        self.assertTrue(module.should_draw_detection_label("dog"))
+        self.assertTrue(module.should_draw_detection_label("cat"))
+        self.assertTrue(module.should_draw_detection_label("bird"))
+
+    def test_obs_overlay_draw_filter_hides_furniture_and_household_objects(self) -> None:
+        for label in ["chair", "couch", "tv", "bottle", "cup", "remote"]:
+            self.assertFalse(module.should_draw_detection_label(label), label)
+
+    def test_live_handoff_runs_only_for_floor_stay_events(self) -> None:
+        self.assertTrue(module.should_run_live_handoff({"event_type": "possible_floor_stay"}))
+        self.assertFalse(module.should_run_live_handoff({"event_type": "missing_off_camera_extended"}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -117,7 +117,7 @@ class FloorStayDetector:
             center_y = ((y1 + y2) / 2.0) / detection.frame_height
             bottom_center = detection.bottom_center_normalized
             in_floor_zone = self.config.floor_zone.contains_normalized_point(*bottom_center)
-            low_posture = _looks_like_low_posture(detection)
+            posture = posture_evidence(detection, in_floor_zone=in_floor_zone)
             entered_at = self._entered_at_by_track.get(track.track_id)
             if selected is not None and track.track_id == selected.track_id:
                 entered_at = (
@@ -135,7 +135,10 @@ class FloorStayDetector:
                     "center_y": round(center_y, 2),
                     "bottom_center": [round(value, 2) for value in bottom_center],
                     "in_floor_zone": in_floor_zone,
-                    "low_posture": low_posture,
+                    "low_posture": posture["low_posture"],
+                    "posture_label": posture["posture_label"],
+                    "posture_basis": posture["posture_basis"],
+                    "floor_stay_eligible": posture["floor_stay_eligible"],
                     "dwell_seconds": round(dwell_seconds, 2),
                 }
             )
@@ -156,6 +159,7 @@ class FloorStayDetector:
     def _build_event(self, track: TrackSnapshot, dwell_seconds: float, now: float) -> dict:
         detection = track.detection
         occurred_at = datetime.fromtimestamp(now, tz=UTC).isoformat().replace("+00:00", "Z")
+        posture = posture_evidence(detection, in_floor_zone=True)
         return {
             "schema": "care-event",
             "event_id": f"evt_{uuid4().hex}",
@@ -177,7 +181,15 @@ class FloorStayDetector:
                 "occlusion_grace_seconds": self.config.tracking.occlusion_grace_seconds,
                 "dedupe_window_seconds": self.config.tracking.dedupe_window_seconds,
                 "policy_version": "floor_stay_v1_tracking_reliability",
-                "not_claimed": ["fall_confirmed", "injury_detected", "medical_emergency"],
+                "posture_label": posture["posture_label"],
+                "posture_basis": posture["posture_basis"],
+                "posture_indicator": "wide low person box intersects configured floor zone",
+                "not_claimed": [
+                    "fall_confirmed",
+                    "injury_detected",
+                    "medical_emergency",
+                    "sitting_on_floor_not_floor_stay_by_itself",
+                ],
                 "track_id": track.track_id,
                 "model": "yolo26n-mlx",
                 "detection_confidence": round(detection.confidence, 4),
@@ -196,13 +208,33 @@ class FloorStayDetector:
 
 
 def _looks_like_low_posture(detection: Detection) -> bool:
+    return posture_evidence(detection, in_floor_zone=True)["floor_stay_eligible"]
+
+
+def posture_evidence(detection: Detection, *, in_floor_zone: bool) -> dict:
     x1, y1, x2, y2 = detection.bbox_xyxy
     width = max(x2 - x1, 1.0)
     height = max(y2 - y1, 1.0)
     aspect_ratio = width / height
     center_y = ((y1 + y2) / 2.0) / detection.frame_height
+    low_center = center_y >= 0.60
+    wide_low = aspect_ratio >= 2.0 and low_center
 
-    return aspect_ratio >= 2.0 and center_y >= 0.60
+    if in_floor_zone and wide_low:
+        posture_label = "laying_low_possible"
+    elif in_floor_zone and low_center:
+        posture_label = "seated_on_floor_possible"
+    elif low_center:
+        posture_label = "low_posture_possible"
+    else:
+        posture_label = "standing_likely"
+
+    return {
+        "posture_label": posture_label,
+        "posture_basis": "yolo_box_geometry",
+        "low_posture": wide_low,
+        "floor_stay_eligible": in_floor_zone and wide_low,
+    }
 
 
 def _escalation_stage(config: CareSightConfig, dwell_seconds: float) -> str:

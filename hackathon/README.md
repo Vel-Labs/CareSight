@@ -21,31 +21,29 @@ This folder is the judge and operator entrypoint for the current demo. It points
 
 ## Demo Video
 
-<p align="center">
-  <img src="../docs/assets/caresight-video-poster.jpg" alt="CareSight vertical demo poster showing caregiver alert and live handoff context." width="320">
-</p>
-
-Direct GitHub video upload slot:
+Primary video slot:
 
 ```text
-Paste the uploaded GitHub video asset URL here after the MP4 is uploaded through GitHub's Markdown editor.
+Paste the unlisted YouTube URL or uploaded GitHub video asset URL here.
 ```
 
-The current source video is kept outside Git because it is a 57 MB H.264 vertical demo. GitHub direct Markdown video uploads support `.mp4`, `.mov`, and `.webm`, but upload limits depend on the repository/account plan. Use H.264 for the broadest browser compatibility.
+For public sharing, an unlisted YouTube link is usually cleaner than committing video to Git: it streams well, works on mobile, and avoids repository bloat. A GitHub-uploaded `.mp4`, `.mov`, or `.webm` is still useful when you want the video to play directly inside GitHub Markdown. Do not commit demo videos to the repository.
 
 ```mermaid
-sequenceDiagram
-  participant Home as Local home feed
-  participant Vision as YOLO26n MLX
-  participant Store as SQLite blackbox
-  participant Review as Human review
-  participant Caregiver as Caregiver handoff
+flowchart TD
+  Feed["Local home feed"]
+  Vision["YOLO26n MLX"]
+  Store["SQLite blackbox"]
+  Review["Human review"]
+  Handoff["Caregiver handoff"]
+  Receipt["Acknowledgement + follow-up"]
 
-  Home->>Vision: local camera frames
-  Vision->>Store: possible event + snapshot metadata
-  Store->>Review: review packet and audit receipt
-  Review->>Caregiver: approved alert / handoff path
-  Caregiver-->>Store: acknowledgement and follow-up state
+  Feed --> Vision
+  Vision --> Store
+  Store --> Review
+  Review --> Handoff
+  Handoff --> Receipt
+  Receipt --> Store
 ```
 
 ## Affordable Home Bundle Concept

@@ -184,6 +184,12 @@ Rationale: Frigate has already solved many practical camera operations problems 
 
 Event-triggered clips are allowed as local evidence when configured, but a recording clip does not confirm a fall, injury, medical state, identity, or emergency. MQTT, restreaming, and live-view features should default to local/private operation and preserve the human-review boundary.
 
+## 2026-05-23: Keep OBS as the Current Visual Intermediary and Defer a Dedicated Camera Dashboard
+
+The hackathon live visual path uses OBS browser-feed overlays as the current intermediary surface for local review, recording, and optional FaceTime/virtual-camera experiments. CareSight remains responsible for detection, calibrated floor-zone policy, posture evidence, missing-off-camera events, SQLite audit records, and bounded handoff state. A dedicated CareSight camera/review dashboard is future implementation for calibration editing, multi-camera review, replay, posture/missing indicators, and audit navigation.
+
+Rationale: OBS already solves compositing and virtual-camera workflows for the demo. Building a full Frigate-like dashboard now would duplicate camera-surface work before the event policy and live-validation gates are stable.
+
 ## 2026-05-21: Use Redacted Contact IDs for Live-Contact Staging
 
 CareSight iMessage and FaceTime staging validates requested contact IDs against a redacted local allowlist. Git-tracked examples may include stable IDs, roles, display labels, and redacted channel references, but not phone numbers, addresses, passwords, tokens, or BlueBubbles credentials.

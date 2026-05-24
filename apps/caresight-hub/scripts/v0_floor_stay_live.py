@@ -24,6 +24,7 @@ DEFAULT_OBS_PREVIEW_PATH = REPO_ROOT / "apps" / "obs-hub" / "config" / "live_pre
 DEFAULT_ALLOWLIST_PATH = ROOT_DIR / "config" / "hermes" / "allowlisted-contacts.example.json"
 DEFAULT_BROWSER_FEED_HOST = "127.0.0.1"
 DEFAULT_BROWSER_FEED_PORT = 8766
+DISPLAY_LABELS = {"person", "cat", "dog", "bird"}
 
 
 def parse_args():
@@ -276,7 +277,17 @@ def result_to_detections(result, frame_width: int, frame_height: int):
     return detections
 
 
-def draw_frame(cv2, frame, result, config, fps_values: deque[float], *, appearance_overlay: bool = False, rgb_frame=None):
+def draw_frame(
+    cv2,
+    frame,
+    result,
+    config,
+    fps_values: deque[float],
+    *,
+    appearance_overlay: bool = False,
+    rgb_frame=None,
+    floor_diagnostic: dict | None = None,
+):
     display = frame.copy()
     zone = config.floor_zone
     height, width = display.shape[:2]
@@ -307,13 +318,25 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float], *, appearan
         cv2.LINE_AA,
     )
 
+    posture_by_bbox = _posture_by_bbox(floor_diagnostic)
+    active_person = _active_floor_person(floor_diagnostic)
     if result.boxes is not None:
         for box, conf, cls in zip(result.boxes.xyxy, result.boxes.conf, result.boxes.cls, strict=False):
             cls_id = int(cls)
             name = class_name(result.names, cls_id)
+            if not should_draw_detection_label(name):
+                continue
             bx1, by1, bx2, by2 = [int(value) for value in box]
-            color = (255, 80, 40) if name == "person" else (40, 190, 255)
-            label = f"{name} {float(conf):.2f}"
+            posture = posture_by_bbox.get(
+                (
+                    round(float(box[0]), 1),
+                    round(float(box[1]), 1),
+                    round(float(box[2]), 1),
+                    round(float(box[3]), 1),
+                )
+            )
+            color = _box_color(posture, name)
+            label = _box_label(name, float(conf), posture)
             cv2.rectangle(display, (bx1, by1), (bx2, by2), color, 2)
             cv2.putText(
                 display,
@@ -329,6 +352,31 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float], *, appearan
                 draw_appearance_overlay(cv2, display, rgb_frame, (bx1, by1, bx2, by2))
 
     avg_fps = sum(fps_values) / len(fps_values) if fps_values else 0.0
+    if active_person:
+        dwell = float(active_person.get("dwell_seconds", 0.0))
+        required = float((floor_diagnostic or {}).get("required_dwell_seconds", config.floor_stay.dwell_seconds))
+        posture_label = str(active_person.get("posture_label", "person_detected"))
+        cv2.rectangle(display, (12, 48), (440, 104), (18, 24, 34), -1)
+        cv2.putText(
+            display,
+            f"Floor-zone dwell: {dwell:.1f}/{required:.1f}s",
+            (24, 72),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (40, 210, 255),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            display,
+            f"Posture: {posture_label.replace('_', ' ')}",
+            (24, 96),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            (230, 235, 240),
+            2,
+            cv2.LINE_AA,
+        )
     cv2.putText(
         display,
         f"v0 floor stay | dwell={config.floor_stay.dwell_seconds:.1f}s | {avg_fps:.1f} FPS | q to quit",
@@ -340,6 +388,56 @@ def draw_frame(cv2, frame, result, config, fps_values: deque[float], *, appearan
         cv2.LINE_AA,
     )
     return display
+
+
+def _posture_by_bbox(diagnostic: dict | None) -> dict[tuple[float, float, float, float], dict]:
+    if not diagnostic:
+        return {}
+    return {
+        tuple(person["bbox_xyxy"]): person
+        for person in diagnostic.get("people", [])
+        if "bbox_xyxy" in person
+    }
+
+
+def should_draw_detection_label(label: str) -> bool:
+    return label.strip().lower() in DISPLAY_LABELS
+
+
+def _active_floor_person(diagnostic: dict | None) -> dict | None:
+    if not diagnostic:
+        return None
+    selected_track_id = diagnostic.get("selected_track_id")
+    if selected_track_id is None:
+        return None
+    for person in diagnostic.get("people", []):
+        if person.get("track_id") == selected_track_id:
+            return person
+    return None
+
+
+def _box_color(posture: dict | None, name: str) -> tuple[int, int, int]:
+    if name != "person":
+        return (40, 190, 255)
+    if posture and posture.get("floor_stay_eligible"):
+        return (40, 90, 255)
+    if posture and posture.get("posture_label") == "seated_on_floor_possible":
+        return (40, 210, 255)
+    return (255, 80, 40)
+
+
+def _box_label(name: str, confidence: float, posture: dict | None) -> str:
+    if name != "person" or not posture:
+        return f"{name} {confidence:.2f}"
+    posture_label = str(posture.get("posture_label", "person_detected")).replace("_", " ")
+    dwell = float(posture.get("dwell_seconds", 0.0))
+    if posture.get("floor_stay_eligible"):
+        return f"person {confidence:.2f} | {posture_label} | {dwell:.1f}s"
+    return f"person {confidence:.2f} | {posture_label}"
+
+
+def should_run_live_handoff(event: dict) -> bool:
+    return event.get("event_type") == "possible_floor_stay"
 
 
 def draw_appearance_overlay(cv2, display, rgb_frame, bbox_xyxy):
@@ -1303,6 +1401,7 @@ def maybe_write_obs_preview(
     last_write_at: float,
     preview_fps: float,
     appearance_overlay: bool,
+    floor_diagnostic: dict | None,
 ) -> float:
     if preview_fps <= 0:
         return last_write_at
@@ -1318,6 +1417,7 @@ def maybe_write_obs_preview(
         fps_values,
         appearance_overlay=appearance_overlay,
         rgb_frame=rgb_frame,
+        floor_diagnostic=floor_diagnostic,
     )
     cv2.imwrite(str(preview_path), annotated)
     return now
@@ -1538,6 +1638,7 @@ def main() -> None:
                 last_floor_debug_at = time.monotonic()
 
             annotated_frame = None
+            floor_diagnostic = detector.diagnostic()
             if args.obs_browser_feed or args.obs_live_preview or use_preview_window:
                 annotated_frame = draw_frame(
                     cv2,
@@ -1547,6 +1648,7 @@ def main() -> None:
                     fps_values,
                     appearance_overlay=args.appearance_overlay,
                     rgb_frame=rgb_frame,
+                    floor_diagnostic=floor_diagnostic,
                 )
             if mjpeg_server is not None and annotated_frame is not None:
                 mjpeg_server.update(cv2, annotated_frame)
@@ -1562,6 +1664,7 @@ def main() -> None:
                     last_write_at=last_obs_preview_write_at,
                     preview_fps=args.obs_live_preview_fps,
                     appearance_overlay=args.appearance_overlay,
+                    floor_diagnostic=floor_diagnostic,
                 )
             event_persisted = False
             if event is not None:
@@ -1581,7 +1684,7 @@ def main() -> None:
                 event_persisted = True
                 persisted_event_count += 1
                 last_concern_severity = event.get("severity")
-                if args.auto_agent_live_run:
+                if args.auto_agent_live_run and should_run_live_handoff(event):
                     if not run_post_event_live_in_background(event["event_id"]):
                         try:
                             receipt = run_post_event_agent_live_run(

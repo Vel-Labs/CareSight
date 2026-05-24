@@ -101,14 +101,14 @@ def send_imessage(
     attachment_path: str | Path | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
-    backend = os.environ.get("CARESIGHT_IMESSAGE_BACKEND", "applescript").strip().casefold()
-    if backend == "imsg" and attachment_path is None and shutil.which("imsg"):
-        return send_imessage_with_imsg(target, message, dry_run=dry_run)
-    if backend == "imsg":
-        raise RuntimeError("imsg backend requested but unavailable for this send; use applescript for attachments")
     attachment = Path(attachment_path).expanduser() if attachment_path else None
     if attachment and not attachment.exists():
         raise FileNotFoundError(f"iMessage attachment not found: {attachment}")
+    backend = os.environ.get("CARESIGHT_IMESSAGE_BACKEND", "auto").strip().casefold()
+    if backend in {"auto", "imsg"} and shutil.which("imsg"):
+        return send_imessage_with_imsg(target, message, attachment_path=attachment, dry_run=dry_run)
+    if backend == "imsg":
+        raise RuntimeError("imsg backend requested but unavailable")
     command = _imessage_command(target, message, attachment)
     if dry_run:
         delivery = {
@@ -129,18 +129,33 @@ def send_imessage(
     return delivery
 
 
-def send_imessage_with_imsg(target: str, message: str, *, dry_run: bool = False) -> dict[str, Any]:
+def send_imessage_with_imsg(
+    target: str,
+    message: str,
+    *,
+    attachment_path: Path | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
     command = ["imsg", "send", "--to", target, "--text", message, "--service", "imessage"]
+    if attachment_path is not None:
+        command.extend(["--file", str(attachment_path)])
     if dry_run:
-        return {
+        delivery = {
             "status": "dry_run",
             "platform": "imsg",
             "command_preview": ["imsg", "send", "--to", "<redacted-target>", "--text", "<message>"],
         }
+        if attachment_path is not None:
+            delivery["command_preview"].extend(["--file", "<redacted-attachment>"])
+            delivery["attachment"] = _redacted_attachment(attachment_path)
+        return delivery
     result = subprocess.run(command, capture_output=True, check=False, text=True)
     if result.returncode != 0:
         raise RuntimeError(_redact_text(result.stderr.strip() or result.stdout.strip() or "imsg send failed", target))
-    return {"status": "sent", "platform": "imsg"}
+    delivery = {"status": "sent", "platform": "imsg"}
+    if attachment_path is not None:
+        delivery["attachment"] = _redacted_attachment(attachment_path)
+    return delivery
 
 
 def open_facetime(target: str, *, dry_run: bool = False) -> dict[str, Any]:
@@ -158,7 +173,7 @@ def open_facetime(target: str, *, dry_run: bool = False) -> dict[str, Any]:
 
 
 def switch_obs_to_facetime_scene() -> dict[str, Any]:
-    scene = os.environ.get("CARESIGHT_OBS_FACETIME_SCENE", "CareSight Hub - FaceTime Mobile").strip()
+    scene = os.environ.get("CARESIGHT_OBS_FACETIME_SCENE", "").strip()
     if not scene:
         return {"status": "not_requested"}
     repo_root = Path(__file__).resolve().parents[5]
@@ -618,13 +633,15 @@ on run argv
   set messageText to item 2 of argv
   set attachmentPath to item 3 of argv
   tell application "Messages"
+    activate
     set targetService to 1st service whose service type = iMessage
     set targetBuddy to buddy targetHandle of targetService
     send messageText to targetBuddy
     if attachmentPath is not "" then
-      delay 1
       set attachmentFile to POSIX file attachmentPath as alias
+      delay 2
       send attachmentFile to targetBuddy
+      delay 1
     end if
   end tell
 end run
