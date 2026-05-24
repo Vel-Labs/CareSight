@@ -20,10 +20,11 @@ from caresight.storage.sqlite_store import utc_now
 
 DEFAULT_LIVE_MESSAGE = (
     "CareSight alert. Possible floor stay observed in the Living Room. Needs review. "
-    "Would you like to connect to CareSight?"
+    "Reply yes connect or yes FaceTime to open a caregiver FaceTime handoff."
 )
 
 FACETIME_APPROVAL_PHRASES = ("yes connect", "yes facetime")
+FACETIME_APPROVAL_INSTRUCTION = "yes connect or yes FaceTime"
 OPPORTUNITY_TERMS = ("tomorrow", "later", "after", "when", "call me", "can you call", "what time")
 AMBIGUOUS_TERMS = ("please wait", "wait", "hold on", "start what", "what?", "call later")
 
@@ -389,8 +390,8 @@ def execute_facetime_if_yes(
 ) -> dict[str, Any]:
     request = store.get_agent_action_request(request_id)
     draft = store.get_agent_draft(request["source_draft_id"])
-    phrase = required_phrase or "yes connect"
-    reply_classification = classify_reply_intent(reply_text, required_phrase=phrase)
+    phrase = required_phrase or FACETIME_APPROVAL_INSTRUCTION
+    reply_classification = classify_reply_intent(reply_text, required_phrase=required_phrase)
     reply_receipt = _reply_gated_handoff_receipt(
         request=request,
         contact_id=contact_id,
@@ -494,6 +495,54 @@ def execute_facetime_if_yes(
         reply_gated_handoff=reply_receipt,
     )
     store.update_agent_execution_attempt(attempt)
+    return attempt
+
+
+def record_facetime_not_requested(
+    store: Any,
+    *,
+    request_id: str,
+    reply_watch: dict[str, Any],
+    contact_id: str = "contact_emergency_primary",
+    required_phrase: str | None = None,
+) -> dict[str, Any]:
+    request = store.get_agent_action_request(request_id)
+    draft = store.get_agent_draft(request["source_draft_id"])
+    reply_classification = str(reply_watch.get("reply_classification") or reply_watch.get("status") or "ambiguous")
+    if reply_classification not in {"no", "ambiguous", "opportunity", "timeout", "blocked"}:
+        reply_classification = "ambiguous"
+    phrase = required_phrase or FACETIME_APPROVAL_INSTRUCTION
+    reply_text = str(reply_watch.get("reply_text") or reply_watch.get("status") or reply_classification)
+    reply_receipt = _reply_gated_handoff_receipt(
+        request=request,
+        contact_id=contact_id,
+        reply_text=reply_text,
+        required_phrase=phrase,
+        allowed_followup_actions=request.get("response_options", []),
+        reply_classification=reply_classification,
+        target_verification="not_checked",
+    )
+    attempt = _build_live_attempt(
+        request=request,
+        draft=draft,
+        contact_id=contact_id,
+        target="",
+        target_source="not_resolved",
+        channel="facetime",
+        message="",
+        delivery={
+            "status": "not_requested",
+            "reply_interpreted_as_yes": False,
+            "reply_classification": reply_classification,
+            "reply_watch": _redacted_reply_watch(reply_watch),
+        },
+        dry_run=True,
+        result=f"facetime_not_requested_reply_{reply_classification}",
+        external_action_performed=False,
+        reply_gated_handoff=reply_receipt,
+        followup_draft=_reply_followup_draft(reply_classification),
+    )
+    store.insert_agent_execution_attempt(attempt)
     return attempt
 
 
@@ -861,6 +910,14 @@ def _reply_followup_draft(reply_classification: str) -> dict[str, Any]:
         "draft_text": text,
         "external_action_performed": False,
     }
+
+
+def _redacted_reply_watch(reply_watch: dict[str, Any]) -> dict[str, Any]:
+    redacted = dict(reply_watch)
+    redacted.pop("reply_text", None)
+    if "target" in redacted:
+        redacted["target"] = _redacted_target(str(redacted["target"]))
+    return redacted
 
 
 def _imessage_command(target: str, message: str, attachment: Path | None = None) -> list[str]:

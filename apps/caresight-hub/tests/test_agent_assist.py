@@ -19,6 +19,7 @@ from caresight.runtime.agent_assist import (
     execute_facetime_if_yes,
     execute_live_imessage,
     is_yes_like_reply,
+    record_facetime_not_requested,
     wait_for_yes_reply,
     run_hermes_dry_run,
     stage_action_request,
@@ -446,6 +447,16 @@ class AgentAssistTest(unittest.TestCase):
                 live_approved=True,
                 dry_run=True,
             )
+            yes_facetime_attempt = execute_facetime_if_yes(
+                seed.store,
+                request_id=request["request_id"],
+                reply_text="yes FaceTime",
+                contact_id="contact_emergency_primary",
+                allowlist_config=allowlist,
+                target="+15555550123",
+                live_approved=True,
+                dry_run=True,
+            )
 
             self.assertEqual(no_attempt["result"], "facetime_not_requested_reply_no")
             self.assertFalse(no_attempt["external_action_performed"])
@@ -453,6 +464,42 @@ class AgentAssistTest(unittest.TestCase):
             self.assertTrue(yes_attempt["payload"]["delivery"]["reply_interpreted_as_yes"])
             self.assertEqual(yes_attempt["payload"]["reply_gated_handoff"]["reply_classification"], "yes")
             self.assertEqual(yes_attempt["payload"]["reply_gated_handoff"]["target_verification"], "verified")
+            self.assertEqual(yes_facetime_attempt["result"], "facetime_live_dry_run")
+            self.assertTrue(yes_facetime_attempt["payload"]["delivery"]["reply_interpreted_as_yes"])
+
+    def test_facetime_timeout_is_recorded_as_not_requested_attempt(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123", facetime="+15555550123")
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+                response_options=["request_facetime_handoff"],
+            )
+            attempt = record_facetime_not_requested(
+                seed.store,
+                request_id=request["request_id"],
+                reply_watch={
+                    "status": "timeout",
+                    "reply_interpreted_as_yes": False,
+                    "reply_classification": "timeout",
+                    "source": "macos_messages_db",
+                    "target": "+15555550123",
+                },
+                contact_id="contact_emergency_primary",
+            )
+            stored = seed.store.list_agent_execution_attempts(request["request_id"])
+
+            self.assertEqual(attempt["result"], "facetime_not_requested_reply_timeout")
+            self.assertFalse(attempt["external_action_performed"])
+            self.assertEqual(attempt["payload"]["delivery"]["reply_watch"]["target"]["redacted"], True)
+            self.assertEqual(attempt["payload"]["reply_gated_handoff"]["required_phrase"], "yes connect or yes FaceTime")
+            self.assertEqual(stored[0]["attempt_id"], attempt["attempt_id"])
 
     def test_reply_classification_blocks_ambiguous_and_opportunity_replies(self) -> None:
         cases = {

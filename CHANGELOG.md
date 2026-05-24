@@ -10,6 +10,7 @@
 - Guarded non-loopback MJPEG preview binding behind `--allow-lan-preview`, `--preview-token`, and `--ack-lan-preview-risk`.
 - Fixed the MJPEG OBS browser feed `/live.html` renderer so CSS braces are not interpreted as Python format placeholders.
 - Kept the approved live caregiver handoff chain scoped to possible floor-stay events, with event-specific text wording and zsh-safe demo launcher prompts.
+- Aligned the live FaceTime handoff copy with the explicit approval phrases (`yes connect` / `yes FaceTime`) and record no-call reply-watch outcomes in SQLite when FaceTime is not opened.
 - Added Phase 2 cleanup: storage migration/connection/review helper boundaries behind the `SQLiteStore` facade, strict migration identifier validation, and focused storage identity helpers.
 - Added Phase 2 cleanup: explicit live-loop, escalation, preview, and post-event pipeline modules while preserving the current `v0_floor_stay_live.py` CLI surface.
 - Moved tracked v0 demo config to `v0.example.json`, kept `v0.local.json` ignored, added deterministic config fallback, and made OBS site labels generic/config-driven with `site_label_source`.

@@ -4,6 +4,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from caresight.runtime.config import CareSightConfig
 from caresight.runtime.escalation import plan_escalation
@@ -242,6 +243,16 @@ class V0FloorStayLiveTest(unittest.TestCase):
         self.assertIn("possible floor-stay event", message)
         self.assertIn("Living Room", message)
         self.assertIn("not a medical or emergency claim", message)
+        self.assertIn("yes connect", message)
+        self.assertIn("yes FaceTime", message)
+
+    def test_no_response_message_uses_explicit_facetime_approval_phrase(self) -> None:
+        with patch.object(sys, "argv", [str(SCRIPT)]):
+            parser = module.parse_args()
+
+        self.assertIn("yes connect", parser.no_response_escalation_message)
+        self.assertIn("yes FaceTime", parser.no_response_escalation_message)
+        self.assertNotIn("reply yes to see a live feed", parser.no_response_escalation_message)
 
     def test_live_message_override_is_preserved(self) -> None:
         self.assertEqual(

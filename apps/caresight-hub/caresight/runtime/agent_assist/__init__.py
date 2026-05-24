@@ -19,6 +19,7 @@ from .live_handoff import (
     execute_facetime_if_yes,
     execute_live_imessage,
     is_yes_like_reply,
+    record_facetime_not_requested,
     wait_for_yes_reply,
 )
 
@@ -37,6 +38,7 @@ __all__ = [
     "execute_facetime_if_yes",
     "execute_live_imessage",
     "is_yes_like_reply",
+    "record_facetime_not_requested",
     "wait_for_yes_reply",
     "load_contact_allowlist",
     "run_hermes_dry_run",

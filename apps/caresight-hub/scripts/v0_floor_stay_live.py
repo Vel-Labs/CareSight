@@ -194,7 +194,8 @@ def parse_args():
         "--no-response-escalation-message",
         default=(
             "This is CareSight Hub escalation. We have not heard back, but there is an event that requires "
-            "caregiver verification. Please see the image attached, and reply yes to see a live feed."
+            "caregiver verification. Please see the image attached, and reply yes connect or yes FaceTime "
+            "to open a caregiver FaceTime handoff."
         ),
     )
     parser.add_argument(
@@ -477,7 +478,7 @@ def live_message_for_event(event: dict, override: str | None = None) -> str:
     room = evidence.get("room_name") or event.get("room_name") or event.get("camera_id") or "the monitored room"
     return (
         f"CareSight alert. A possible floor-stay event needs review in {room}. "
-        "This is not a medical or emergency claim. Would you like to connect to CareSight?"
+        "This is not a medical or emergency claim. Reply yes connect or yes FaceTime to open a caregiver FaceTime handoff."
     )
 
 
@@ -1182,7 +1183,12 @@ def run_post_event_agent_live_run(
     site_name: str | None = None,
     site_mode: str | None = None,
 ) -> dict:
-    from caresight.runtime.agent_assist import execute_facetime_if_yes, execute_live_imessage, wait_for_yes_reply
+    from caresight.runtime.agent_assist import (
+        execute_facetime_if_yes,
+        execute_live_imessage,
+        record_facetime_not_requested,
+        wait_for_yes_reply,
+    )
 
     event = store.get_event(event_id)
     approved_live_message = live_message_for_event(event, live_message)
@@ -1270,15 +1276,47 @@ def run_post_event_agent_live_run(
                 if reply.get("reply_interpreted_as_yes"):
                     live_receipt["reply_watch"] = reply
                 else:
+                    no_facetime_attempt = record_facetime_not_requested(
+                        store,
+                        request_id=receipt["request_id"],
+                        reply_watch=reply,
+                        contact_id=allowed_contact_id,
+                    )
+                    live_receipt["facetime_attempt_id"] = no_facetime_attempt["attempt_id"]
+                    live_receipt["facetime_result"] = no_facetime_attempt["result"]
                     live_receipt["facetime_next_step"] = "no yes-like reply observed after escalation timeout"
                     return live_receipt
             else:
+                no_facetime_attempt = record_facetime_not_requested(
+                    store,
+                    request_id=receipt["request_id"],
+                    reply_watch=reply,
+                    contact_id=allowed_contact_id,
+                )
+                live_receipt["facetime_attempt_id"] = no_facetime_attempt["attempt_id"]
+                live_receipt["facetime_result"] = no_facetime_attempt["result"]
                 live_receipt["facetime_next_step"] = "no yes-like reply observed before escalation timeout"
                 return live_receipt
         else:
+            no_facetime_attempt = record_facetime_not_requested(
+                store,
+                request_id=receipt["request_id"],
+                reply_watch=reply,
+                contact_id=allowed_contact_id,
+            )
+            live_receipt["facetime_attempt_id"] = no_facetime_attempt["attempt_id"]
+            live_receipt["facetime_result"] = no_facetime_attempt["result"]
             live_receipt["facetime_next_step"] = "no yes-like reply observed before timeout"
             return live_receipt
     if not reply.get("reply_interpreted_as_yes"):
+        no_facetime_attempt = record_facetime_not_requested(
+            store,
+            request_id=receipt["request_id"],
+            reply_watch=reply,
+            contact_id=allowed_contact_id,
+        )
+        live_receipt["facetime_attempt_id"] = no_facetime_attempt["attempt_id"]
+        live_receipt["facetime_result"] = no_facetime_attempt["result"]
         live_receipt["facetime_next_step"] = "no yes-like reply observed before timeout"
         return live_receipt
 
