@@ -2,15 +2,17 @@
 
 CareSight is a local-first caregiver awareness prototype for the moments when families do not have enough continuity: someone may be on the floor, someone may have left the camera view, a caregiver may need context quickly, and the home should be able to preserve what was observed without turning into a cloud surveillance product.
 
-The hero of the demo is the care loop:
+The hero demo is the local care observation engine:
 
 ```text
-local camera view
+Local Care Observation Engine
   -> YOLO26 MLX local perception
-  -> bounded care event
+  -> bounded care event, such as possible floor-stay / suspected fall or missing-off-camera
   -> local SQLite memory and snapshot
-  -> human-readable review
-  -> loved-one / caregiver handoff
+  -> human-readable review prepared with local Gemma 4 E2B MLX
+  -> loved-one / caregiver handoff through Hermes agent harness
+  -> Gemma-prepared text, screenshot escalation, optional FaceTime live feed through OBS,
+     and optional local Holler TTS playback using the Dakota voice
 ```
 
 CareSight is not a medical device, certified fall detector, HIPAA compliance claim, alarm service, or emergency dispatch system. It creates possible care observations that authorized humans can review.
@@ -35,16 +37,19 @@ The product direction is a practical home bundle: Mac mini, accessible cameras, 
 ## Current Demo Cut
 
 ```text
-YOLO26 MLX detector workers
-  -> local multi-camera feeds
-  -> calibrated floor-plane overlay
-  -> possible_floor_stay or missing_off_camera_extended event
-  -> local SQLite receipt and snapshot
-  -> Markdown review packet
-  -> OBS caregiver handoff surface
+local camera feeds
+  -> YOLO26 MLX detector workers on the Mac
+  -> calibrated floor-plane overlay and bounded event policies
+  -> SQLite local memory, event receipt, and snapshot
+  -> Gemma 4 E2B MLX local review/draft layer
+  -> Hermes staged handoff harness for caregiver text and escalation payloads
+  -> OBS local review / optional FaceTime live-feed surface
+  -> Holler TTS local handoff audio with Dakota voice when explicitly approved
 ```
 
 The current hardware path uses owner-authorized local Tapo RTSP cameras because they are cheap, available, and enough to prove the home-bundle concept. They are replaceable inputs, not the center of the architecture.
+
+The important privacy and trust boundary is that raw camera context, event memory, model drafting, and proof receipts are designed to run locally first. The handoff path should expose only the event-scoped context that a caregiver needs: message text, a screenshot when approved, and a live feed only when the operator chooses that escalation path.
 
 ## Three Visible Lanes
 
@@ -89,13 +94,24 @@ SQLite remains the canonical local record. OBS and Markdown are presentation lay
 
 ## Agentic-Ready Architecture
 
-CareSight is built so coding agents and local service agents can safely extend it without becoming the authority layer.
+CareSight is built so coding agents and local service agents can safely extend it without becoming the authority layer. The architecture separates observation, memory, drafting, service handoff, and human confirmation.
 
 - `contracts/` owns schemas and examples.
 - `packages/core/` owns TypeScript validation and contract enforcement.
-- `apps/caresight-hub/` owns the Python runtime for YOLO26 MLX, camera input, SQLite, review packets, and handoff helpers.
+- `apps/caresight-hub/` owns the Python runtime for YOLO26 MLX, camera input, SQLite, review packets, local Gemma drafting, Hermes handoff preparation, OBS updates, and Holler TTS helpers.
 - `docs/` and `hackathon/` own the human-readable operating story, audit trail, and roadmap.
 
-Agents may summarize events, draft caregiver text, update OBS presentation state, and prepare handoff payloads. They must not confirm or dismiss events, diagnose, claim medical certainty, or dispatch help. That boundary is what lets the repo be highly agentic while still respecting the human care loop.
+Local model and agent lanes:
+
+| Lane | Tooling | Boundary |
+| --- | --- | --- |
+| Vision | YOLO26 MLX | Detects people/objects locally and feeds bounded event policy. |
+| Memory | SQLite | Stores event receipts, snapshots, reviews, drafts, and execution attempts locally. |
+| Drafting | Gemma 4 E2B MLX | Prepares human-readable review and caregiver alert wording from SQLite-derived context. |
+| Handoff harness | Hermes | Stages and records caregiver handoff payloads instead of bypassing CareSight policy. |
+| Visual handoff | OBS | Presents the local live/review surface and optional FaceTime feed source. |
+| Audio handoff | Holler TTS, Dakota voice | Plays approved local handoff audio only after explicit operator approval. |
+
+Agents may summarize events, draft caregiver text, update OBS presentation state, and prepare handoff payloads. They must not confirm or dismiss events, diagnose, claim medical certainty, dispatch help, or upload raw video as a default path. That boundary is what lets the repo be highly agentic while still respecting the human care loop.
 
 The project uses open-source components and local-first defaults so the work can be inspected, reused, and improved for general good rather than hidden behind an opaque cloud-only care pipeline.
