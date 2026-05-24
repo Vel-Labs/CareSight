@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS agent_execution_attempts (
   created_at TEXT NOT NULL,
   harness TEXT NOT NULL,
   attempt_kind TEXT NOT NULL CHECK(attempt_kind IN ('dry_run', 'live')),
-  execution_state TEXT NOT NULL CHECK(execution_state IN ('dry_run', 'blocked', 'executed', 'failed')),
+  execution_state TEXT NOT NULL CHECK(execution_state IN ('pending_execution', 'dry_run', 'blocked', 'executed', 'failed')),
   result TEXT NOT NULL,
   error TEXT,
   external_action_performed INTEGER NOT NULL,

@@ -25,6 +25,11 @@ Anything that defines project meaning, lifecycle state, schema shape, example sh
 - `agent-action-request`: staged-only local action intent. The contract requires `stage: staged`, `execution_state: not_executed`, and human approval before any future downstream execution lane exists. iMessage/FaceTime-style handoffs require allowlisted contact IDs and may offer bounded response options such as a text acknowledgement, local screen capture by request, or FaceTime handoff by request.
 - `tts-utterance`: validated draft-only utterance text for a neutral system voice. It forbids voice cloning and the same overclaim patterns as agent drafts.
 
+## Phase 1 Live Handoff Contracts
+
+- `media-sharing-policy`: event-scoped approval for images, screenshots, clips, or text excerpts before they leave the local device. Phase 1 permits approved event-scoped snapshot metadata and blocks raw video by default.
+- `reply-gated-handoff`: receipt shape for text replies that authorize a bounded follow-up such as FaceTime. FaceTime continuation requires an allowed follow-up action, affirmative reply classification, target verification, and an execution receipt.
+
 ## Sprint 03 Appearance Profile Contracts
 
 - `appearance-profile`: non-biometric, same-day local appearance descriptors for care context. The contract requires `identity_boundary: non_biometric_daily_appearance_only`, distinguishes runtime observations from seeded fixtures with `descriptor_source` and `descriptor_status`, permits only bounded role assignments, and forbids biometric identity, face recognition, named-person identification, and cross-day identity claims.

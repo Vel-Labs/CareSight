@@ -258,6 +258,12 @@ Rationale: macOS camera ownership can make OpenCV and OBS fight over the same ca
 
 Each live or dry-run escalation attempt should be readable back through the originating `event_id`. The event-scoped escalation receipt links local event evidence, agent drafts, staged action requests, execution attempts, OBS overlay state, and the detector preview path without creating a new care event or exposing private contact targets.
 
+## 2026-05-24: Require Pre-Execution Receipts and Contract-Gated Live Handoffs
+
+Live iMessage, FaceTime, and TTS handoff paths must write a durable `pending_execution` attempt before the external action is requested, then update that same attempt to `executed`, `failed`, or `dry_run`. Explicit CLI or environment targets must match the allowlisted contact channel reference or approved target hash. Event snapshots require an explicit `media-sharing-policy` receipt, and FaceTime follow-up requires a `reply-gated-handoff` receipt tied to the source staged request.
+
+Rationale: live handoffs are useful for the demo only if they remain auditable and bounded. The receipt must exist before the action, private contact targets must not bypass contact policy, media sharing needs its own human approval record, and FaceTime must be a reply-gated follow-up rather than an implicit side effect.
+
 Rationale: caregivers and demo operators need a clean audit trail for what happened after an event. Keeping the receipt read-only and event-scoped preserves SQLite as source of truth while making iMessage, FaceTime, TTS, and OBS evidence inspectable.
 
 ## 2026-05-22: Keep Daily Appearance Profiles Non-Biometric And Same-Day

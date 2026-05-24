@@ -21,7 +21,9 @@ const schemaByName = new Map([
   ["project-capability", "project-capability.schema.json"],
   ["routine", "routine.schema.json"],
   ["tts-utterance", "tts-utterance.schema.json"],
-  ["llm-provider", "llm-provider.schema.json"]
+  ["llm-provider", "llm-provider.schema.json"],
+  ["media-sharing-policy", "media-sharing-policy.schema.json"],
+  ["reply-gated-handoff", "reply-gated-handoff.schema.json"]
 ]);
 
 export async function validateContractCorpus(

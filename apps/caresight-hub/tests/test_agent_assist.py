@@ -252,7 +252,8 @@ class AgentAssistTest(unittest.TestCase):
             self.assertEqual(seed.store.list_agent_execution_attempts(request["request_id"])[0]["attempt_id"], attempt["attempt_id"])
 
     def test_live_imessage_dry_run_requires_staged_allowlisted_request_and_redacts_target(self) -> None:
-        with seeded_store() as seed:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123")
             draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
             request = stage_action_request(
                 seed.store,
@@ -268,21 +269,73 @@ class AgentAssistTest(unittest.TestCase):
                 request_id=request["request_id"],
                 message="CareSight alert. Possible floor stay observed. Would you like to connect to CareSight?",
                 contact_id="contact_emergency_primary",
-                allowlist_config="/does/not/need/to/exist.json",
+                allowlist_config=allowlist,
                 target="+15555550123",
                 dry_run=True,
             )
 
+            stored = seed.store.list_agent_execution_attempts(request["request_id"])
             self.assertEqual(attempt["harness"], "local_macos_live_handoff")
             self.assertEqual(attempt["result"], "imessage_live_dry_run")
+            self.assertEqual(stored[0]["attempt_id"], attempt["attempt_id"])
             self.assertFalse(attempt["external_action_performed"])
             self.assertEqual(attempt["payload"]["target"]["redacted"], True)
+            self.assertEqual(attempt["payload"]["target_verification"]["status"], "verified")
             self.assertNotIn("+15555550123", json.dumps(attempt))
+
+    def test_live_imessage_blocks_explicit_target_that_does_not_match_allowlist(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123")
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+            )
+
+            with self.assertRaises(ValueError):
+                execute_live_imessage(
+                    seed.store,
+                    request_id=request["request_id"],
+                    contact_id="contact_emergency_primary",
+                    allowlist_config=allowlist,
+                    target="+15555550999",
+                    dry_run=True,
+                )
+
+    def test_live_imessage_env_target_must_match_allowlist(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123")
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+            )
+
+            with patch.dict("os.environ", {"CARESIGHT_LIVE_IMESSAGE_TARGET": "+15555550999"}, clear=False):
+                with self.assertRaises(ValueError):
+                    execute_live_imessage(
+                        seed.store,
+                        request_id=request["request_id"],
+                        contact_id="contact_emergency_primary",
+                        allowlist_config=allowlist,
+                        dry_run=True,
+                    )
 
     def test_live_imessage_dry_run_can_include_redacted_local_snapshot_attachment(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
             snapshot = Path(tmp) / "evt_snapshot.jpg"
             snapshot.write_bytes(b"fake image")
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123")
             draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
             request = stage_action_request(
                 seed.store,
@@ -299,9 +352,10 @@ class AgentAssistTest(unittest.TestCase):
                 request_id=request["request_id"],
                 message="This is CareSight Hub escalation. Please see the image attached.",
                 contact_id="contact_emergency_primary",
-                allowlist_config="/does/not/need/to/exist.json",
+                allowlist_config=allowlist,
                 target="+15555550123",
                 attachment_path=snapshot,
+                media_policy=media_policy(seed.event_id),
                 result_name="imessage_no_response_escalation_sent",
                 dry_run=True,
             )
@@ -310,7 +364,37 @@ class AgentAssistTest(unittest.TestCase):
             self.assertEqual(attempt["result"], "imessage_no_response_escalation_sent")
             self.assertEqual(delivery["attachment"]["name"], "evt_snapshot.jpg")
             self.assertTrue(delivery["attachment"]["redacted"])
+            self.assertEqual(attempt["payload"]["media_policy"]["approval_state"], "approved")
+            self.assertEqual(attempt["payload"]["attachment"]["approval_state"], "approved")
             self.assertNotIn(str(snapshot), json.dumps(attempt))
+
+    def test_live_imessage_attachment_requires_media_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            snapshot = Path(tmp) / "evt_snapshot.jpg"
+            snapshot.write_bytes(b"fake image")
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123")
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+            )
+
+            with self.assertRaises(ValueError):
+                execute_live_imessage(
+                    seed.store,
+                    request_id=request["request_id"],
+                    message="CareSight follow-up.",
+                    contact_id="contact_emergency_primary",
+                    allowlist_config=allowlist,
+                    target="+15555550123",
+                    attachment_path=snapshot,
+                    dry_run=True,
+                )
 
     def test_live_imessage_attachment_command_uses_alias_file_send(self) -> None:
         command = _imessage_command("+15555550123", "CareSight follow-up", Path("/tmp/evt_snapshot.jpg"))
@@ -323,7 +407,8 @@ class AgentAssistTest(unittest.TestCase):
         self.assertEqual(command[-1], "/tmp/evt_snapshot.jpg")
 
     def test_facetime_handoff_is_reply_gated(self) -> None:
-        with seeded_store() as seed:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123", facetime="+15555550123")
             draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
             request = stage_action_request(
                 seed.store,
@@ -344,7 +429,7 @@ class AgentAssistTest(unittest.TestCase):
                 request_id=request["request_id"],
                 reply_text="no not now",
                 contact_id="contact_emergency_primary",
-                allowlist_config="/does/not/need/to/exist.json",
+                allowlist_config=allowlist,
                 target="+15555550123",
                 live_approved=True,
             )
@@ -353,7 +438,7 @@ class AgentAssistTest(unittest.TestCase):
                 request_id=request["request_id"],
                 reply_text="yes please",
                 contact_id="contact_emergency_primary",
-                allowlist_config="/does/not/need/to/exist.json",
+                allowlist_config=allowlist,
                 target="+15555550123",
                 live_approved=True,
                 dry_run=True,
@@ -363,6 +448,33 @@ class AgentAssistTest(unittest.TestCase):
             self.assertFalse(no_attempt["external_action_performed"])
             self.assertEqual(yes_attempt["result"], "facetime_live_dry_run")
             self.assertTrue(yes_attempt["payload"]["delivery"]["reply_interpreted_as_yes"])
+            self.assertEqual(yes_attempt["payload"]["reply_gated_handoff"]["target_verification"], "verified")
+
+    def test_facetime_requires_followup_option(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, seeded_store() as seed:
+            allowlist = write_allowlist(Path(tmp), imessage="+15555550123", facetime="+15555550123")
+            draft = build_agent_draft(seed.store, seed.event_id, purpose="alert_draft")
+            request = stage_action_request(
+                seed.store,
+                event_id=seed.event_id,
+                source_draft_id=draft["draft_id"],
+                requested_action="send_imessage_draft",
+                destination="imessage",
+                recipient_role="emergency_contact",
+                allowed_contact_ids=["contact_emergency_primary"],
+                response_options=["acknowledge_text_update"],
+            )
+
+            with self.assertRaises(ValueError):
+                execute_facetime_if_yes(
+                    seed.store,
+                    request_id=request["request_id"],
+                    reply_text="yes please",
+                    contact_id="contact_emergency_primary",
+                    allowlist_config=allowlist,
+                    target="+15555550123",
+                    dry_run=True,
+                )
 
     def test_aitum_vertical_switch_falls_back_when_optional_plugin_missing(self) -> None:
         repo_root = Path(__file__).resolve().parents[3]
@@ -561,6 +673,53 @@ class Seed:
 
 def seeded_store() -> Seed:
     return Seed(tempfile.TemporaryDirectory())
+
+
+def write_allowlist(
+    directory: Path,
+    *,
+    imessage: str = "redacted-local-channel-ref",
+    facetime: str = "redacted-local-channel-ref",
+) -> Path:
+    path = directory / "allowlisted-contacts.local.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "care-contact-allowlist",
+                "contacts": [
+                    {
+                        "contact_id": "contact_emergency_primary",
+                        "role": "emergency_contact",
+                        "display_label": "Primary emergency contact",
+                        "channel_refs": {"imessage": imessage, "facetime": facetime},
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
+def media_policy(event_id: str) -> dict[str, object]:
+    return {
+        "schema": "media-sharing-policy",
+        "policy_id": "media_policy_test_snapshot",
+        "media_type": "event_scoped_snapshot",
+        "scope": "event_scoped",
+        "approval_state": "approved",
+        "approved_by": "Steven",
+        "approved_at": "2026-05-24T10:00:00Z",
+        "redaction_required": True,
+        "redaction_status": "completed",
+        "retention_class": "ephemeral_handoff",
+        "blocked_media_types": ["raw_video", "continuous_feed"],
+        "provenance": {
+            "event_id": event_id,
+            "source": "operator_media_approval",
+            "source_fields": ["events", "event_reviews", "snapshot_path"],
+        },
+    }
 
 
 class LocalGemmaServer:

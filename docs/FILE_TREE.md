@@ -290,10 +290,12 @@ contracts/examples/invalid/floor-stay-emergency-dispatch.event.json
 contracts/examples/invalid/floor-stay-fall-confirmed-without-human.event.json
 contracts/examples/invalid/human-review-packet-missing-provenance.json
 contracts/examples/invalid/llm-provider-missing-secret-boundary.json
+contracts/examples/invalid/media-sharing-policy-raw-video-default.json
 contracts/examples/invalid/medication-confirmed-without-authorized-human.json
 contracts/examples/invalid/missing-authority.json
 contracts/examples/invalid/missing-off-camera-named-identity.event.json
 contracts/examples/invalid/raw-video-cloud-upload-default.json
+contracts/examples/invalid/reply-gated-handoff-ambiguous-reply.json
 contracts/examples/invalid/ring-camera-provider-out-of-scope.json
 contracts/examples/invalid/tts-utterance-medication-confirmed.json
 contracts/examples/valid/agent-action-request.staged-note.json
@@ -308,6 +310,7 @@ contracts/examples/valid/forbidden-claim-vocabulary.sprint-02.json
 contracts/examples/valid/human-review-packet.possible-floor-stay.json
 contracts/examples/valid/hydration-routine.event.json
 contracts/examples/valid/living-room.camera-config.json
+contracts/examples/valid/media-sharing-policy.event-scoped-snapshot.json
 contracts/examples/valid/medication-routine.event.json
 contracts/examples/valid/minimax-llm-provider.json
 contracts/examples/valid/missing-off-camera.event.json
@@ -315,6 +318,7 @@ contracts/examples/valid/missing-off-camera.tracking-reliability.event.json
 contracts/examples/valid/morning-medication.routine.json
 contracts/examples/valid/possible-floor-stay.event.json
 contracts/examples/valid/possible-floor-stay.tracking-reliability.event.json
+contracts/examples/valid/reply-gated-handoff.facetime.json
 contracts/examples/valid/tts-utterance.possible-floor-stay.json
 contracts/fail-closed-rules.md
 contracts/lifecycle.md
@@ -330,7 +334,9 @@ contracts/schemas/caregiver-role.schema.json
 contracts/schemas/forbidden-claim-vocabulary.schema.json
 contracts/schemas/human-review-packet.schema.json
 contracts/schemas/llm-provider.schema.json
+contracts/schemas/media-sharing-policy.schema.json
 contracts/schemas/project-capability.schema.json
+contracts/schemas/reply-gated-handoff.schema.json
 contracts/schemas/repo-profile.schema.json
 contracts/schemas/routine.schema.json
 contracts/schemas/tts-utterance.schema.json
@@ -392,6 +398,10 @@ docs/audits/2026-05-23-sprint-04-tracking-reliability.md
 docs/audits/2026-05-23-sprint-05-camera-proof-recovery.md
 docs/audits/2026-05-23-sprint-05-camera-support.md
 docs/audits/2026-05-23-tapo-rtsp-validation.md
+docs/audits/2026-05-24-bug-fix-phased-cleanup-plan.md
+docs/audits/2026-05-24-business-grants-commercialization-report.md
+docs/audits/2026-05-24-post-hackathon-optimization-roadmap.md
+docs/audits/2026-05-24-project-bug-risk-audit.md
 docs/audits/README.md
 docs/audits/assets/sprint-04/missing-off-camera.svg
 docs/audits/assets/sprint-04/multi-person-selection.svg
@@ -577,6 +587,7 @@ skills/agent-assignment-writer/templates/agent-assignment.md
 skills/agent-assignment-writer/templates/fresh-agent-handoff.md
 skills/contract-steward/SKILL.md
 skills/core-enforcement/SKILL.md
+skills/live-demo-validation-recovery/SKILL.md
 skills/phase-closeout-audit/SKILL.md
 skills/phase-closeout-audit/templates/closeout-audit.md
 skills/project-personalize/SKILL.md

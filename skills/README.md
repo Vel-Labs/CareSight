@@ -22,3 +22,12 @@ license: Complete terms in LICENSE.txt
 These skills are scaffold assets. To activate one in an agent runtime, copy or symlink the desired skill folder into that runtime's configured skills directory.
 
 The purpose is to reduce token use by giving agents narrow, reusable instructions for common scaffold tasks.
+
+## Current Skills
+
+- `agent-assignment-writer`
+- `contract-steward`
+- `core-enforcement`
+- `phase-closeout-audit`
+- `project-personalize`
+- `live-demo-validation-recovery`

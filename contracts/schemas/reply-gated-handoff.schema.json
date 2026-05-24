@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://project-governance-scaffold.local/schemas/reply-gated-handoff.schema.json",
+  "title": "ReplyGatedHandoff",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "handoff_id",
+    "source_request_id",
+    "allowed_followup_actions",
+    "reply_classification",
+    "required_phrase",
+    "live_approval_state",
+    "contact_id",
+    "target_verification",
+    "execution_receipt_required"
+  ],
+  "properties": {
+    "schema": {
+      "const": "reply-gated-handoff"
+    },
+    "handoff_id": {
+      "type": "string",
+      "pattern": "^handoff_[a-z0-9_-]+$"
+    },
+    "source_request_id": {
+      "type": "string",
+      "pattern": "^action_req_[a-z0-9_-]+$"
+    },
+    "allowed_followup_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": ["request_facetime_handoff", "play_tts_utterance", "acknowledge_text_update"]
+      },
+      "contains": {
+        "const": "request_facetime_handoff"
+      }
+    },
+    "reply_classification": {
+      "type": "string",
+      "enum": ["affirmative", "negative", "ambiguous", "timeout"]
+    },
+    "required_phrase": {
+      "type": "string",
+      "minLength": 2
+    },
+    "live_approval_state": {
+      "type": "string",
+      "enum": ["approved_for_this_attempt", "blocked", "not_approved"]
+    },
+    "contact_id": {
+      "type": "string",
+      "pattern": "^contact_[a-z0-9_-]+$"
+    },
+    "target_verification": {
+      "type": "string",
+      "enum": ["verified", "blocked", "not_checked"]
+    },
+    "execution_receipt_required": {
+      "const": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "reply_classification": {
+            "const": "affirmative"
+          }
+        },
+        "required": ["reply_classification"]
+      },
+      "then": {
+        "properties": {
+          "live_approval_state": {
+            "const": "approved_for_this_attempt"
+          },
+          "target_verification": {
+            "const": "verified"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "reply_classification": {
+            "enum": ["negative", "ambiguous", "timeout"]
+          }
+        },
+        "required": ["reply_classification"]
+      },
+      "then": {
+        "properties": {
+          "live_approval_state": {
+            "enum": ["blocked", "not_approved"]
+          },
+          "target_verification": {
+            "enum": ["blocked", "not_checked"]
+          }
+        }
+      }
+    }
+  ]
+}

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added Phase 1 live-handoff cleanup: allowlisted target matching, pre-execution pending receipts for live iMessage/FaceTime/TTS paths, media-policy-gated snapshot attachments, reply-gated FaceTime receipts, and derived latest action-attempt status.
+- Added report-only post-hackathon audit artifacts covering project bugs/risks, phased bug-fix cleanup planning, technical optimization roadmap, and business/grant commercialization paths.
 - Added GitHub-native README enhancements: hackathon demo callout, compact Mermaid care-loop diagrams, a bounded product-lane roadmap table, collapsible setup/safety sections, and a no-commit video link slot.
 - Added an animated README banner showing the bounded CareSight loop from possible floor-stay observation to human review, caregiver help confirmation, and assisted recovery.
 - Changed the live demo FaceTime handoff to preserve the operator-selected OBS scene/camera, disabled Aitum vertical automation in the launcher, and restored BlackHole as the default TTS route for the call path.

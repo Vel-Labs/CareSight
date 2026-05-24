@@ -1130,6 +1130,7 @@ def run_post_event_agent_live_run(
         if no_response_escalation_seconds > 0 and reply.get("status") == "timeout":
             event = store.get_event(event_id)
             snapshot_path = escalation_attachment_path(event)
+            media_policy = build_event_snapshot_media_policy(event_id, snapshot_path) if snapshot_path else None
             escalation_attempt = execute_live_imessage(
                 store,
                 request_id=receipt["request_id"],
@@ -1138,6 +1139,7 @@ def run_post_event_agent_live_run(
                 allowlist_config=allowlist_config,
                 target=live_imessage_target,
                 attachment_path=snapshot_path,
+                media_policy=media_policy,
                 result_name="imessage_no_response_escalation_sent",
                 live_approved=live_approved,
             )
@@ -1190,6 +1192,14 @@ def run_post_event_agent_live_run(
     if facetime_attempt["external_action_performed"] and tts_after_facetime_delay_seconds > 0:
         time.sleep(tts_after_facetime_delay_seconds)
     if play_tts_after_facetime:
+        pending_tts_attempt = record_tts_playback_pending_attempt(
+            store,
+            request_id=receipt["request_id"],
+            contact_id=allowed_contact_id,
+            text=tts_text,
+            voice=tts_voice,
+            audio_route=tts_audio_route,
+        )
         playback = play_tts(
             tts_text,
             voice=tts_voice,
@@ -1207,6 +1217,7 @@ def run_post_event_agent_live_run(
             voice=tts_voice,
             audio_route=tts_audio_route,
             playback=playback,
+            pending_attempt=pending_tts_attempt,
         )
         update_obs_overlay(event_id)
         live_receipt["tts_attempt_id"] = tts_attempt["attempt_id"]
@@ -1226,6 +1237,7 @@ def record_tts_playback_attempt(
     voice: str,
     audio_route: str,
     playback: dict,
+    pending_attempt: dict | None = None,
 ) -> dict:
     request = store.get_agent_action_request(request_id)
     draft = store.get_agent_draft(request["source_draft_id"])
@@ -1260,7 +1272,7 @@ def record_tts_playback_attempt(
     }
     attempt = {
         "schema": "agent-execution-attempt",
-        "attempt_id": f"attempt_{uuid4().hex}",
+        "attempt_id": pending_attempt["attempt_id"] if pending_attempt else f"attempt_{uuid4().hex}",
         "request_id": request_id,
         "event_id": request["event_id"],
         "created_at": utc_now(),
@@ -1270,6 +1282,61 @@ def record_tts_playback_attempt(
         "result": "tts_playback_requested" if ok else "tts_playback_failed",
         "error": None if ok else str(playback.get("stderr") or playback.get("stdout") or "tts playback failed")[-500:],
         "external_action_performed": ok,
+        "payload": payload,
+        "safety_boundaries": payload["safety_boundaries"],
+        "provenance": {
+            "source": "sqlite_action_request_and_operator_live_approval",
+            "source_fields": ["agent_action_requests", "agent_drafts", "agent_execution_attempts"],
+        },
+    }
+    if pending_attempt:
+        store.update_agent_execution_attempt(attempt)
+    else:
+        store.insert_agent_execution_attempt(attempt)
+    return attempt
+
+
+def record_tts_playback_pending_attempt(
+    store,
+    *,
+    request_id: str,
+    contact_id: str,
+    text: str,
+    voice: str,
+    audio_route: str,
+) -> dict:
+    request = store.get_agent_action_request(request_id)
+    draft = store.get_agent_draft(request["source_draft_id"])
+    payload = {
+        "schema": "care-tts-live-playback",
+        "request_id": request_id,
+        "event_id": request["event_id"],
+        "source_draft_id": draft["draft_id"],
+        "approved_contact_id": contact_id,
+        "execution_state": "pending_execution",
+        "live_channel": "tts",
+        "live_message_text": text,
+        "delivery": {"status": "pending_execution", "voice": voice, "audio_route": audio_route},
+        "safety_boundaries": [
+            "human_review_required",
+            "local_tts_only",
+            "no_autonomous_dispatch",
+            "no_medical_diagnosis",
+            "raw_video_stays_local",
+        ],
+    }
+    attempt = {
+        "schema": "agent-execution-attempt",
+        "attempt_id": f"attempt_{uuid4().hex}",
+        "request_id": request_id,
+        "event_id": request["event_id"],
+        "created_at": utc_now(),
+        "harness": "local_macos_live_handoff",
+        "attempt_kind": "live",
+        "execution_state": "pending_execution",
+        "result": "tts_pending_execution",
+        "error": None,
+        "external_action_performed": False,
         "payload": payload,
         "safety_boundaries": payload["safety_boundaries"],
         "provenance": {
@@ -1288,6 +1355,29 @@ def escalation_attachment_path(event: dict) -> str | None:
     if DEFAULT_OBS_PREVIEW_PATH.exists():
         return str(DEFAULT_OBS_PREVIEW_PATH)
     return None
+
+
+def build_event_snapshot_media_policy(event_id: str, snapshot_path: str | None) -> dict | None:
+    if not snapshot_path:
+        return None
+    return {
+        "schema": "media-sharing-policy",
+        "policy_id": f"media_policy_{event_id.replace('evt_', '')}_snapshot",
+        "media_type": "event_scoped_snapshot",
+        "scope": "event_scoped",
+        "approval_state": "approved",
+        "approved_by": "live_approved_operator",
+        "approved_at": utc_now(),
+        "redaction_required": True,
+        "redaction_status": "completed",
+        "retention_class": "ephemeral_handoff",
+        "blocked_media_types": ["raw_video", "continuous_feed"],
+        "provenance": {
+            "event_id": event_id,
+            "source": "operator_media_approval",
+            "source_fields": ["events", "snapshot_path", "agent_execution_attempts"],
+        },
+    }
 
 
 def _resolve_live_target_for_channel(contact_id: str, allowlist_config: str, channel: str) -> str:

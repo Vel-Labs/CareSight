@@ -40,6 +40,40 @@ class SQLiteStore:
                 column="response_options_json",
                 definition="TEXT NOT NULL DEFAULT '[]'",
             )
+            self._rebuild_agent_execution_attempts_if_needed(conn)
+
+    def _rebuild_agent_execution_attempts_if_needed(self, conn: sqlite3.Connection) -> None:
+        sql_row = conn.execute(
+            """
+            SELECT sql FROM sqlite_master
+            WHERE type = 'table' AND name = 'agent_execution_attempts'
+            """
+        ).fetchone()
+        if sql_row is None or "pending_execution" in str(sql_row["sql"]):
+            return
+        conn.executescript(
+            """
+            ALTER TABLE agent_execution_attempts RENAME TO agent_execution_attempts_old;
+            CREATE TABLE agent_execution_attempts (
+              attempt_id TEXT PRIMARY KEY,
+              request_id TEXT NOT NULL REFERENCES agent_action_requests(request_id) ON DELETE CASCADE,
+              event_id TEXT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+              created_at TEXT NOT NULL,
+              harness TEXT NOT NULL,
+              attempt_kind TEXT NOT NULL CHECK(attempt_kind IN ('dry_run', 'live')),
+              execution_state TEXT NOT NULL CHECK(execution_state IN ('pending_execution', 'dry_run', 'blocked', 'executed', 'failed')),
+              result TEXT NOT NULL,
+              error TEXT,
+              external_action_performed INTEGER NOT NULL,
+              payload_json TEXT NOT NULL,
+              safety_boundaries_json TEXT NOT NULL,
+              provenance_json TEXT NOT NULL
+            );
+            INSERT INTO agent_execution_attempts
+            SELECT * FROM agent_execution_attempts_old;
+            DROP TABLE agent_execution_attempts_old;
+            """
+        )
 
     def insert_appearance_profile(self, profile: dict[str, Any]) -> None:
         with self._connect() as conn:
@@ -803,7 +837,11 @@ class SQLiteStore:
                 """,
                 (event_id,),
             ).fetchall()
-        return [agent_action_request_from_row(row) for row in rows]
+        requests = [agent_action_request_from_row(row) for row in rows]
+        for request in requests:
+            attempts = self.list_agent_execution_attempts(request["request_id"])
+            request["latest_attempt_state"] = latest_attempt_state(attempts)
+        return requests
 
     def get_agent_action_request(self, request_id: str) -> dict[str, Any]:
         with self._connect() as conn:
@@ -813,7 +851,9 @@ class SQLiteStore:
             ).fetchone()
         if row is None:
             raise KeyError(request_id)
-        return agent_action_request_from_row(row)
+        request = agent_action_request_from_row(row)
+        request["latest_attempt_state"] = latest_attempt_state(self.list_agent_execution_attempts(request_id))
+        return request
 
     def insert_agent_execution_attempt(self, attempt: dict[str, Any]) -> None:
         with self._connect() as conn:
@@ -858,6 +898,44 @@ class SQLiteStore:
                     json.dumps(attempt["payload"], sort_keys=True),
                     json.dumps(attempt["safety_boundaries"], sort_keys=True),
                     json.dumps(attempt["provenance"], sort_keys=True),
+                ),
+            )
+
+    def update_agent_execution_attempt(self, attempt: dict[str, Any]) -> None:
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT request_id, event_id FROM agent_execution_attempts WHERE attempt_id = ?",
+                (attempt["attempt_id"],),
+            ).fetchone()
+            if row is None:
+                raise KeyError(attempt["attempt_id"])
+            if row["request_id"] != attempt["request_id"] or row["event_id"] != attempt["event_id"]:
+                raise ValueError("execution attempt identity fields cannot change")
+            conn.execute(
+                """
+                UPDATE agent_execution_attempts
+                SET harness = ?,
+                    attempt_kind = ?,
+                    execution_state = ?,
+                    result = ?,
+                    error = ?,
+                    external_action_performed = ?,
+                    payload_json = ?,
+                    safety_boundaries_json = ?,
+                    provenance_json = ?
+                WHERE attempt_id = ?
+                """,
+                (
+                    attempt["harness"],
+                    attempt["attempt_kind"],
+                    attempt["execution_state"],
+                    attempt["result"],
+                    attempt.get("error"),
+                    int(attempt["external_action_performed"]),
+                    json.dumps(attempt["payload"], sort_keys=True),
+                    json.dumps(attempt["safety_boundaries"], sort_keys=True),
+                    json.dumps(attempt["provenance"], sort_keys=True),
+                    attempt["attempt_id"],
                 ),
             )
 
@@ -1156,6 +1234,18 @@ def agent_execution_attempt_from_row(row: sqlite3.Row) -> dict[str, Any]:
         "payload": json.loads(row["payload_json"]),
         "safety_boundaries": json.loads(row["safety_boundaries_json"]),
         "provenance": json.loads(row["provenance_json"]),
+    }
+
+
+def latest_attempt_state(attempts: list[dict[str, Any]]) -> dict[str, Any]:
+    if not attempts:
+        return {"status": "staged", "attempt_id": None, "result": None, "error": None}
+    latest = attempts[-1]
+    return {
+        "status": latest["execution_state"],
+        "attempt_id": latest["attempt_id"],
+        "result": latest["result"],
+        "error": latest.get("error"),
     }
 
 

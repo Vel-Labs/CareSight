@@ -1,0 +1,18 @@
+{
+  "schema": "media-sharing-policy",
+  "policy_id": "media_policy_evt_d9aa_snapshot_001",
+  "media_type": "event_scoped_snapshot",
+  "scope": "event_scoped",
+  "approval_state": "approved",
+  "approved_by": "Steven",
+  "approved_at": "2026-05-24T10:00:00Z",
+  "redaction_required": true,
+  "redaction_status": "completed",
+  "retention_class": "ephemeral_handoff",
+  "blocked_media_types": ["raw_video", "continuous_feed"],
+  "provenance": {
+    "event_id": "evt_d9aa38bdc636459c92ea4e25f665cd0d",
+    "source": "operator_media_approval",
+    "source_fields": ["events", "event_reviews", "snapshot_path"]
+  }
+}

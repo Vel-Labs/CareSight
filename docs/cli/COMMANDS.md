@@ -311,7 +311,7 @@ CareSight alert. Possible floor stay observed in the Living Room. Needs review. 
 
 Outputs: normal `event_persisted` line, a Hermes dry-run attempt receipt in SQLite, and `post_event_agent_live_run` with the staged `request_id`, live `attempt_id`, and `external_action_performed: true`.
 
-Agent safety: `human-review-required`. This sends one live iMessage only after `--live-approved` and a private target are provided. It does not automatically start FaceTime because reply monitoring is not enabled by default.
+Agent safety: `human-review-required`. This sends one live iMessage only after `--live-approved` and a private target are provided. The target must match the configured allowlisted contact channel reference or approved target hash; a CLI or environment target that does not match the contact is blocked. A durable `pending_execution` attempt is inserted before the live send and then updated to `executed`, `failed`, or `dry_run`.
 
 Private contact config:
 
@@ -339,9 +339,9 @@ python3 apps/caresight-hub/scripts/caresight_live_handoff.py \
   --live-approved
 ```
 
-Purpose: open FaceTime for the same allowlisted contact only when the operator-provided reply text is interpreted as yes-like.
+Purpose: open FaceTime for the same allowlisted contact only when the staged request offered `request_facetime_handoff`, the target matches the allowlisted contact, and the operator-provided reply text is interpreted as yes-like.
 
-Validation: `test_agent_assist.py` verifies yes/no reply interpretation, target redaction, and dry-run live-handoff receipts. `test_v0_floor_stay_live.py` verifies the live-run CLI option and receipt formatting.
+Validation: `test_agent_assist.py` verifies yes/no reply interpretation, target matching, target redaction, reply-gated receipts, media-policy-gated attachments, and dry-run live-handoff receipts. `test_v0_floor_stay_live.py` verifies the live-run CLI option and receipt formatting.
 
 Agent safety: `human-review-required`. This is an operator-mediated handoff. It does not start emergency dispatch, diagnose, or expose raw video to an agent. OBS Virtual Camera must be selected/configured by the operator.
 
@@ -828,7 +828,7 @@ Purpose: stage a local action request from a validated agent draft without execu
 
 Inputs: `event_id`, required `--draft-id`, required `--action send_caregiver_message|send_imessage_draft|create_apple_note|prepare_handoff_packet|prepare_facetime_handoff|play_tts_utterance`, optional `--destination caregiver_console|imessage|apple_notes|facetime|local_tts|handoff_packet`, optional `--escalation-level routine|attention|urgent_handoff`, optional `--recipient-role caregiver|emergency_contact`, repeatable `--allowed-contact-id contact_<id>`, optional `--allowlist-config <path>` for redacted contact IDs, repeatable `--response-option acknowledge_text_update|request_local_screen_capture|request_facetime_handoff|dismiss_after_review`, and optional `--db <path>`.
 
-Outputs: `agent-action-request` JSON with `stage: staged`, `execution_state: not_executed`, `requires_human_approval: true`, source draft, destination, escalation level, recipient role, allowlisted contact IDs, response options, safety boundaries, and provenance.
+Outputs: `agent-action-request` JSON with `stage: staged`, `execution_state: not_executed`, `requires_human_approval: true`, source draft, destination, escalation level, recipient role, allowlisted contact IDs, response options, safety boundaries, provenance, and a derived `latest_attempt_state` read model when execution attempts exist.
 
 Validation: `test_agent_assist.py` verifies staged requests stay local, blocked drafts cannot stage action requests, and unknown iMessage/FaceTime contact IDs are rejected when a contact allowlist is configured. `test_care_console.py` verifies CLI staging persists only local SQLite rows and blocks unconfigured contact IDs.
 

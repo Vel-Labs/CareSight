@@ -13,7 +13,7 @@ from typing import Any
 from urllib.parse import quote
 from uuid import uuid4
 
-from caresight.runtime.agent_assist.contacts import load_contact_allowlist
+from caresight.runtime.agent_assist.contacts import load_contact_allowlist, verify_contact_target
 from caresight.runtime.agent_assist.harness import build_hermes_handoff_payload
 from caresight.storage.sqlite_store import utc_now
 
@@ -68,7 +68,9 @@ def resolve_contact_target(
     allowlist_config: str | Path,
     explicit_target: str | None = None,
 ) -> tuple[str, str]:
+    allowlist = load_contact_allowlist(allowlist_config)
     if explicit_target:
+        verify_contact_target(allowlist, contact_id=contact_id, channel=channel, target=explicit_target)
         return explicit_target, "cli"
 
     env_keys = {
@@ -78,14 +80,15 @@ def resolve_contact_target(
     for key in env_keys[channel]:
         value = os.environ.get(key, "").strip()
         if value:
+            verify_contact_target(allowlist, contact_id=contact_id, channel=channel, target=value)
             return value, f"env:{key}"
 
-    allowlist = load_contact_allowlist(allowlist_config)
     try:
         channel_ref = str(allowlist[contact_id].get("channel_refs", {}).get(channel, "")).strip()
     except KeyError as exc:
         raise ValueError(f"contact id not allowlisted: {contact_id}") from exc
     if channel_ref and channel_ref != "redacted-local-channel-ref":
+        verify_contact_target(allowlist, contact_id=contact_id, channel=channel, target=channel_ref)
         return channel_ref, "allowlist"
 
     raise ValueError(
@@ -302,6 +305,7 @@ def execute_live_imessage(
     result_name: str | None = None,
     live_approved: bool = False,
     dry_run: bool = False,
+    media_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not live_approved and not dry_run:
         raise ValueError("live iMessage execution requires --live-approved")
@@ -315,7 +319,38 @@ def execute_live_imessage(
         allowlist_config=allowlist_config,
         explicit_target=target,
     )
-    delivery = send_imessage(resolved_target, message, attachment_path=attachment_path, dry_run=dry_run)
+    attachment_metadata = _validate_media_attachment_policy(attachment_path, media_policy)
+    pending = _build_live_attempt(
+        request=request,
+        draft=draft,
+        contact_id=contact_id,
+        target=resolved_target,
+        target_source=target_source,
+        channel="imessage",
+        message=message,
+        delivery={"status": "pending_execution"},
+        dry_run=dry_run,
+        result="imessage_pending_execution",
+        external_action_performed=False,
+        execution_state="pending_execution",
+        target_verification={"status": "verified", "source": target_source},
+        media_policy=media_policy,
+        attachment_metadata=attachment_metadata,
+    )
+    store.insert_agent_execution_attempt(pending)
+    try:
+        delivery = send_imessage(resolved_target, message, attachment_path=attachment_path, dry_run=dry_run)
+    except Exception as exc:
+        failed = _finalize_live_attempt(
+            pending,
+            delivery={"status": "failed"},
+            result="imessage_failed",
+            execution_state="failed",
+            external_action_performed=False,
+            error=str(exc),
+        )
+        store.update_agent_execution_attempt(failed)
+        raise
     attempt = _build_live_attempt(
         request=request,
         draft=draft,
@@ -328,8 +363,13 @@ def execute_live_imessage(
         dry_run=dry_run,
         result=result_name or ("imessage_sent" if not dry_run else "imessage_live_dry_run"),
         external_action_performed=not dry_run,
+        attempt_id=pending["attempt_id"],
+        execution_state="executed" if not dry_run else "dry_run",
+        target_verification={"status": "verified", "source": target_source},
+        media_policy=media_policy,
+        attachment_metadata=attachment_metadata,
     )
-    store.insert_agent_execution_attempt(attempt)
+    store.update_agent_execution_attempt(attempt)
     return attempt
 
 
@@ -370,13 +410,51 @@ def execute_facetime_if_yes(
     request = store.get_agent_action_request(request_id)
     draft = store.get_agent_draft(request["source_draft_id"])
     _validate_live_request(request, contact_id=contact_id, destination="imessage")
+    if "request_facetime_handoff" not in request.get("response_options", []):
+        raise ValueError("FaceTime handoff requires request_facetime_handoff response option")
     resolved_target, target_source = resolve_contact_target(
         contact_id=contact_id,
         channel="facetime",
         allowlist_config=allowlist_config,
         explicit_target=target,
     )
-    delivery = open_facetime(resolved_target, dry_run=dry_run)
+    reply_receipt = _reply_gated_handoff_receipt(
+        request=request,
+        contact_id=contact_id,
+        reply_text=reply_text,
+        required_phrase="yes",
+        allowed_followup_actions=request.get("response_options", []),
+    )
+    pending = _build_live_attempt(
+        request=request,
+        draft=draft,
+        contact_id=contact_id,
+        target=resolved_target,
+        target_source=target_source,
+        channel="facetime",
+        message="",
+        delivery={"status": "pending_execution", "reply_interpreted_as_yes": True},
+        dry_run=dry_run,
+        result="facetime_pending_execution",
+        external_action_performed=False,
+        execution_state="pending_execution",
+        target_verification={"status": "verified", "source": target_source},
+        reply_gated_handoff=reply_receipt,
+    )
+    store.insert_agent_execution_attempt(pending)
+    try:
+        delivery = open_facetime(resolved_target, dry_run=dry_run)
+    except Exception as exc:
+        failed = _finalize_live_attempt(
+            pending,
+            delivery={"status": "failed", "reply_interpreted_as_yes": True},
+            result="facetime_failed",
+            execution_state="failed",
+            external_action_performed=False,
+            error=str(exc),
+        )
+        store.update_agent_execution_attempt(failed)
+        raise
     delivery["reply_interpreted_as_yes"] = True
     attempt = _build_live_attempt(
         request=request,
@@ -390,8 +468,12 @@ def execute_facetime_if_yes(
         dry_run=dry_run,
         result="facetime_open_requested" if not dry_run else "facetime_live_dry_run",
         external_action_performed=not dry_run,
+        attempt_id=pending["attempt_id"],
+        execution_state="executed" if not dry_run else "dry_run",
+        target_verification={"status": "verified", "source": target_source},
+        reply_gated_handoff=reply_receipt,
     )
-    store.insert_agent_execution_attempt(attempt)
+    store.update_agent_execution_attempt(attempt)
     return attempt
 
 
@@ -585,28 +667,42 @@ def _build_live_attempt(
     dry_run: bool,
     result: str,
     external_action_performed: bool,
+    attempt_id: str | None = None,
+    execution_state: str | None = None,
+    target_verification: dict[str, Any] | None = None,
+    media_policy: dict[str, Any] | None = None,
+    attachment_metadata: dict[str, Any] | None = None,
+    reply_gated_handoff: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     payload = build_hermes_handoff_payload(request, draft=draft)
+    final_execution_state = execution_state or ("executed" if external_action_performed else "dry_run")
     payload.update(
         {
-            "execution_state": "executed" if external_action_performed else "dry_run",
+            "execution_state": final_execution_state,
             "live_channel": channel,
             "live_message_text": message or None,
             "approved_contact_id": contact_id,
             "target": _redacted_target(target) if target else None,
             "target_source": target_source,
+            "target_verification": target_verification or {"status": "not_recorded"},
             "delivery": delivery,
         }
     )
+    if media_policy is not None:
+        payload["media_policy"] = _redacted_media_policy(media_policy)
+    if attachment_metadata is not None:
+        payload["attachment"] = attachment_metadata
+    if reply_gated_handoff is not None:
+        payload["reply_gated_handoff"] = reply_gated_handoff
     return {
         "schema": "agent-execution-attempt",
-        "attempt_id": f"attempt_{uuid4().hex}",
+        "attempt_id": attempt_id or f"attempt_{uuid4().hex}",
         "request_id": request["request_id"],
         "event_id": request["event_id"],
         "created_at": utc_now(),
         "harness": "local_macos_live_handoff",
-        "attempt_kind": "live" if external_action_performed else "dry_run",
-        "execution_state": "executed" if external_action_performed else "dry_run",
+        "attempt_kind": "dry_run" if dry_run else "live",
+        "execution_state": final_execution_state,
         "result": result,
         "error": None,
         "external_action_performed": external_action_performed,
@@ -623,6 +719,102 @@ def _build_live_attempt(
             "source": "sqlite_action_request_and_operator_live_approval",
             "source_fields": ["agent_action_requests", "agent_drafts", "agent_execution_attempts"],
         },
+    }
+
+
+def _finalize_live_attempt(
+    attempt: dict[str, Any],
+    *,
+    delivery: dict[str, Any],
+    result: str,
+    execution_state: str,
+    external_action_performed: bool,
+    error: str | None = None,
+) -> dict[str, Any]:
+    updated = dict(attempt)
+    payload = dict(attempt["payload"])
+    payload["execution_state"] = execution_state
+    payload["delivery"] = delivery
+    updated.update(
+        {
+            "execution_state": execution_state,
+            "result": result,
+            "error": error,
+            "external_action_performed": external_action_performed,
+            "attempt_kind": "live" if external_action_performed else attempt["attempt_kind"],
+            "payload": payload,
+        }
+    )
+    return updated
+
+
+def _validate_media_attachment_policy(
+    attachment_path: str | Path | None,
+    media_policy: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    if attachment_path is None:
+        return None
+    if media_policy is None:
+        raise ValueError("attachment requires an explicit media-sharing-policy receipt")
+    if media_policy.get("schema") != "media-sharing-policy":
+        raise ValueError("attachment requires media-sharing-policy schema")
+    if media_policy.get("media_type") != "event_scoped_snapshot":
+        raise ValueError("only event-scoped snapshots may be attached in Phase 1")
+    if media_policy.get("scope") != "event_scoped":
+        raise ValueError("attachment media policy must be event_scoped")
+    if media_policy.get("approval_state") != "approved":
+        raise ValueError("attachment media policy must be approved")
+    if media_policy.get("redaction_required") and media_policy.get("redaction_status") != "completed":
+        raise ValueError("attachment redaction must be completed before sharing")
+    if "raw_video" not in media_policy.get("blocked_media_types", []):
+        raise ValueError("media policy must block raw_video by default")
+    path = Path(attachment_path).expanduser()
+    digest = hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+    return {
+        "source": "event_scoped_snapshot",
+        "redaction_status": media_policy.get("redaction_status"),
+        "approval_state": media_policy.get("approval_state"),
+        "sha256": digest,
+        **_redacted_attachment(path),
+    }
+
+
+def _redacted_media_policy(media_policy: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "schema": media_policy.get("schema"),
+        "policy_id": media_policy.get("policy_id"),
+        "media_type": media_policy.get("media_type"),
+        "scope": media_policy.get("scope"),
+        "approval_state": media_policy.get("approval_state"),
+        "approved_by": media_policy.get("approved_by"),
+        "approved_at": media_policy.get("approved_at"),
+        "redaction_required": media_policy.get("redaction_required"),
+        "redaction_status": media_policy.get("redaction_status"),
+        "retention_class": media_policy.get("retention_class"),
+        "blocked_media_types": media_policy.get("blocked_media_types", []),
+    }
+
+
+def _reply_gated_handoff_receipt(
+    *,
+    request: dict[str, Any],
+    contact_id: str,
+    reply_text: str,
+    required_phrase: str,
+    allowed_followup_actions: list[str],
+) -> dict[str, Any]:
+    return {
+        "schema": "reply-gated-handoff",
+        "handoff_id": f"handoff_{uuid4().hex}",
+        "source_request_id": request["request_id"],
+        "allowed_followup_actions": allowed_followup_actions,
+        "reply_classification": "affirmative",
+        "required_phrase": required_phrase,
+        "live_approval_state": "approved_for_this_attempt",
+        "contact_id": contact_id,
+        "target_verification": "verified",
+        "execution_receipt_required": True,
+        "reply_text_sha256_prefix": hashlib.sha256(reply_text.encode("utf-8")).hexdigest()[:12],
     }
 
 
