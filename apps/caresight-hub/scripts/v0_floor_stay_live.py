@@ -194,8 +194,8 @@ def parse_args():
         "--no-response-escalation-message",
         default=(
             "This is CareSight Hub escalation. We have not heard back, but there is an event that requires "
-            "caregiver verification. Please see the image attached, and reply yes connect or yes FaceTime "
-            "to open a caregiver FaceTime handoff."
+            "caregiver verification. Please see the image attached. To connect, please respond with: "
+            "yes connect or yes FaceTime."
         ),
     )
     parser.add_argument(
@@ -478,7 +478,7 @@ def live_message_for_event(event: dict, override: str | None = None) -> str:
     room = evidence.get("room_name") or event.get("room_name") or event.get("camera_id") or "the monitored room"
     return (
         f"CareSight alert. A possible floor-stay event needs review in {room}. "
-        "This is not a medical or emergency claim. Reply yes connect or yes FaceTime to open a caregiver FaceTime handoff."
+        "This is not a medical or emergency claim. To connect, please respond with: yes connect or yes FaceTime."
     )
 
 

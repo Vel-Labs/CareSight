@@ -20,7 +20,7 @@ from caresight.storage.sqlite_store import utc_now
 
 DEFAULT_LIVE_MESSAGE = (
     "CareSight alert. Possible floor stay observed in the Living Room. Needs review. "
-    "Reply yes connect or yes FaceTime to open a caregiver FaceTime handoff."
+    "To connect, please respond with: yes connect or yes FaceTime."
 )
 
 FACETIME_APPROVAL_PHRASES = ("yes connect", "yes facetime")

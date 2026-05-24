@@ -288,7 +288,7 @@ The bounded live test is split into two steps:
 The live alert text is:
 
 ```text
-CareSight alert. Possible floor stay observed in the Living Room. Needs review. Reply yes connect or yes FaceTime to open a caregiver FaceTime handoff.
+CareSight alert. Possible floor stay observed in the Living Room. Needs review. To connect, please respond with: yes connect or yes FaceTime.
 ```
 
 Set private contact targets in the shell or in an ignored private allowlist. Do not commit real phone numbers, emails, BlueBubbles credentials, or contact handles.
@@ -387,7 +387,7 @@ OBS should use the `/live.html` page as a Browser Source URL. That page renders 
 If no reply is observed before the no-response escalation window, the command sends one follow-up iMessage with the local event snapshot attached:
 
 ```text
-This is CareSight Hub escalation. We have not heard back, but there is an event that requires caregiver verification. Please see the image attached, and reply yes connect or yes FaceTime to open a caregiver FaceTime handoff.
+This is CareSight Hub escalation. We have not heard back, but there is an event that requires caregiver verification. Please see the image attached. To connect, please respond with: yes connect or yes FaceTime.
 ```
 
 The follow-up uses the same allowlisted target and remains bounded to caregiver verification. It does not dispatch help, diagnose, or send raw video to an agent. If the reply watch times out or is blocked, the run records a `facetime_not_requested_reply_*` execution attempt so the local SQLite audit trail explains why FaceTime did not open.
