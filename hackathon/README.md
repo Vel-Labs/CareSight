@@ -21,13 +21,16 @@ This folder is the judge and operator entrypoint for the current demo. It points
 
 ## Demo Video
 
-Primary video slot:
+Primary video and social posts:
 
-```text
-Paste the unlisted YouTube URL or uploaded GitHub video asset URL here.
-```
+| Surface | Link |
+| --- | --- |
+| YouTube Short | [CareSight Hub demo](https://youtube.com/shorts/wGKUoL215SI?feature=share) |
+| LinkedIn | [CareSight Hub post](https://www.linkedin.com/posts/spajewski_yolomlx-ugcPost-7464486100519075840-ZT_G/) |
+| X | [CareSight Hub post](https://x.com/Velcrafting/status/2058712618701836308) |
+| TikTok | [CareSight Hub demo](https://www.tiktok.com/t/ZP8pt8Cre/) |
 
-For public sharing, an unlisted YouTube link is usually cleaner than committing video to Git: it streams well, works on mobile, and avoids repository bloat. A GitHub-uploaded `.mp4`, `.mov`, or `.webm` is still useful when you want the video to play directly inside GitHub Markdown. Do not commit demo videos to the repository.
+Demo videos and social media renders stay outside Git to avoid repository bloat.
 
 ```mermaid
 flowchart TD
