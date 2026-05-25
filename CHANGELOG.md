@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Removed the tracked `hackathon/video_assets/` render/logo asset dump so large generated media stays out of the repository.
 - Updated the current ship-goal flow so SQLite feeds local model assist before human review: Gemma drafts, Hermes Agent no-send handoff preflight, and Holler TTS readbacks remain downstream, bounded, and non-authoritative.
 - Added Phase 5 documentation visibility: a short operating status page, a curated CLI safety-class index, categorized command docs, and README/roadmap routing for current gates and operator usability.
 - Added a separate Phase 1-4 bug-fix validation pass with fresh gate results, runtime probe receipts, accepted/residual-risk classifications, and explicit remaining live-validation boundaries before Phase 5 documentation work.

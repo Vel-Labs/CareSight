@@ -613,6 +613,7 @@ docs/templates/PHASE_AUDIT_TEMPLATE.md
 docs/templates/PHASE_IMPLEMENTATION_TEMPLATE.md
 docs/templates/PHASE_PROMPT_TEMPLATE.md
 docs/templates/REPO_PERSONALIZATION_CHECKLIST.md
+hackathon/.DS_Store
 hackathon/AUDIT_DIGEST.md
 hackathon/DEMO_JOURNEY.md
 hackathon/README.md
