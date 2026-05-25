@@ -34,13 +34,15 @@ flowchart TD
   Feed["Local home feed"]
   Vision["YOLO26n MLX"]
   Store["SQLite blackbox"]
+  Models["Local model assist<br/>Gemma + Hermes Agent + Holler TTS"]
   Review["Human review"]
   Handoff["Caregiver handoff"]
   Receipt["Acknowledgement + follow-up"]
 
   Feed --> Vision
   Vision --> Store
-  Store --> Review
+  Store --> Models
+  Models --> Review
   Review --> Handoff
   Handoff --> Receipt
   Receipt --> Store

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" rx="96" fill="#F4F1EA"/>
+  <g transform="translate(212 184)">
+    <circle cx="316" cy="316" r="292" fill="#10252A"/>
+    <path d="M146 338l170-138 170 138v190c0 28-22 50-50 50H196c-28 0-50-22-50-50V338z" fill="#F4F1EA"/>
+    <path d="M106 348l210-172 210 172" fill="none" stroke="#10252A" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218 408h196" stroke="#D99F3C" stroke-width="34" stroke-linecap="round"/>
+    <path d="M218 478h124" stroke="#69B7A8" stroke-width="34" stroke-linecap="round"/>
+    <circle cx="474" cy="204" r="28" fill="#4776E6"/>
+    <path d="M522 156c40 40 60 88 60 144" fill="none" stroke="#4776E6" stroke-width="22" stroke-linecap="round"/>
+    <path d="M568 110c64 64 96 141 96 230" fill="none" stroke="#4776E6" stroke-width="18" stroke-linecap="round" opacity=".55"/>
+  </g>
+  <g font-family="sans-serif">
+    <text x="850" y="438" font-size="116" font-weight="760" fill="#10252A">CareSight</text>
+    <text x="856" y="526" font-size="44" font-weight="600" fill="#47766F">Local awareness. Human review.</text>
+  </g>
+</svg>

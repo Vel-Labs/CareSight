@@ -79,19 +79,23 @@ flowchart TD
   Vision["YOLO26 MLX"]
   Policy["Bounded event policy"]
   Memory["SQLite memory"]
+  Models["Local model assist<br/>Gemma drafts + Hermes Agent no-send harness + Holler TTS"]
   Review["Human review"]
   Handoff["Caregiver handoff"]
 
   Camera --> Vision
   Vision --> Policy
   Policy --> Memory
-  Memory --> Review
+  Memory --> Models
+  Models --> Review
   Review --> Handoff
 ```
 
 $$
-\text{CareSight loop} = \text{local observation} + \text{bounded policy} + \text{human review}
+\text{CareSight loop} = \text{local observation} + \text{bounded policy} + \text{SQLite memory} + \text{local model assist} + \text{human review}
 $$
+
+The local model assist layer is downstream of SQLite. Gemma drafts caregiver-facing wording, Hermes Agent prepares or verifies staged no-send handoff payloads, and Holler TTS can generate approved readbacks. None of these lanes becomes canonical truth, confirms events, dispatches help, or performs live handoff actions without the human review gate.
 
 <details>
 <summary>Repo shape</summary>

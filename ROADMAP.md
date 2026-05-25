@@ -4,7 +4,21 @@ This is the high-level roadmap index for humans, judges, and coding agents.
 
 ## Current Ship Goal
 
-CareSight Hub v1/v2 hackathon MVP: a local-first care event engine that runs YOLO26 MLX on Apple Silicon, stores structured events locally, creates a daily journal, and alerts permissioned caregivers.
+CareSight Hub v1/v2 hackathon MVP: a local-first care event engine that runs YOLO26 MLX on Apple Silicon, stores structured events locally in SQLite, routes those records through local model assist, and keeps caregiver handoff behind human review.
+
+Current ship chain:
+
+```text
+Local camera
+  -> YOLO26 MLX
+  -> bounded event policy
+  -> SQLite memory
+  -> local model assist: Gemma draft, Hermes Agent no-send harness, Holler TTS readback
+  -> human review
+  -> caregiver handoff
+```
+
+The local model layer is draft/readback/preflight only. It may summarize SQLite-derived context, prepare handoff payloads, or generate approved TTS audio, but it must not confirm events, rewrite records, inspect raw video as the decision-maker, dispatch help, or bypass the human review gate.
 
 ## Now
 

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-labelledby="title desc">
+  <title id="title">CareSight Hub logo</title>
+  <desc id="desc">A local caregiver awareness mark with a home, eye, and bounded review loop.</desc>
+  <defs>
+    <linearGradient id="markGradient" x1="130" x2="1070" y1="180" y2="1030" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#45D6B5"/>
+      <stop offset="0.52" stop-color="#4F8BFF"/>
+      <stop offset="1" stop-color="#F7B955"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#061018" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="1200" rx="250" fill="#081015"/>
+  <circle cx="600" cy="600" r="430" fill="none" stroke="url(#markGradient)" stroke-width="54" stroke-linecap="round" stroke-dasharray="2140 350"/>
+  <path d="M318 618L600 388l282 230v302c0 39-31 70-70 70H388c-39 0-70-31-70-70V618z" fill="#101D25" stroke="#EAF5F1" stroke-width="38" stroke-linejoin="round" filter="url(#softShadow)"/>
+  <path d="M250 628L600 342l350 286" fill="none" stroke="#EAF5F1" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M365 690c68-96 146-144 235-144s167 48 235 144c-68 96-146 144-235 144s-167-48-235-144z" fill="#0B1218" stroke="#45D6B5" stroke-width="34" stroke-linejoin="round"/>
+  <circle cx="600" cy="690" r="72" fill="#4F8BFF"/>
+  <circle cx="600" cy="690" r="28" fill="#EAF5F1"/>
+  <path d="M742 438h92v92" fill="none" stroke="#F7B955" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M834 438L702 570" fill="none" stroke="#F7B955" stroke-width="36" stroke-linecap="round"/>
+</svg>

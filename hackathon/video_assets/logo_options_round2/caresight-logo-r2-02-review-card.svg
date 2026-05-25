@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" rx="96" fill="#F2F0EA"/>
+  <g transform="translate(250 190)">
+    <rect x="0" y="0" width="620" height="620" rx="128" fill="#102126"/>
+    <rect x="126" y="128" width="368" height="400" rx="44" fill="#F7F4EC"/>
+    <path d="M190 228h240M190 306h188M190 384h126" stroke="#102126" stroke-width="32" stroke-linecap="round"/>
+    <circle cx="430" cy="424" r="66" fill="#6ED6C3"/>
+    <path d="M398 425l24 24 50-58" fill="none" stroke="#102126" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g font-family="sans-serif">
+    <text x="940" y="420" font-size="116" font-weight="760" fill="#102126">CareSight</text>
+    <text x="946" y="512" font-size="42" font-weight="560" fill="#3C6C64">Local events, ready for review</text>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" rx="96" fill="#0A1316"/>
+  <g transform="translate(260 190)">
+    <rect width="620" height="620" rx="150" fill="#142126"/>
+    <circle cx="226" cy="310" r="84" fill="#F4BF62"/>
+    <circle cx="420" cy="310" r="84" fill="#6ED6C3"/>
+    <path d="M282 310h82" stroke="#EAF6F1" stroke-width="36" stroke-linecap="round"/>
+    <path d="M164 476c20-72 56-108 106-108s86 36 106 108" fill="none" stroke="#EAF6F1" stroke-width="34" stroke-linecap="round"/>
+    <path d="M330 476c20-72 56-108 106-108s86 36 106 108" fill="none" stroke="#EAF6F1" stroke-width="34" stroke-linecap="round"/>
+  </g>
+  <g font-family="sans-serif">
+    <text x="940" y="420" font-size="116" font-weight="760" fill="#EAF6F1">CareSight</text>
+    <text x="946" y="512" font-size="42" fill="#A8D8CF">Keeps caregivers close to the moment</text>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" rx="96" fill="#0B1215"/>
+  <g transform="translate(250 190)">
+    <rect x="0" y="0" width="620" height="620" rx="150" fill="#122127"/>
+    <circle cx="230" cy="282" r="74" fill="#6ED6C3"/>
+    <circle cx="390" cy="282" r="74" fill="#F4BF62"/>
+    <path d="M144 480c30-88 84-132 162-132s132 44 162 132" fill="none" stroke="#EAF6F1" stroke-width="42" stroke-linecap="round"/>
+    <path d="M258 392h104" stroke="#4E84F5" stroke-width="32" stroke-linecap="round"/>
+    <path d="M322 338l56 54-56 54" fill="none" stroke="#4E84F5" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g font-family="sans-serif">
+    <text x="940" y="430" font-size="116" font-weight="760" fill="#EAF6F1">CareSight</text>
+    <text x="946" y="522" font-size="42" fill="#A8D8CF">From local signal to human handoff</text>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" rx="96" fill="#F7F3EC"/>
+  <g transform="translate(250 180)">
+    <rect width="640" height="640" rx="160" fill="#102126"/>
+    <circle cx="320" cy="320" r="204" fill="#183037"/>
+    <circle cx="320" cy="260" r="82" fill="#F4BF62"/>
+    <path d="M192 472c26-98 70-146 128-146s102 48 128 146" fill="none" stroke="#EAF6F1" stroke-width="48" stroke-linecap="round"/>
+    <path d="M154 284c-22 50-24 100-6 150M486 284c22 50 24 100 6 150" fill="none" stroke="#6ED6C3" stroke-width="30" stroke-linecap="round"/>
+  </g>
+  <g font-family="sans-serif">
+    <text x="940" y="420" font-size="116" font-weight="760" fill="#102126">CareSight</text>
+    <text x="946" y="512" font-size="42" font-weight="560" fill="#3E6F66">A care layer around one loved one</text>
+  </g>
+</svg>

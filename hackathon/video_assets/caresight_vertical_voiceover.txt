@@ -1,0 +1,11 @@
+CareSight Hub is a local-first caregiver awareness loop.
+
+In this journey demo, the bottom half shows the framework coming online: camera, policy, review state, and audit trail.
+
+The top half shows the local camera view, where Yo Low 26 M L X turns motion into structured observations instead of streaming the home to the cloud.
+
+When the system sees a possible floor stay, it does not decide what happened. It stores the event, drafts a caregiver alert, and waits for human review.
+
+The escalation stays bounded: text first, then a reply-gated FaceTime handoff when the caregiver asks to see more.
+
+The goal is simple: notice care-relevant moments, preserve local privacy, and keep the final call with a person.
