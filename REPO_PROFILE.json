@@ -170,5 +170,17 @@
     "npm test",
     "npm run typecheck",
     "npm run py:check"
-  ]
+  ],
+  "publication": {
+    "state": "enrolled",
+    "repository": "Vel-Labs/CareSight",
+    "surfaces": [
+      "projects"
+    ],
+    "title": "CareSight",
+    "summary": "Local-first caregiver awareness prototype with local observations, human review and caregiver handoffs.",
+    "consent": {
+      "metadataSync": true
+    }
+  }
 }
